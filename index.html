@@ -3,1274 +3,213 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>BION Technologies Corp — AI Governance & AI Adoption</title>
-  <meta name="description" content="BION Technologies Corp helps mining, banks, hospitals, and government adopt AI safely with governance, risk management, and practical team workshops." />
+  <title>BION Technologies Corp — Trusted AI Governance</title>
+
+  <!-- Font: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@500;650;800&display=swap" rel="stylesheet">
+
   <style>
     :root{
-      /* Serious, modern, trust-forward palette */
-      --bg: #0b1220;          /* deep navy */
-      --panel: #0f1b33;       /* slightly lighter navy */
-      --panel-2: #111f3d;
-      --text: #e8eefc;        /* near-white */
-      --muted: #b8c5e6;
-      --soft: rgba(232,238,252,.08);
-      --border: rgba(232,238,252,.14);
-      --accent: #6ee7ff;      /* calm cyan */
-      --accent-2: #a78bfa;    /* subtle violet */
-      --warm: #ffd7a3;        /* warm highlight */
-      --ok: #7CFFB2;
-      --danger: #ff6e8b;
-
-      --shadow: 0 18px 50px rgba(0,0,0,.35);
-      --radius: 18px;
-
-      --font: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
+      --bg:#0b1220;
+      --panel: rgba(15,27,51,.70);
+      --text:#eaf0ff;
+      --muted:#b7c4e6;
+      --border: rgba(234,240,255,.14);
+      --accent:#6ee7ff;
+      --accent2:#a78bfa;
+      --warm:#ffd7a3;
+      --shadow: 0 18px 60px rgba(0,0,0,.38);
+      --radius:18px;
     }
-
-    *{ box-sizing:border-box; }
-    html, body{ height:100%; }
+    *{box-sizing:border-box}
     body{
       margin:0;
-      font-family: var(--font);
+      font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      color:var(--text);
       background:
-        radial-gradient(900px 600px at 12% 10%, rgba(110,231,255,.18), transparent 60%),
-        radial-gradient(800px 600px at 90% 0%, rgba(167,139,250,.14), transparent 55%),
-        radial-gradient(900px 700px at 50% 110%, rgba(255,215,163,.12), transparent 58%),
+        radial-gradient(900px 650px at 15% 10%, rgba(110,231,255,.14), transparent 60%),
+        radial-gradient(900px 650px at 85% 0%, rgba(167,139,250,.12), transparent 55%),
+        radial-gradient(900px 650px at 50% 110%, rgba(255,215,163,.10), transparent 55%),
         var(--bg);
-      color: var(--text);
-      line-height:1.55;
     }
-
-    a{ color:inherit; }
-    .skip{
-      position:absolute; left:-999px; top:auto; width:1px; height:1px; overflow:hidden;
-    }
-    .skip:focus{
-      left:16px; top:16px; width:auto; height:auto; padding:10px 12px;
-      background: var(--panel); border:1px solid var(--border); border-radius: 10px;
-      z-index: 1000;
-    }
-
-    /* Layout */
-    .shell{
-      max-width: 1180px;
-      margin: 0 auto;
-      padding: 28px 18px 56px;
-    }
-
-    header{
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:16px;
-      margin-bottom: 18px;
-    }
-
-    .brand{
-      display:flex;
-      align-items:center;
-      gap:12px;
-      min-width: 220px;
-    }
-    .logo{
-      width:44px; height:44px;
-      border-radius: 14px;
-      background:
-        radial-gradient(20px 20px at 25% 35%, rgba(255,215,163,.95), rgba(255,215,163,.0) 70%),
-        radial-gradient(28px 26px at 70% 70%, rgba(110,231,255,.9), rgba(110,231,255,.0) 70%),
-        linear-gradient(135deg, rgba(167,139,250,.8), rgba(110,231,255,.65));
-      box-shadow: 0 10px 30px rgba(110,231,255,.18);
-      border: 1px solid rgba(232,238,252,.18);
-    }
-    .brand h1{
-      font-size: 15px;
-      margin:0;
-      letter-spacing: .4px;
-      font-weight: 700;
-    }
-    .brand p{
-      margin:0;
-      font-size: 12.5px;
-      color: var(--muted);
-    }
-
-    /* Top actions */
-    .top-actions{
-      display:flex;
-      align-items:center;
-      gap:10px;
-    }
-
-    .pill{
-      display:inline-flex;
-      align-items:center;
-      gap:10px;
-      padding: 10px 12px;
-      border-radius: 999px;
-      border: 1px solid var(--border);
-      background: rgba(15,27,51,.55);
-      backdrop-filter: blur(8px);
-      box-shadow: 0 10px 30px rgba(0,0,0,.15);
-      white-space: nowrap;
-    }
-    .pill span{
-      font-size: 12.5px;
-      color: var(--muted);
-    }
-    .dot{
-      width:10px; height:10px; border-radius: 999px;
-      background: linear-gradient(135deg, var(--accent), var(--accent-2));
-      box-shadow: 0 0 0 4px rgba(110,231,255,.12);
-      flex:0 0 auto;
-    }
-
-    .icon-btn{
-      width: 44px; height: 44px;
-      border-radius: 14px;
-      border: 1px solid var(--border);
-      background: rgba(15,27,51,.55);
-      display:grid;
-      place-items:center;
-      cursor:pointer;
-      transition: transform .12s ease, border-color .12s ease, background .12s ease;
-      backdrop-filter: blur(8px);
-    }
-    .icon-btn:hover{ transform: translateY(-1px); border-color: rgba(110,231,255,.45); }
-    .icon-btn:active{ transform: translateY(0px); }
-    .icon-btn:focus-visible{
-      outline: 3px solid rgba(110,231,255,.35);
-      outline-offset: 2px;
-    }
-    .icon{
-      width: 20px; height: 20px;
-      fill: none;
-      stroke: var(--text);
-      stroke-width: 2;
-      stroke-linecap: round;
-      stroke-linejoin: round;
-      opacity: .95;
-    }
-
-    /* Nav (Tabs) */
-    nav{
-      position: sticky;
-      top: 12px;
-      z-index: 50;
-      margin-bottom: 18px;
-    }
-    .tabs{
-      display:flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      padding: 10px;
-      border-radius: 16px;
-      background: rgba(15,27,51,.55);
-      border: 1px solid var(--border);
+    .wrap{max-width:1100px;margin:0 auto;padding:18px 16px 72px}
+    .top{
+      position:sticky; top:12px; z-index:5;
+      display:flex; align-items:center; justify-content:space-between; gap:12px;
+      padding:12px 12px;
+      border-radius:16px;
+      background: rgba(15,27,51,.70);
+      border:1px solid var(--border);
       backdrop-filter: blur(10px);
       box-shadow: var(--shadow);
     }
-    .tab{
-      appearance:none;
-      border: 1px solid transparent;
-      background: transparent;
-      color: var(--muted);
-      padding: 10px 12px;
-      border-radius: 12px;
-      cursor:pointer;
-      font-weight: 650;
-      letter-spacing: .2px;
-      transition: background .12s ease, color .12s ease, border-color .12s ease, transform .12s ease;
-      display:flex;
-      align-items:center;
-      gap:8px;
-    }
-    .tab:hover{ background: rgba(232,238,252,.06); color: var(--text); }
-    .tab[aria-selected="true"]{
-      background: linear-gradient(135deg, rgba(110,231,255,.17), rgba(167,139,250,.12));
-      color: var(--text);
-      border-color: rgba(110,231,255,.35);
-    }
-    .tab:focus-visible{
-      outline: 3px solid rgba(110,231,255,.32);
-      outline-offset: 2px;
-    }
-
-    /* Main panels */
-    main{
-      border-radius: var(--radius);
-      border: 1px solid var(--border);
-      background: rgba(15,27,51,.55);
-      backdrop-filter: blur(12px);
-      box-shadow: var(--shadow);
+    .brand{display:flex;align-items:center;gap:10px;min-width:240px}
+    .logo{
+      width:38px;height:38px;border-radius:14px;
+      background: linear-gradient(135deg, rgba(110,231,255,.22), rgba(167,139,250,.18));
+      border:1px solid rgba(234,240,255,.16);
+      position:relative;
       overflow:hidden;
     }
-
-    .panel{
-      display:none;
-      padding: 26px;
+    .logo:after{
+      content:""; position:absolute; inset:-20px;
+      background: radial-gradient(circle at 30% 30%, rgba(255,215,163,.40), transparent 55%);
+      transform: rotate(10deg);
     }
-    .panel[aria-hidden="false"]{ display:block; }
-
-    /* Hero */
-    .hero{
-      display:grid;
-      grid-template-columns: 1.2fr .8fr;
-      gap: 22px;
-      align-items: stretch;
+    .brand b{display:block;font-weight:800;font-size:13.5px;letter-spacing:.2px}
+    .brand span{display:block;color:var(--muted);font-size:12px;margin-top:2px}
+    .menu{display:flex;gap:6px;flex-wrap:wrap;justify-content:center}
+    .menu button{
+      font:inherit;
+      padding:8px 10px;
+      border-radius:12px;
+      border:1px solid rgba(234,240,255,.10);
+      background: rgba(234,240,255,.04);
+      color: rgba(183,196,230,.85);
+      cursor:not-allowed;
+      opacity:.75;
     }
-    @media (max-width: 920px){
-      .hero{ grid-template-columns: 1fr; }
+    .cta{
+      display:flex;align-items:center;gap:10px;
+      padding:8px 10px;border-radius:999px;
+      border:1px solid rgba(255,215,163,.20);
+      background: rgba(255,215,163,.10);
+      white-space:nowrap;
+      font-size:12.5px;
     }
-
-    .hero h2{
-      margin: 0 0 10px;
-      font-size: clamp(26px, 3.6vw, 42px);
-      line-height: 1.15;
-      letter-spacing: -0.6px;
-    }
-    .hero p{
-      margin: 0 0 16px;
-      color: var(--muted);
-      font-size: 15.5px;
-      max-width: 65ch;
-    }
-    .trustline{
-      display:inline-flex;
-      align-items:center;
-      gap:10px;
-      padding: 10px 12px;
-      border-radius: 14px;
-      background: rgba(255,215,163,.08);
-      border: 1px solid rgba(255,215,163,.18);
-      color: var(--text);
-      margin-top: 6px;
-    }
-    .trustline strong{ letter-spacing:.2px; }
-    .btn-row{
-      display:flex;
-      flex-wrap: wrap;
-      gap:10px;
-      margin-top: 14px;
-    }
-    .btn{
-      appearance:none;
-      border: 1px solid rgba(110,231,255,.35);
-      background: linear-gradient(135deg, rgba(110,231,255,.18), rgba(167,139,250,.12));
-      color: var(--text);
-      padding: 11px 14px;
-      border-radius: 14px;
-      cursor:pointer;
-      font-weight: 700;
-      letter-spacing:.2px;
-      transition: transform .12s ease, border-color .12s ease;
-    }
-    .btn:hover{ transform: translateY(-1px); border-color: rgba(110,231,255,.6); }
-    .btn:active{ transform: translateY(0px); }
-    .btn.secondary{
-      border-color: rgba(232,238,252,.16);
-      background: rgba(232,238,252,.06);
-      color: var(--text);
-    }
-    .btn:focus-visible{
-      outline: 3px solid rgba(110,231,255,.35);
-      outline-offset: 2px;
-    }
-
-    /* Right hero card */
-    .hero-card{
-      border-radius: 18px;
-      overflow:hidden;
-      border: 1px solid rgba(232,238,252,.14);
-      background: rgba(17,31,61,.55);
-      display:flex;
-      flex-direction:column;
-      min-height: 280px;
-    }
-    .hero-img{
-      height: 160px;
-      background:
-        linear-gradient(0deg, rgba(11,18,32,.65), rgba(11,18,32,.10)),
-        url("https://images.unsplash.com/photo-1556761175-5973dc0f32e7?auto=format&fit=crop&w=1400&q=80");
-      background-size: cover;
-      background-position: center;
-      border-bottom: 1px solid rgba(232,238,252,.12);
-    }
-    .hero-card .content{
-      padding: 14px 14px 16px;
-    }
-    .hero-card h3{
-      margin: 0 0 6px;
-      font-size: 15.5px;
-      letter-spacing:.2px;
-    }
-    .hero-card p{
-      margin:0;
-      color: var(--muted);
-      font-size: 13.5px;
-    }
-    .mini-metrics{
-      display:grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 8px;
-      margin-top: 12px;
-    }
-    .metric{
-      border: 1px solid rgba(232,238,252,.14);
-      background: rgba(232,238,252,.04);
-      border-radius: 14px;
-      padding: 10px;
-    }
-    .metric .k{
-      font-size: 12px;
-      color: var(--muted);
-    }
-    .metric .v{
-      font-size: 14px;
-      font-weight: 800;
-      margin-top: 4px;
-      letter-spacing:.2px;
-    }
-
-    /* Sections / cards */
-    .grid{
-      display:grid;
-      grid-template-columns: repeat(12, 1fr);
-      gap: 14px;
-      margin-top: 18px;
-    }
-    .card{
-      grid-column: span 4;
-      border-radius: 18px;
-      border: 1px solid rgba(232,238,252,.14);
-      background: rgba(232,238,252,.04);
-      padding: 16px;
-      overflow:hidden;
-    }
-    @media (max-width: 980px){
-      .card{ grid-column: span 6; }
-    }
-    @media (max-width: 640px){
-      .card{ grid-column: span 12; }
-    }
-    .card h4{
-      margin:0 0 6px;
-      font-size: 15px;
-      letter-spacing:.2px;
-    }
-    .card p{
-      margin:0;
-      color: var(--muted);
-      font-size: 13.5px;
-    }
-    .badge{
-      display:inline-flex;
-      align-items:center;
-      gap:8px;
-      font-size: 12px;
-      color: var(--muted);
-      border: 1px solid rgba(232,238,252,.14);
-      background: rgba(15,27,51,.35);
-      padding: 8px 10px;
-      border-radius: 999px;
-      margin-bottom: 10px;
-      width: fit-content;
-    }
-    .badge .spark{
-      width: 10px; height: 10px; border-radius: 999px;
-      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    .dot{
+      width:9px;height:9px;border-radius:99px;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
       box-shadow: 0 0 0 4px rgba(110,231,255,.10);
     }
 
-    /* Process list */
-    .steps{
-      margin-top: 16px;
-      display:grid;
-      gap:10px;
-    }
-    .step{
-      display:flex;
-      gap:12px;
-      padding: 12px;
-      border-radius: 16px;
-      border: 1px solid rgba(232,238,252,.14);
-      background: rgba(232,238,252,.035);
-    }
-    .step .n{
-      width: 30px; height: 30px;
-      border-radius: 12px;
-      display:grid;
-      place-items:center;
-      background: linear-gradient(135deg, rgba(110,231,255,.16), rgba(167,139,250,.12));
-      border: 1px solid rgba(110,231,255,.22);
-      font-weight: 850;
-      flex:0 0 auto;
-    }
-    .step .t{
-      font-weight: 750;
-      margin:0;
-      letter-spacing:.15px;
-    }
-    .step .d{
-      margin: 2px 0 0;
-      color: var(--muted);
-      font-size: 13.5px;
-    }
-
-    /* Team */
-    .team-grid{
-      display:grid;
-      grid-template-columns: repeat(12, 1fr);
-      gap: 14px;
-      margin-top: 14px;
-    }
-    .profile{
-      grid-column: span 4;
-      border-radius: 18px;
-      border: 1px solid rgba(232,238,252,.14);
-      background: rgba(232,238,252,.04);
+    .card{
+      margin-top:18px;
+      border-radius:var(--radius);
+      border:1px solid var(--border);
+      background: rgba(15,27,51,.55);
+      backdrop-filter: blur(10px);
+      box-shadow: var(--shadow);
       overflow:hidden;
     }
-    @media (max-width: 980px){ .profile{ grid-column: span 6; } }
-    @media (max-width: 640px){ .profile{ grid-column: span 12; } }
-    .avatar{
-      height: 210px;
-      background-size: cover;
-      background-position: center;
-      border-bottom: 1px solid rgba(232,238,252,.12);
-      filter: saturate(1.05) contrast(1.02);
+    .hero{
+      display:grid;
+      grid-template-columns: 1.15fr .85fr;
+      gap:16px;
+      padding:22px;
+      align-items:stretch;
     }
-    .profile .body{
-      padding: 14px 14px 16px;
-    }
-    .profile h4{
-      margin:0 0 4px;
-      font-size: 15.5px;
-      letter-spacing:.2px;
-    }
-    .role{
-      color: var(--muted);
-      font-size: 13px;
+    @media (max-width:900px){ .hero{grid-template-columns:1fr} .cta{display:none} }
+    h1{
       margin:0 0 10px;
+      font-size: clamp(28px, 3.8vw, 46px);
+      line-height:1.12;
+      letter-spacing:-.7px;
     }
-    .bio{
-      color: var(--muted);
-      font-size: 13.5px;
-      margin:0;
+    p{margin:0;color:var(--muted);font-size:15.5px;max-width:70ch}
+    .trust{
+      margin-top:12px;
+      display:inline-flex;align-items:center;gap:10px;
+      padding:10px 12px;
+      border-radius:14px;
+      border:1px solid rgba(110,231,255,.22);
+      background: linear-gradient(135deg, rgba(110,231,255,.10), rgba(167,139,250,.07));
+      font-size:13.5px;
     }
-
-    /* Contact */
-    .contact-wrap{
-      display:grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 14px;
+    .trust strong{color:var(--text);letter-spacing:.2px}
+    .actions{margin-top:14px;display:flex;gap:10px;flex-wrap:wrap}
+    .btn{
+      font:inherit;
+      font-weight:800;
+      padding:11px 14px;
+      border-radius:14px;
+      border:1px solid rgba(110,231,255,.32);
+      background: linear-gradient(135deg, rgba(110,231,255,.16), rgba(167,139,250,.10));
+      color:var(--text);
+      cursor:not-allowed;
+      opacity:.85;
     }
-    @media (max-width: 900px){
-      .contact-wrap{ grid-template-columns: 1fr; }
+    .btn.secondary{
+      border-color: rgba(234,240,255,.16);
+      background: rgba(234,240,255,.06);
+      font-weight:700;
     }
-    form{
-      display:grid;
-      gap: 10px;
-    }
-    label{
-      font-size: 12.5px;
-      color: var(--muted);
-      display:block;
-      margin-bottom: 6px;
-    }
-    input, textarea{
-      width:100%;
-      padding: 12px 12px;
-      border-radius: 14px;
-      border: 1px solid rgba(232,238,252,.16);
-      background: rgba(11,18,32,.35);
-      color: var(--text);
-      font: inherit;
-      outline: none;
-      transition: border-color .12s ease;
-    }
-    input:focus, textarea:focus{
-      border-color: rgba(110,231,255,.55);
-      box-shadow: 0 0 0 4px rgba(110,231,255,.12);
-    }
-    textarea{ min-height: 118px; resize: vertical; }
-    .form-row{
-      display:grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
-    }
-    @media (max-width: 640px){ .form-row{ grid-template-columns: 1fr; } }
-
-    .note{
-      color: var(--muted);
-      font-size: 13.5px;
-    }
-    .contact-card{
-      border-radius: 18px;
-      border: 1px solid rgba(232,238,252,.14);
-      background: rgba(232,238,252,.04);
-      padding: 16px;
+    .side{
+      border-radius:16px;
+      border:1px solid rgba(234,240,255,.12);
+      background: rgba(234,240,255,.03);
       overflow:hidden;
-      position:relative;
+      display:flex;flex-direction:column;
     }
-    .contact-card:before{
-      content:"";
-      position:absolute; inset:-60px -80px auto auto;
-      width: 240px; height: 240px;
-      background: radial-gradient(circle at 30% 30%, rgba(255,215,163,.22), transparent 60%),
-                  radial-gradient(circle at 70% 70%, rgba(110,231,255,.20), transparent 60%);
-      filter: blur(2px);
-      pointer-events:none;
+    .img{
+      height:190px;
+      background:
+        linear-gradient(0deg, rgba(11,18,32,.72), rgba(11,18,32,.15)),
+        url("https://images.unsplash.com/photo-1556761175-5973dc0f32e7?auto=format&fit=crop&w=1400&q=80");
+      background-size:cover;
+      background-position:center;
+      border-bottom:1px solid rgba(234,240,255,.10);
     }
-
-    footer{
-      margin-top: 14px;
-      padding: 16px 4px 0;
-      color: rgba(184,197,230,.85);
-      font-size: 12.5px;
-      display:flex;
-      gap:10px;
-      flex-wrap: wrap;
-      justify-content: space-between;
-      opacity:.95;
-    }
-
-    /* Modal */
-    .backdrop{
-      position: fixed;
-      inset:0;
-      background: rgba(0,0,0,.55);
-      display:none;
-      align-items: center;
-      justify-content: center;
-      padding: 18px;
-      z-index: 200;
-    }
-    .backdrop.open{ display:flex; }
-    .modal{
-      width: min(520px, 100%);
-      border-radius: 18px;
-      border: 1px solid rgba(232,238,252,.18);
-      background: rgba(15,27,51,.82);
-      backdrop-filter: blur(12px);
-      box-shadow: 0 24px 80px rgba(0,0,0,.6);
-      overflow:hidden;
-    }
-    .modal header{
-      margin: 0;
-      padding: 14px 14px 0;
-      display:flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      gap: 10px;
-    }
-    .modal h3{
-      margin: 0;
-      font-size: 16px;
-      letter-spacing:.2px;
-    }
-    .modal .sub{
-      margin: 6px 0 0;
-      color: var(--muted);
-      font-size: 13px;
-    }
-    .modal .content{
-      padding: 12px 14px 16px;
-    }
-    .close{
-      width: 40px; height: 40px;
-      border-radius: 14px;
-      border: 1px solid rgba(232,238,252,.16);
-      background: rgba(232,238,252,.06);
-      cursor:pointer;
-      display:grid;
-      place-items:center;
-    }
-    .close:hover{ border-color: rgba(110,231,255,.5); }
-    .close:focus-visible{
-      outline: 3px solid rgba(110,231,255,.35);
-      outline-offset: 2px;
-    }
-    .error{
-      margin-top: 10px;
-      padding: 10px 12px;
-      border-radius: 14px;
-      border: 1px solid rgba(255,110,139,.35);
-      background: rgba(255,110,139,.10);
-      color: rgba(255,220,229,.95);
-      display:none;
-    }
-    .error.show{ display:block; }
-    .ok{
-      margin-top: 10px;
-      padding: 10px 12px;
-      border-radius: 14px;
-      border: 1px solid rgba(124,255,178,.35);
-      background: rgba(124,255,178,.08);
-      color: rgba(224,255,239,.95);
-      display:none;
-    }
-    .ok.show{ display:block; }
-
-    /* Small helper */
-    .divider{
-      height: 1px;
-      background: rgba(232,238,252,.10);
-      margin: 18px 0;
-    }
+    .side .inner{padding:14px}
+    .side b{display:block;margin-bottom:6px}
+    .side small{color:var(--muted);font-size:13px;line-height:1.45}
   </style>
 </head>
-
 <body>
-  <a class="skip" href="#main">Skip to content</a>
-
-  <div class="shell">
-    <header aria-label="Site header">
-      <div class="brand" aria-label="BION Technologies Corp">
+  <div class="wrap">
+    <header class="top" aria-label="Top bar">
+      <div class="brand">
         <div class="logo" aria-hidden="true"></div>
         <div>
-          <h1>BION Technologies Corp</h1>
-          <p>AI adoption + AI governance for high-stakes organizations</p>
+          <b>BION Technologies Corp</b>
+          <span>AI governance & adoption for high-stakes orgs</span>
         </div>
       </div>
 
-      <div class="top-actions">
-        <div class="pill" aria-label="Trust message">
-          <div class="dot" aria-hidden="true"></div>
-          <span><strong>TRUST ON US</strong> — safer AI, faster adoption</span>
-        </div>
+      <!-- Disabled menu: layout only -->
+      <nav class="menu" aria-label="Menu (disabled)">
+        <button disabled>Home</button>
+        <button disabled>AI for your org</button>
+        <button disabled>AI governance</button>
+        <button disabled>Team</button>
+        <button disabled>Contact</button>
+      </nav>
 
-        <button class="icon-btn" id="adminBtn" aria-label="Admin access (opens login)" title="Admin">
-          <!-- Lock Icon -->
-          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M7 11V8a5 5 0 0 1 10 0v3"></path>
-            <path d="M6 11h12v10H6z"></path>
-            <path d="M12 15v2"></path>
-          </svg>
-        </button>
+      <div class="cta" aria-label="Trust statement">
+        <span class="dot" aria-hidden="true"></span>
+        <span><strong>TRUST ON US</strong> — defensible AI, faster rollout</span>
       </div>
     </header>
 
-    <nav aria-label="Primary navigation">
-      <div class="tabs" role="tablist" aria-label="Main tabs">
-        <button class="tab" role="tab" id="tab-home" aria-controls="panel-home" aria-selected="true" tabindex="0">
-          Home
-        </button>
-        <button class="tab" role="tab" id="tab-adoption" aria-controls="panel-adoption" aria-selected="false" tabindex="-1">
-          AI for your org
-        </button>
-        <button class="tab" role="tab" id="tab-governance" aria-controls="panel-governance" aria-selected="false" tabindex="-1">
-          AI governance
-        </button>
-        <button class="tab" role="tab" id="tab-team" aria-controls="panel-team" aria-selected="false" tabindex="-1">
-          Team
-        </button>
-        <button class="tab" role="tab" id="tab-contact" aria-controls="panel-contact" aria-selected="false" tabindex="-1">
-          Contact
-        </button>
-      </div>
-    </nav>
-
-    <main id="main">
-      <!-- HOME -->
-      <section class="panel" role="tabpanel" id="panel-home" aria-labelledby="tab-home" aria-hidden="false">
-        <div class="hero">
-          <div>
-            <div class="badge"><span class="spark" aria-hidden="true"></span> For mining • banks • hospitals • government</div>
-            <h2>Introduce AI with confidence — governance first, people always.</h2>
-            <p>
-              BION Technologies Corp helps executive teams safely adopt AI in high-stakes environments.
-              We blend <strong>risk discipline</strong> with <strong>human-centered change</strong> so your organization
-              gets real outcomes without losing trust, compliance, or operational control.
-            </p>
-            <div class="trustline" aria-label="Trust statement">
-              <strong>TRUST ON US</strong>
-              <span style="color: var(--muted); font-size: 13.5px;">to operationalize AI responsibly — from policy to practice.</span>
-            </div>
-            <div class="btn-row">
-              <button class="btn" data-jump="panel-adoption">Start with a workshop</button>
-              <button class="btn secondary" data-jump="panel-governance">Build AI governance</button>
-              <button class="btn secondary" data-jump="panel-contact">Talk to us</button>
-            </div>
-          </div>
-
-          <aside class="hero-card" aria-label="Trust and outcomes">
-            <div class="hero-img" role="img" aria-label="Leaders collaborating in a modern workplace"></div>
-            <div class="content">
-              <h3>Trust is an operating system.</h3>
-              <p>
-                We help you deploy AI in a way that employees, regulators, and the public can rely on —
-                <em>clear ownership, transparent decisions, measurable controls.</em>
-              </p>
-
-              <div class="mini-metrics" aria-label="Key focus areas">
-                <div class="metric">
-                  <div class="k">Focus</div>
-                  <div class="v">Safety</div>
-                </div>
-                <div class="metric">
-                  <div class="k">Focus</div>
-                  <div class="v">Compliance</div>
-                </div>
-                <div class="metric">
-                  <div class="k">Focus</div>
-                  <div class="v">Adoption</div>
-                </div>
-              </div>
-            </div>
-          </aside>
-        </div>
-
-        <div class="grid" aria-label="Value propositions">
-          <div class="card">
-            <h4>Executive-ready AI strategy</h4>
-            <p>Translate AI possibilities into decisions: priority use cases, risks, controls, and a realistic adoption roadmap.</p>
-          </div>
-          <div class="card">
-            <h4>Human-centered change</h4>
-            <p>Workshops and training designed for real behavior change — reducing fear, confusion, and “shadow AI.”</p>
-          </div>
-          <div class="card">
-            <h4>Governance that enables</h4>
-            <p>Policies, roles, and workflows that accelerate safe delivery instead of blocking it.</p>
-          </div>
-
-          <div class="card">
-            <h4>High-stakes readiness</h4>
-            <p>Built for operational reliability and public trust — especially in regulated or safety-critical environments.</p>
-          </div>
-          <div class="card">
-            <h4>Vendor + model oversight</h4>
-            <p>Know what you’re using, why you’re using it, and how it’s controlled: inventories, assessments, and audits.</p>
-          </div>
-          <div class="card">
-            <h4>Measured risk reduction</h4>
-            <p>Risk assessments that are actionable: mitigate, monitor, document, and continuously improve.</p>
-          </div>
-        </div>
-
-        <div class="divider"></div>
-
-        <div class="steps" aria-label="Engagement approach">
-          <div class="step">
-            <div class="n">1</div>
-            <div>
-              <p class="t">Discovery & trust baseline</p>
-              <p class="d">Stakeholder interviews, current-state review, and a shared understanding of “what safe AI means here.”</p>
-            </div>
-          </div>
-          <div class="step">
-            <div class="n">2</div>
-            <div>
-              <p class="t">Workshops & policy-to-practice</p>
-              <p class="d">Hands-on sessions that align leadership, legal, security, and operations — turning guidelines into routines.</p>
-            </div>
-          </div>
-          <div class="step">
-            <div class="n">3</div>
-            <div>
-              <p class="t">Governance + delivery</p>
-              <p class="d">Model inventory, vendor governance, risk assessments, audit readiness, and operating cadence.</p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <!-- AI FOR YOUR ORG -->
-      <section class="panel" role="tabpanel" id="panel-adoption" aria-labelledby="tab-adoption" aria-hidden="true">
-        <div class="badge"><span class="spark" aria-hidden="true"></span> AI for your org — workshops</div>
-        <h2 style="margin:0 0 8px; letter-spacing:-.4px;">Workshops that get your team ready for AI — safely and fast.</h2>
-        <p style="margin:0; color:var(--muted); max-width: 75ch;">
-          Your organization doesn’t adopt AI by installing software — it adopts AI by changing decisions, workflows, and habits.
-          Our workshops build shared mental models and practical skills while reinforcing safe, compliant behavior.
-          <strong>TRUST ON US</strong> to make adoption human, not chaotic.
-        </p>
-
-        <div class="grid" aria-label="Workshop modules">
-          <div class="card">
-            <h4>AI literacy for executives</h4>
-            <p>What AI can/can’t do, how it fails, and how to govern it without slowing innovation.</p>
-          </div>
-          <div class="card">
-            <h4>Secure use of GenAI</h4>
-            <p>Data handling, prompt hygiene, sensitive information risks, and safe patterns for real work.</p>
-          </div>
-          <div class="card">
-            <h4>Use-case selection</h4>
-            <p>Pick the right problems: feasibility, ROI, safety, regulatory exposure, and operational readiness.</p>
-          </div>
-          <div class="card">
-            <h4>Human factors & HCI</h4>
-            <p>Design AI workflows people can trust: transparency, friction where needed, and error-resistant interfaces.</p>
-          </div>
-          <div class="card">
-            <h4>Change management</h4>
-            <p>Reduce fear and resistance; increase adoption with clear roles, incentives, and communication.</p>
-          </div>
-          <div class="card">
-            <h4>Operating model</h4>
-            <p>Define ownership, approvals, escalation paths, and “how work gets done” with AI in the loop.</p>
-          </div>
-        </div>
-
-        <div class="divider"></div>
-
-        <div class="steps" aria-label="Workshop outcomes">
-          <div class="step">
-            <div class="n">✓</div>
-            <div>
-              <p class="t">A shared language across teams</p>
-              <p class="d">Leadership, legal, security, and operations aligned — fewer misunderstandings, faster decisions.</p>
-            </div>
-          </div>
-          <div class="step">
-            <div class="n">✓</div>
-            <div>
-              <p class="t">Behavior that protects trust</p>
-              <p class="d">Clear rules for data, tools, and approvals — reducing “shadow AI” and accidental exposure.</p>
-            </div>
-          </div>
-          <div class="step">
-            <div class="n">✓</div>
-            <div>
-              <p class="t">A shortlist of safe, high-value use cases</p>
-              <p class="d">A prioritized backlog with owners, constraints, success metrics, and governance requirements.</p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <!-- AI GOVERNANCE -->
-      <section class="panel" role="tabpanel" id="panel-governance" aria-labelledby="tab-governance" aria-hidden="true">
-        <div class="badge"><span class="spark" aria-hidden="true"></span> AI governance — policy, risk, audit</div>
-        <h2 style="margin:0 0 8px; letter-spacing:-.4px;">Governance that creates confidence — not bureaucracy.</h2>
-        <p style="margin:0; color:var(--muted); max-width: 80ch;">
-          In mining, banking, hospitals, and government, AI must earn trust continuously.
-          We help you create a governance system that is clear, measurable, and ready for oversight:
-          <strong>policy</strong>, <strong>frameworks</strong>, <strong>risk assessments</strong>, <strong>model inventory</strong>, <strong>vendor governance</strong>, and <strong>audits</strong>.
-        </p>
-
-        <div class="grid" aria-label="Governance services">
-          <div class="card">
-            <h4>AI policy & principles</h4>
-            <p>Practical rules and decision rights: what’s allowed, what requires review, and what’s prohibited.</p>
-          </div>
-          <div class="card">
-            <h4>Governance framework creation</h4>
-            <p>Roles, committees, workflows, documentation, and escalation paths that fit your operating reality.</p>
-          </div>
-          <div class="card">
-            <h4>Risk assessments</h4>
-            <p>Hazards, privacy/security, bias, reliability, and human oversight — with mitigations and monitoring.</p>
-          </div>
-          <div class="card">
-            <h4>Model inventory & lifecycle</h4>
-            <p>Know what you have, how it’s used, data sources, owners, approvals, and retirement criteria.</p>
-          </div>
-          <div class="card">
-            <h4>Vendor governance</h4>
-            <p>Evaluate vendors with consistent controls: contracts, data handling, testing evidence, and ongoing reviews.</p>
-          </div>
-          <div class="card">
-            <h4>Audit readiness</h4>
-            <p>Evidence-first governance: logs, documentation, approvals, and repeatable reviews that stand up to scrutiny.</p>
-          </div>
-        </div>
-
-        <div class="divider"></div>
-
-        <div class="steps" aria-label="Governance roadmap">
-          <div class="step">
-            <div class="n">1</div>
-            <div>
-              <p class="t">Baseline & inventory</p>
-              <p class="d">Identify AI tools/models in use (including GenAI) and map owners, data flows, and current controls.</p>
-            </div>
-          </div>
-          <div class="step">
-            <div class="n">2</div>
-            <div>
-              <p class="t">Framework & policies</p>
-              <p class="d">Define governance structure, review criteria, and documentation standards that teams can actually follow.</p>
-            </div>
-          </div>
-          <div class="step">
-            <div class="n">3</div>
-            <div>
-              <p class="t">Assessment & monitoring</p>
-              <p class="d">Run risk assessments and set monitoring: drift, incidents, user feedback, and periodic re-approval.</p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <!-- TEAM -->
-      <section class="panel" role="tabpanel" id="panel-team" aria-labelledby="tab-team" aria-hidden="true">
-        <div class="badge"><span class="spark" aria-hidden="true"></span> Team — placeholder profiles</div>
-        <h2 style="margin:0 0 8px; letter-spacing:-.4px;">A team built for trust: technology, risk, and people.</h2>
-        <p style="margin:0; color:var(--muted); max-width: 78ch;">
-          Below are <strong>placeholder</strong> profiles with photos. You can replace names, roles, and bios later.
-          The goal is to communicate credibility, warmth, and real-world operational understanding.
-        </p>
-
-        <div class="team-grid" aria-label="Team members">
-          <article class="profile">
-            <div class="avatar" role="img" aria-label="Portrait of Dr. Maya Chen"
-              style="background-image:url('https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=1200&q=80');"></div>
-            <div class="body">
-              <h4>Dr. Maya Chen</h4>
-              <p class="role">AI Governance Lead (Placeholder)</p>
-              <p class="bio">Designs governance frameworks that executives can run and auditors can validate—policy, inventories, and review workflows.</p>
-            </div>
-          </article>
-
-          <article class="profile">
-            <div class="avatar" role="img" aria-label="Portrait of Jordan Rivera"
-              style="background-image:url('https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=1200&q=80');"></div>
-            <div class="body">
-              <h4>Jordan Rivera</h4>
-              <p class="role">Security & Risk Advisor (Placeholder)</p>
-              <p class="bio">Specializes in risk assessments, vendor governance, and controls that keep sensitive operations safe while enabling innovation.</p>
-            </div>
-          </article>
-
-          <article class="profile">
-            <div class="avatar" role="img" aria-label="Portrait of Aisha Patel"
-              style="background-image:url('https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=1200&q=80');"></div>
-            <div class="body">
-              <h4>Aisha Patel</h4>
-              <p class="role">UX & Adoption Strategist (Placeholder)</p>
-              <p class="bio">Leads workshops and human-centered rollout plans so AI becomes trusted behavior—not an extra burden or a hidden risk.</p>
-            </div>
-          </article>
-        </div>
-
-        <div class="divider"></div>
-
-        <div class="card" style="grid-column: span 12;">
-          <h4>Replace team info later</h4>
+    <main class="card">
+      <section class="hero">
+        <div>
+          <h1>Govern AI like a safety-critical system.</h1>
           <p>
-            You can swap images by replacing the <code>background-image:url(...)</code> inside each <code>.avatar</code>.
-            Replace names/roles/bios directly in the HTML.
+            We help CEOs, CIOs, CISOs, and Legal teams introduce AI with clarity:
+            policy, risk assessments, model inventory, vendor governance, and audit-ready evidence.
           </p>
-        </div>
-      </section>
-
-      <!-- CONTACT -->
-      <section class="panel" role="tabpanel" id="panel-contact" aria-labelledby="tab-contact" aria-hidden="true">
-        <div class="badge"><span class="spark" aria-hidden="true"></span> Contact</div>
-        <h2 style="margin:0 0 8px; letter-spacing:-.4px;">Let’s build trusted AI practices in your organization.</h2>
-        <p style="margin:0; color:var(--muted); max-width: 85ch;">
-          Tell us what environment you’re operating in (mining, banking, hospitals, government), your goals, and your constraints.
-          We’ll respond with a practical next step — typically a discovery call or a workshop proposal.
-        </p>
-
-        <div class="divider"></div>
-
-        <div class="contact-wrap" aria-label="Contact form and information">
-          <div class="contact-card">
-            <h3 style="margin:0 0 10px;">Send a message</h3>
-            <form id="contactForm" novalidate>
-              <div class="form-row">
-                <div>
-                  <label for="name">Name</label>
-                  <input id="name" name="name" autocomplete="name" required placeholder="Your name" />
-                </div>
-                <div>
-                  <label for="email">Work email</label>
-                  <input id="email" name="email" type="email" autocomplete="email" required placeholder="name@company.com" />
-                </div>
-              </div>
-
-              <div class="form-row">
-                <div>
-                  <label for="org">Organization</label>
-                  <input id="org" name="org" autocomplete="organization" placeholder="Company / agency" />
-                </div>
-                <div>
-                  <label for="sector">Sector</label>
-                  <input id="sector" name="sector" placeholder="Mining, bank, hospital, government…" />
-                </div>
-              </div>
-
-              <div>
-                <label for="message">What do you need?</label>
-                <textarea id="message" name="message" required placeholder="Example: We want AI workshops for leaders + governance for GenAI vendors."></textarea>
-              </div>
-
-              <button class="btn" type="submit">Send message</button>
-              <p class="note" style="margin:6px 0 0;">
-                This demo form validates input and shows a success message (no backend is connected yet).
-              </p>
-              <div class="ok" id="contactOk" role="status" aria-live="polite">
-                Message prepared. In a real deployment, this would be sent to your email/CRM.
-              </div>
-              <div class="error" id="contactErr" role="alert">
-                Please complete the required fields with a valid email.
-              </div>
-            </form>
+          <div class="trust">
+            <strong>TRUST ON US</strong>
+            <span style="color:var(--muted)">to protect reputation, compliance, and operations.</span>
           </div>
-
-          <div class="contact-card">
-            <h3 style="margin:0 0 10px;">Why organizations trust us</h3>
-            <p class="note" style="margin:0 0 12px;">
-              <strong>TRUST ON US</strong> is not a slogan — it’s the product. We operationalize trust through clear governance,
-              measurable controls, and human-centered adoption.
-            </p>
-
-            <div class="steps">
-              <div class="step">
-                <div class="n">✓</div>
-                <div>
-                  <p class="t">Clear accountability</p>
-                  <p class="d">Named owners, review criteria, and decision logs — so AI outcomes are explainable and defensible.</p>
-                </div>
-              </div>
-              <div class="step">
-                <div class="n">✓</div>
-                <div>
-                  <p class="t">Practical safeguards</p>
-                  <p class="d">Controls that match your reality (security, privacy, safety, compliance) — without stalling delivery.</p>
-                </div>
-              </div>
-              <div class="step">
-                <div class="n">✓</div>
-                <div>
-                  <p class="t">Adoption that sticks</p>
-                  <p class="d">Workshops + change plans that reduce fear, prevent misuse, and build reliable habits.</p>
-                </div>
-              </div>
-            </div>
-
-            <div class="divider"></div>
-
-            <p class="note" style="margin:0;">
-              <strong>Next step:</strong> if you want, I can add a “Book a meeting” button (Calendly/Google Calendar link)
-              and wire the form to an email service (SendGrid, Mailgun) or your CRM.
-            </p>
+          <div class="actions" aria-label="Buttons (disabled)">
+            <button class="btn" disabled>Start an engagement</button>
+            <button class="btn secondary" disabled>See how we work</button>
           </div>
         </div>
 
-        <footer aria-label="Footer">
-          <div>© <span id="year"></span> BION Technologies Corp</div>
-          <div style="display:flex; gap:10px; flex-wrap:wrap;">
-            <span>AI adoption • AI governance</span>
-            <span aria-hidden="true">•</span>
-            <span>Mining • Banks • Hospitals • Government</span>
+        <aside class="side" aria-label="Visual panel">
+          <div class="img" role="img" aria-label="Leadership team collaborating"></div>
+          <div class="inner">
+            <b>Industries we support</b>
+            <small>Mining • Banks • Hospitals • Government — where trust, safety, and regulation matter.</small>
           </div>
-        </footer>
+        </aside>
       </section>
     </main>
   </div>
-
-  <!-- Admin Login Modal -->
-  <div class="backdrop" id="modalBackdrop" role="dialog" aria-modal="true" aria-labelledby="modalTitle" aria-describedby="modalDesc">
-    <div class="modal" role="document">
-      <header>
-        <div>
-          <h3 id="modalTitle">Admin login</h3>
-          <p class="sub" id="modalDesc">For authorized users only. (Demo modal — no real auth wired yet.)</p>
-        </div>
-        <button class="close" id="modalClose" aria-label="Close login dialog" title="Close">
-          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M18 6L6 18"></path>
-            <path d="M6 6l12 12"></path>
-          </svg>
-        </button>
-      </header>
-
-      <div class="content">
-        <form id="adminForm" novalidate>
-          <div style="margin-top: 6px;">
-            <label for="adminEmail">Email</label>
-            <input id="adminEmail" name="adminEmail" type="email" autocomplete="username" required placeholder="admin@biontech.com" />
-          </div>
-          <div style="margin-top: 10px;">
-            <label for="adminPass">Password</label>
-            <input id="adminPass" name="adminPass" type="password" autocomplete="current-password" required placeholder="••••••••" />
-          </div>
-
-          <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top: 14px;">
-            <button class="btn" type="submit">Login</button>
-            <button class="btn secondary" type="button" id="forgotBtn">Forgot password</button>
-          </div>
-
-          <div class="error" id="adminErr" role="alert">
-            Demo validation: please enter a valid email and a password (min 6 chars).
-          </div>
-          <div class="ok" id="adminOk" role="status" aria-live="polite">
-            Login accepted (demo). You can later connect this to a real auth system.
-          </div>
-        </form>
-      </div>
-    </div>
-  </div>
-
-  <script>
-    // ---------- Tabs ----------
-    const tabs = Array.from(document.querySelectorAll('[role="tab"]'));
-    const panels = Array.from(document.querySelectorAll('[role="tabpanel"]'));
-
-    function activateTab(tab) {
-      tabs.forEach(t => {
-        const selected = (t === tab);
-        t.setAttribute('aria-selected', selected ? 'true' : 'false');
-        t.tabIndex = selected ? 0 : -1;
-      });
-
-      panels.forEach(p => {
-        const isTarget = (p.id === tab.getAttribute('aria-controls'));
-        p.setAttribute('aria-hidden', isTarget ? 'false' : 'true');
-      });
-
-      tab.focus({ preventScroll: true });
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
-
-    tabs.forEach(tab => {
-      tab.addEventListener('click', () => activateTab(tab));
-      tab.addEventListener('keydown', (e) => {
-        const i = tabs.indexOf(tab);
-        if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
-          e.preventDefault();
-          activateTab(tabs[(i + 1) % tabs.length]);
-        }
-        if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
-          e.preventDefault();
-          activateTab(tabs[(i - 1 + tabs.length) % tabs.length]);
-        }
-        if (e.key === 'Home') { e.preventDefault(); activateTab(tabs[0]); }
-        if (e.key === 'End') { e.preventDefault(); activateTab(tabs[tabs.length - 1]); }
-      });
-    });
-
-    // CTA buttons jump to panels
-    document.querySelectorAll('[data-jump]').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const panelId = btn.getAttribute('data-jump');
-        const tab = tabs.find(t => t.getAttribute('aria-controls') === panelId);
-        if (tab) activateTab(tab);
-      });
-    });
-
-    // ---------- Footer year ----------
-    document.getElementById('year').textContent = new Date().getFullYear();
-
-    // ---------- Contact form demo validation ----------
-    const contactForm = document.getElementById('contactForm');
-    const contactOk = document.getElementById('contactOk');
-    const contactErr = document.getElementById('contactErr');
-
-    if (contactForm) {
-      contactForm.addEventListener('submit', (e) => {
-        e.preventDefault();
-        contactOk.classList.remove('show');
-        contactErr.classList.remove('show');
-
-        const name = document.getElementById('name').value.trim();
-        const email = document.getElementById('email').value.trim();
-        const msg = document.getElementById('message').value.trim();
-
-        const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-        if (!name || !emailOk || !msg) {
-          contactErr.classList.add('show');
-          return;
-        }
-
-        // Demo success (no backend)
-        contactOk.classList.add('show');
-        contactForm.reset();
-      });
-    }
-
-    // ---------- Admin modal ----------
-    const adminBtn = document.getElementById('adminBtn');
-    const modalBackdrop = document.getElementById('modalBackdrop');
-    const modalClose = document.getElementById('modalClose');
-    const adminForm = document.getElementById('adminForm');
-    const adminErr = document.getElementById('adminErr');
-    const adminOk = document.getElementById('adminOk');
-    const forgotBtn = document.getElementById('forgotBtn');
-
-    let lastFocusedEl = null;
-
-    function openModal() {
-      lastFocusedEl = document.activeElement;
-      adminErr.classList.remove('show');
-      adminOk.classList.remove('show');
-      modalBackdrop.classList.add('open');
-
-      // Focus first input
-      setTimeout(() => document.getElementById('adminEmail').focus(), 0);
-      document.body.style.overflow = 'hidden';
-    }
-
-    function closeModal() {
-      modalBackdrop.classList.remove('open');
-      document.body.style.overflow = '';
-      if (lastFocusedEl && typeof lastFocusedEl.focus === 'function') lastFocusedEl.focus();
-    }
-
-    adminBtn.addEventListener('click', openModal);
-    modalClose.addEventListener('click', closeModal);
-
-    // Close if clicking outside modal
-    modalBackdrop.addEventListener('mousedown', (e) => {
-      if (e.target === modalBackdrop) closeModal();
-    });
-
-    // ESC to close + simple focus trap
-    document.addEventListener('keydown', (e) => {
-      if (!modalBackdrop.classList.contains('open')) return;
-
-      if (e.key === 'Escape') {
-        e.preventDefault();
-        closeModal();
-        return;
-      }
-
-      if (e.key === 'Tab') {
-        const focusables = modalBackdrop.querySelectorAll('button, input, [href], textarea, [tabindex]:not([tabindex="-1"])');
-        const list = Array.from(focusables).filter(el => !el.disabled && el.offsetParent !== null);
-        if (!list.length) return;
-
-        const first = list[0];
-        const last = list[list.length - 1];
-
-        if (e.shiftKey && document.activeElement === first) {
-          e.preventDefault(); last.focus();
-        } else if (!e.shiftKey && document.activeElement === last) {
-          e.preventDefault(); first.focus();
-        }
-      }
-    });
-
-    // Demo login validation
-    adminForm.addEventListener('submit', (e) => {
-      e.preventDefault();
-      adminErr.classList.remove('show');
-      adminOk.classList.remove('show');
-
-      const email = document.getElementById('adminEmail').value.trim();
-      const pass = document.getElementById('adminPass').value;
-
-      const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-      const passOk = (pass && pass.length >= 6);
-
-      if (!emailOk || !passOk) {
-        adminErr.classList.add('show');
-        return;
-      }
-
-      adminOk.classList.add('show');
-      // In real implementation: call auth endpoint, set session token, redirect to /admin, etc.
-    });
-
-    forgotBtn.addEventListener('click', () => {
-      adminErr.classList.remove('show');
-      adminOk.classList.remove('show');
-      adminOk.textContent = "Demo: password reset flow would start here (email + reset link).";
-      adminOk.classList.add('show');
-    });
-  </script>
 </body>
 </html>
