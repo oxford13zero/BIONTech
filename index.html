@@ -12,7 +12,7 @@
   <style>
     :root{
       --bg:#0B1220;
-      --panel:#0F1B33;        /* ORIGINAL DARK PANEL */
+      --panel:#0F1B33;        /* DARK HEADER PANEL */
       --panel2:#111F3D;
       --text:#EAF0FF;
       --muted:#B7C4E6;
@@ -49,8 +49,8 @@
       display:flex;
       align-items:center;
       justify-content:space-between;
-      gap:16px;
-      padding:20px 20px;           /* more vertical space for big logo */
+      gap:24px;
+      padding:20px 24px;
       background:var(--panel);
       border:1px solid var(--border);
       border-radius:16px;
@@ -60,41 +60,25 @@
     .brand{
       display:flex;
       align-items:center;
-      gap:18px;
     }
 
-    /* BIG LOGO */
+    /* BIG LOGO — transparent background */
     .logo-img{
-      height:120px;               /* 2–3× bigger */
+      height:120px;
       width:auto;
       display:block;
-    }
-
-    .brand-text b{
-      display:block;
-      font-weight:800;
-      font-size:16px;
-      letter-spacing:.2px;
-      color:#EAF0FF;
-    }
-
-    .brand-text span{
-      display:block;
-      font-size:13px;
-      color:var(--muted);
-      margin-top:4px;
     }
 
     /* Menu */
     .menu{
       display:flex;
-      gap:8px;
+      gap:10px;
       flex-wrap:wrap;
       justify-content:center;
     }
 
     .menu a{
-      padding:10px 12px;
+      padding:10px 14px;
       border-radius:12px;
       border:1px solid var(--border);
       background:var(--panel2);
@@ -130,7 +114,7 @@
 
     @media (max-width:900px){
       .hero{ grid-template-columns:1fr; }
-      .logo-img{ height:90px; }    /* responsive safety */
+      .logo-img{ height:90px; }
     }
 
     h1{
@@ -212,10 +196,6 @@
     <header class="top">
       <div class="brand">
         <img src="BION_logo_refined2.png" alt="BION logo" class="logo-img">
-        <div class="brand-text">
-          <b>BION Technologies Corp</b>
-          <span>AI governance & adoption for high-stakes orgs</span>
-        </div>
       </div>
 
       <nav class="menu">
