@@ -5,228 +5,226 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>BION Technologies Corp — Trusted AI Governance</title>
 
-  <!-- Friendly + highly readable font: Source Sans 3 -->
+  <!-- Highly readable, friendly font -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;600;700;800&display=swap" rel="stylesheet">
 
   <style>
     :root{
-      /* Solid colors only */
-      --bg: #0B1220;
-      --panel: #0F1B33;
+      --bg:#0B1220;
+      --panel:#0F1B33;
       --panel2:#111F3D;
-      --text: #EAF0FF;
+      --text:#EAF0FF;
       --muted:#B7C4E6;
       --border:#233458;
 
-      /* Primary accent stays teal */
-      --accent:#2DD4BF;
+      /* Accents */
+      --accent:#2DD4BF;      /* teal */
+      --secondary:#F4C38B;   /* warm sand */
 
-      /* Secondary accent locked to Warm Sand */
-      --secondary:#F4C38B;
-
-      --shadow: 0 18px 60px rgba(0,0,0,.40);
-      --radius: 18px;
+      --shadow:0 18px 60px rgba(0,0,0,.40);
+      --radius:18px;
     }
 
     *{ box-sizing:border-box; }
+
     body{
       margin:0;
-      font-family: "Source Sans 3", system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-      color: var(--text);
-      background: var(--bg);
-      line-height: 1.55;
+      font-family:"Source Sans 3", system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      background:var(--bg);
+      color:var(--text);
+      line-height:1.55;
     }
-    .wrap{ max-width: 1100px; margin: 0 auto; padding: 18px 16px 72px; }
+
+    .wrap{
+      max-width:1100px;
+      margin:0 auto;
+      padding:18px 16px 72px;
+    }
 
     /* Top bar */
     .top{
-      position: sticky;
-      top: 12px;
-      z-index: 5;
+      position:sticky;
+      top:12px;
+      z-index:5;
       display:flex;
       align-items:center;
       justify-content:space-between;
-      gap: 12px;
-      padding: 12px 12px;
-      border-radius: 16px;
-      background: var(--panel);
-      border: 1px solid var(--border);
-      box-shadow: var(--shadow);
+      gap:12px;
+      padding:12px;
+      background:var(--panel);
+      border:1px solid var(--border);
+      border-radius:16px;
+      box-shadow:var(--shadow);
     }
 
-    .brand{ display:flex; align-items:center; gap: 10px; min-width: 250px; }
-    .logo{
-      width: 38px; height: 38px;
-      border-radius: 14px;
-      background: var(--accent);
-      border: 1px solid var(--border);
-    }
-    .brand b{ display:block; font-weight: 800; font-size: 14px; letter-spacing: .2px; }
-    .brand span{ display:block; color: var(--muted); font-size: 12.5px; margin-top: 2px; }
-
-    /* ENABLED menu */
-    .menu{ display:flex; gap: 6px; flex-wrap: wrap; justify-content:center; }
-    .menu a{
-      display:inline-flex;
+    .brand{
+      display:flex;
       align-items:center;
-      font: inherit;
-      padding: 8px 10px;
-      border-radius: 12px;
-      border: 1px solid var(--border);
-      background: var(--panel2);
-      color: var(--muted);
+      gap:10px;
+      min-width:250px;
+    }
+
+    .logo{
+      width:38px;
+      height:38px;
+      border-radius:14px;
+      background:var(--accent);
+      border:1px solid var(--border);
+    }
+
+    .brand b{
+      display:block;
+      font-weight:800;
+      font-size:14px;
+      letter-spacing:.2px;
+    }
+
+    .brand span{
+      display:block;
+      font-size:12.5px;
+      color:var(--muted);
+      margin-top:2px;
+    }
+
+    /* Enabled menu */
+    .menu{
+      display:flex;
+      gap:6px;
+      flex-wrap:wrap;
+      justify-content:center;
+    }
+
+    .menu a{
+      padding:8px 10px;
+      border-radius:12px;
+      border:1px solid var(--border);
+      background:var(--panel2);
+      color:var(--muted);
       text-decoration:none;
-      cursor: pointer;
-      transition: background-color .15s ease, color .15s ease, transform .12s ease, border-color .15s ease;
+      font-weight:600;
+      transition:color .15s ease, background .15s ease, transform .12s ease, border-color .15s ease;
     }
+
     .menu a:hover{
-      background: #1A2C52;         /* solid hover color */
-      color: var(--text);
-      border-color: rgba(244,195,139,.35); /* warm sand hint */
-      transform: translateY(-1px);
-    }
-    .menu a:active{ transform: translateY(0px); }
-    .menu a:focus-visible{
-      outline: 3px solid rgba(244,195,139,.35);
-      outline-offset: 2px;
+      background:#1A2C52;
+      color:var(--secondary); /* Warm Sand */
+      border-color:rgba(244,195,139,.35);
+      transform:translateY(-1px);
     }
 
     /* Main card */
     .card{
-      margin-top: 18px;
-      border-radius: var(--radius);
-      border: 1px solid var(--border);
-      background: var(--panel);
-      box-shadow: var(--shadow);
+      margin-top:18px;
+      background:var(--panel);
+      border:1px solid var(--border);
+      border-radius:var(--radius);
+      box-shadow:var(--shadow);
       overflow:hidden;
     }
 
     .hero{
       display:grid;
-      grid-template-columns: 1.15fr .85fr;
-      gap: 16px;
-      padding: 22px;
-      align-items: stretch;
+      grid-template-columns:1.15fr .85fr;
+      gap:16px;
+      padding:22px;
+      align-items:stretch;
     }
-    @media (max-width: 900px){
-      .hero{ grid-template-columns: 1fr; }
+
+    @media (max-width:900px){
+      .hero{ grid-template-columns:1fr; }
     }
 
     h1{
-      margin: 0 0 10px;
-      font-size: clamp(28px, 3.8vw, 46px);
-      line-height: 1.12;
-      letter-spacing: -0.6px;
+      margin:0 0 10px;
+      font-size:clamp(28px, 3.8vw, 46px);
+      line-height:1.12;
+      letter-spacing:-0.6px;
     }
+
     p{
-      margin: 0;
-      color: var(--muted);
-      font-size: 16px;
-      max-width: 70ch;
+      margin:0;
+      font-size:16px;
+      color:var(--muted);
+      max-width:70ch;
     }
 
-    /* Warm Sand “labels” (chips) */
-    .chips{
-      margin-top: 12px;
-      display:flex;
-      gap: 8px;
-      flex-wrap: wrap;
-    }
-    .chip{
-      display:inline-flex;
-      align-items:center;
-      padding: 6px 10px;
-      border-radius: 999px;
-      border: 1px solid var(--border);
-      background: var(--panel2);
-      color: var(--secondary);
-      font-weight: 800;
-      font-size: 12.5px;
-      letter-spacing: .15px;
-    }
-
-    /* Buttons below hero: only Workshops + AI Governance */
+    /* Buttons under hero */
     .label-row{
-      margin-top: 16px;
+      margin-top:18px;
       display:flex;
-      gap: 10px;
-      flex-wrap: wrap;
-      align-items:center;
+      gap:10px;
+      flex-wrap:wrap;
     }
+
     .label-btn{
-      font: inherit;
-      font-weight: 800;
-      padding: 10px 12px;
-      border-radius: 14px;
-      border: 1px solid var(--border);
-      background: var(--panel2);
-      color: var(--secondary); /* Warm Sand label */
-      cursor: pointer;
-      transition: background-color .15s ease, transform .12s ease, border-color .15s ease;
+      padding:10px 14px;
+      border-radius:14px;
+      border:1px solid var(--border);
+      background:var(--panel2);
+      color:var(--secondary); /* Warm Sand label */
+      font-weight:800;
       text-decoration:none;
-      display:inline-flex;
-      align-items:center;
+      transition:color .15s ease, background .15s ease, transform .12s ease, border-color .15s ease;
     }
+
     .label-btn:hover{
-      background: #1A2C52; /* hover color change */
-      transform: translateY(-1px);
-      border-color: rgba(244,195,139,.35);
-    }
-    .label-btn:active{ transform: translateY(0px); }
-    .label-btn:focus-visible{
-      outline: 3px solid rgba(244,195,139,.35);
-      outline-offset: 2px;
+      background:#1A2C52;
+      color:var(--secondary); /* Warm Sand on hover */
+      border-color:rgba(244,195,139,.35);
+      transform:translateY(-1px);
     }
 
     /* Side panel */
     .side{
-      border-radius: 16px;
-      border: 1px solid var(--border);
-      background: var(--panel2);
+      border-radius:16px;
+      border:1px solid var(--border);
+      background:var(--panel2);
       overflow:hidden;
       display:flex;
       flex-direction:column;
     }
 
-    /* Clear image: no overlay/transparency */
     .img{
-      height: 220px;
-      background: url("https://images.unsplash.com/photo-1556761175-5973dc0f32e7?auto=format&fit=crop&w=1600&q=80");
-      background-size: cover;
-      background-position: center;
-      border-bottom: 1px solid var(--border);
+      height:220px;
+      background:url("https://images.unsplash.com/photo-1556761175-5973dc0f32e7?auto=format&fit=crop&w=1600&q=80");
+      background-size:cover;
+      background-position:center;
+      border-bottom:1px solid var(--border);
     }
 
-    .side .inner{ padding: 14px; }
+    .side .inner{
+      padding:14px;
+    }
+
     .side b{
       display:block;
-      margin-bottom: 6px;
-      font-weight: 800;
-      color: var(--secondary); /* Warm Sand highlight */
+      margin-bottom:6px;
+      font-weight:800;
+      color:var(--secondary); /* Warm Sand */
     }
+
     .side small{
-      color: var(--muted);
-      font-size: 13.5px;
-      line-height: 1.45;
+      color:var(--muted);
+      font-size:13.5px;
+      line-height:1.45;
     }
   </style>
 </head>
 
 <body>
   <div class="wrap">
-    <header class="top" aria-label="Top bar">
+    <header class="top">
       <div class="brand">
-        <div class="logo" aria-hidden="true"></div>
+        <div class="logo"></div>
         <div>
           <b>BION Technologies Corp</b>
           <span>AI governance & adoption for high-stakes orgs</span>
         </div>
       </div>
 
-      <!-- Enabled menu -->
-      <nav class="menu" aria-label="Menu">
+      <nav class="menu">
         <a href="#home">Home</a>
         <a href="#ai-for-your-org">AI for your org</a>
         <a href="#ai-governance">AI governance</a>
@@ -241,37 +239,34 @@
           <h1>Govern AI like a safety-critical system.</h1>
           <p>
             We help CEOs, CIOs, CISOs, and Legal teams introduce AI with clarity:
-            policy, risk assessments, model inventory, vendor governance, and audit-ready evidence.
+            policy, risk assessments, model inventory, vendor governance,
+            and audit-ready evidence.
           </p>
 
-          <div class="chips" aria-label="Key themes">
-            <span class="chip">Trust</span>
-            <span class="chip">Compliance</span>
-            <span class="chip">Operational Safety</span>
-            <span class="chip">Audit Readiness</span>
-          </div>
-
-          <div class="label-row" aria-label="Primary links">
+          <div class="label-row">
             <a class="label-btn" href="#ai-for-your-org">Workshops</a>
             <a class="label-btn" href="#ai-governance">AI Governance</a>
           </div>
         </div>
 
-        <aside class="side" aria-label="Visual panel">
-          <div class="img" role="img" aria-label="Leadership team collaborating"></div>
+        <aside class="side">
+          <div class="img" aria-label="Leadership team collaborating"></div>
           <div class="inner">
             <b>Industries we support</b>
-            <small>Mining • Banks • Hospitals • Government — where trust, safety, and regulation matter.</small>
+            <small>
+              Mining • Banks • Hospitals • Government — where trust,
+              safety, and regulation matter.
+            </small>
           </div>
         </aside>
       </section>
     </main>
 
-    <!-- Placeholder anchors (no content added, as requested not to change anything else) -->
-    <div id="ai-for-your-org" style="height:1px;"></div>
-    <div id="ai-governance" style="height:1px;"></div>
-    <div id="team" style="height:1px;"></div>
-    <div id="contact" style="height:1px;"></div>
+    <!-- Anchor placeholders -->
+    <div id="ai-for-your-org"></div>
+    <div id="ai-governance"></div>
+    <div id="team"></div>
+    <div id="contact"></div>
   </div>
 </body>
 </html>
