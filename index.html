@@ -12,16 +12,16 @@
   <style>
     :root{
       --bg:#0B1220;
-      --panel:#ffffff;
+      --panel:#0F1B33;        /* ORIGINAL DARK PANEL */
       --panel2:#111F3D;
-      --text:#0B1220;
-      --muted:#4B5563;
-      --border:#E5E7EB;
+      --text:#EAF0FF;
+      --muted:#B7C4E6;
+      --border:#233458;
 
       --accent:#2DD4BF;
       --secondary:#F4C38B;
 
-      --shadow:0 12px 30px rgba(0,0,0,.12);
+      --shadow:0 12px 30px rgba(0,0,0,.4);
       --radius:18px;
     }
 
@@ -30,8 +30,8 @@
     body{
       margin:0;
       font-family:"Source Sans 3", system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-      background:#0B1220;
-      color:#EAF0FF;
+      background:var(--bg);
+      color:var(--text);
       line-height:1.55;
     }
 
@@ -49,8 +49,8 @@
       display:flex;
       align-items:center;
       justify-content:space-between;
-      gap:12px;
-      padding:12px 16px;
+      gap:16px;
+      padding:20px 20px;           /* more vertical space for big logo */
       background:var(--panel);
       border:1px solid var(--border);
       border-radius:16px;
@@ -60,13 +60,12 @@
     .brand{
       display:flex;
       align-items:center;
-      gap:14px;
-      min-width:260px;
+      gap:18px;
     }
 
-    /* NEW LOGO */
+    /* BIG LOGO */
     .logo-img{
-      height:48px;
+      height:120px;               /* 2–3× bigger */
       width:auto;
       display:block;
     }
@@ -74,39 +73,39 @@
     .brand-text b{
       display:block;
       font-weight:800;
-      font-size:14px;
+      font-size:16px;
       letter-spacing:.2px;
-      color:#0B1220;
+      color:#EAF0FF;
     }
 
     .brand-text span{
       display:block;
-      font-size:12.5px;
-      color:#4B5563;
-      margin-top:2px;
+      font-size:13px;
+      color:var(--muted);
+      margin-top:4px;
     }
 
     /* Menu */
     .menu{
       display:flex;
-      gap:6px;
+      gap:8px;
       flex-wrap:wrap;
       justify-content:center;
     }
 
     .menu a{
-      padding:8px 10px;
+      padding:10px 12px;
       border-radius:12px;
       border:1px solid var(--border);
-      background:#ffffff;
-      color:#0B1220;
+      background:var(--panel2);
+      color:var(--text);
       text-decoration:none;
       font-weight:600;
       transition:color .15s ease, background .15s ease, transform .12s ease, border-color .15s ease;
     }
 
     .menu a:hover{
-      background:#F9FAFB;
+      background:#1A2C52;
       color:var(--secondary);
       border-color:rgba(244,195,139,.6);
       transform:translateY(-1px);
@@ -131,6 +130,7 @@
 
     @media (max-width:900px){
       .hero{ grid-template-columns:1fr; }
+      .logo-img{ height:90px; }    /* responsive safety */
     }
 
     h1{
@@ -138,13 +138,13 @@
       font-size:clamp(28px, 3.8vw, 46px);
       line-height:1.12;
       letter-spacing:-0.6px;
-      color:#EAF0FF;
+      color:var(--text);
     }
 
     p{
       margin:0;
       font-size:16px;
-      color:#B7C4E6;
+      color:var(--muted);
       max-width:70ch;
     }
 
@@ -155,13 +155,12 @@
       flex-wrap:wrap;
     }
 
-    /* BUTTON LABELS → WHITE */
     .label-btn{
       padding:10px 14px;
       border-radius:14px;
       border:1px solid #233458;
       background:#111F3D;
-      color:#FFFFFF; /* CHANGED */
+      color:#FFFFFF;
       font-weight:800;
       text-decoration:none;
       transition:all .15s ease;
@@ -201,7 +200,7 @@
     }
 
     .side small{
-      color:#B7C4E6;
+      color:var(--muted);
       font-size:13.5px;
       line-height:1.45;
     }
