@@ -3,44 +3,44 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>BION Technologies Corp — Trusted AI Governance</title>
+  <title>BION Technologies Corp — Human-Centered AI Adoption</title>
 
-  <!-- Font: Inter -->
+  <!-- Font: Nunito Sans -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@500;650;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@600;700;900&display=swap" rel="stylesheet">
 
   <style>
     :root{
-      --bg:#0b1220;
-      --panel: rgba(15,27,51,.70);
-      --text:#eaf0ff;
-      --muted:#b7c4e6;
-      --border: rgba(234,240,255,.14);
-      --accent:#6ee7ff;
-      --accent2:#a78bfa;
-      --warm:#ffd7a3;
-      --shadow: 0 18px 60px rgba(0,0,0,.38);
+      --bg:#07151a;
+      --panel: rgba(10,35,40,.64);
+      --text:#f0fbff;
+      --muted:#b8d6de;
+      --border: rgba(240,251,255,.16);
+      --accent:#4de6c8;    /* seafoam */
+      --accent2:#72a7ff;   /* calm blue */
+      --warm:#ffd2b0;
+      --shadow: 0 18px 60px rgba(0,0,0,.35);
       --radius:18px;
     }
     *{box-sizing:border-box}
     body{
       margin:0;
-      font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      font-family: "Nunito Sans", system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
       color:var(--text);
       background:
-        radial-gradient(900px 650px at 15% 10%, rgba(110,231,255,.14), transparent 60%),
-        radial-gradient(900px 650px at 85% 0%, rgba(167,139,250,.12), transparent 55%),
-        radial-gradient(900px 650px at 50% 110%, rgba(255,215,163,.10), transparent 55%),
+        radial-gradient(900px 650px at 10% 0%, rgba(77,230,200,.18), transparent 60%),
+        radial-gradient(900px 650px at 95% 10%, rgba(114,167,255,.16), transparent 55%),
+        radial-gradient(900px 650px at 50% 110%, rgba(255,210,176,.10), transparent 55%),
         var(--bg);
     }
-    .wrap{max-width:1100px;margin:0 auto;padding:18px 16px 72px}
+    .wrap{max-width:1080px;margin:0 auto;padding:18px 16px 72px}
     .top{
       position:sticky; top:12px; z-index:5;
       display:flex; align-items:center; justify-content:space-between; gap:12px;
       padding:12px 12px;
       border-radius:16px;
-      background: rgba(15,27,51,.70);
+      background: rgba(10,35,40,.62);
       border:1px solid var(--border);
       backdrop-filter: blur(10px);
       box-shadow: var(--shadow);
@@ -48,112 +48,105 @@
     .brand{display:flex;align-items:center;gap:10px;min-width:240px}
     .logo{
       width:38px;height:38px;border-radius:14px;
-      background: linear-gradient(135deg, rgba(110,231,255,.22), rgba(167,139,250,.18));
-      border:1px solid rgba(234,240,255,.16);
-      position:relative;
-      overflow:hidden;
+      background: radial-gradient(circle at 30% 30%, rgba(255,210,176,.55), transparent 55%),
+                  linear-gradient(135deg, rgba(77,230,200,.20), rgba(114,167,255,.18));
+      border:1px solid rgba(240,251,255,.18);
     }
-    .logo:after{
-      content:""; position:absolute; inset:-20px;
-      background: radial-gradient(circle at 30% 30%, rgba(255,215,163,.40), transparent 55%);
-      transform: rotate(10deg);
-    }
-    .brand b{display:block;font-weight:800;font-size:13.5px;letter-spacing:.2px}
+    .brand b{display:block;font-weight:900;font-size:13.5px;letter-spacing:.2px}
     .brand span{display:block;color:var(--muted);font-size:12px;margin-top:2px}
     .menu{display:flex;gap:6px;flex-wrap:wrap;justify-content:center}
     .menu button{
       font:inherit;
       padding:8px 10px;
       border-radius:12px;
-      border:1px solid rgba(234,240,255,.10);
-      background: rgba(234,240,255,.04);
-      color: rgba(183,196,230,.85);
+      border:1px solid rgba(240,251,255,.12);
+      background: rgba(240,251,255,.05);
+      color: rgba(184,214,222,.92);
       cursor:not-allowed;
-      opacity:.75;
+      opacity:.80;
     }
-    .cta{
-      display:flex;align-items:center;gap:10px;
-      padding:8px 10px;border-radius:999px;
-      border:1px solid rgba(255,215,163,.20);
-      background: rgba(255,215,163,.10);
-      white-space:nowrap;
+    .trust{
+      display:inline-flex; align-items:center; gap:10px;
+      padding:8px 10px; border-radius:999px;
+      border:1px solid rgba(255,210,176,.22);
+      background: rgba(255,210,176,.10);
       font-size:12.5px;
+      white-space:nowrap;
     }
     .dot{
       width:9px;height:9px;border-radius:99px;
       background: linear-gradient(135deg, var(--accent), var(--accent2));
-      box-shadow: 0 0 0 4px rgba(110,231,255,.10);
+      box-shadow: 0 0 0 4px rgba(77,230,200,.10);
     }
 
     .card{
       margin-top:18px;
       border-radius:var(--radius);
       border:1px solid var(--border);
-      background: rgba(15,27,51,.55);
+      background: rgba(10,35,40,.58);
       backdrop-filter: blur(10px);
       box-shadow: var(--shadow);
       overflow:hidden;
     }
     .hero{
       display:grid;
-      grid-template-columns: 1.15fr .85fr;
+      grid-template-columns: 1.1fr .9fr;
       gap:16px;
       padding:22px;
       align-items:stretch;
     }
-    @media (max-width:900px){ .hero{grid-template-columns:1fr} .cta{display:none} }
+    @media (max-width:900px){ .hero{grid-template-columns:1fr} .trust{display:none} }
     h1{
       margin:0 0 10px;
-      font-size: clamp(28px, 3.8vw, 46px);
-      line-height:1.12;
-      letter-spacing:-.7px;
+      font-size: clamp(28px, 3.6vw, 44px);
+      line-height:1.14;
+      letter-spacing:-.5px;
     }
-    p{margin:0;color:var(--muted);font-size:15.5px;max-width:70ch}
-    .trust{
+    p{margin:0;color:var(--muted);font-size:15.5px;max-width:72ch}
+    .pill{
       margin-top:12px;
-      display:inline-flex;align-items:center;gap:10px;
+      display:inline-flex; align-items:center; gap:10px;
       padding:10px 12px;
       border-radius:14px;
-      border:1px solid rgba(110,231,255,.22);
-      background: linear-gradient(135deg, rgba(110,231,255,.10), rgba(167,139,250,.07));
+      border:1px solid rgba(77,230,200,.22);
+      background: linear-gradient(135deg, rgba(77,230,200,.12), rgba(114,167,255,.08));
       font-size:13.5px;
     }
-    .trust strong{color:var(--text);letter-spacing:.2px}
     .actions{margin-top:14px;display:flex;gap:10px;flex-wrap:wrap}
     .btn{
       font:inherit;
-      font-weight:800;
+      font-weight:900;
       padding:11px 14px;
       border-radius:14px;
-      border:1px solid rgba(110,231,255,.32);
-      background: linear-gradient(135deg, rgba(110,231,255,.16), rgba(167,139,250,.10));
+      border:1px solid rgba(77,230,200,.32);
+      background: linear-gradient(135deg, rgba(77,230,200,.14), rgba(114,167,255,.10));
       color:var(--text);
       cursor:not-allowed;
       opacity:.85;
     }
     .btn.secondary{
-      border-color: rgba(234,240,255,.16);
-      background: rgba(234,240,255,.06);
-      font-weight:700;
+      border-color: rgba(240,251,255,.16);
+      background: rgba(240,251,255,.06);
+      font-weight:800;
     }
     .side{
       border-radius:16px;
-      border:1px solid rgba(234,240,255,.12);
-      background: rgba(234,240,255,.03);
+      border:1px solid rgba(240,251,255,.12);
+      background: rgba(240,251,255,.04);
       overflow:hidden;
       display:flex;flex-direction:column;
     }
     .img{
       height:190px;
       background:
-        linear-gradient(0deg, rgba(11,18,32,.72), rgba(11,18,32,.15)),
-        url("https://images.unsplash.com/photo-1556761175-5973dc0f32e7?auto=format&fit=crop&w=1400&q=80");
+        linear-gradient(0deg, rgba(7,21,26,.72), rgba(7,21,26,.10)),
+        url("https://images.unsplash.com/photo-1521737604893-d14cc237f11d?auto=format&fit=crop&w=1400&q=80");
       background-size:cover;
       background-position:center;
-      border-bottom:1px solid rgba(234,240,255,.10);
+      border-bottom:1px solid rgba(240,251,255,.10);
     }
     .side .inner{padding:14px}
-    .side b{display:block;margin-bottom:6px}
+    .side b{display:block;margin-bottom:6px;font-weight:900}
     .side small{color:var(--muted);font-size:13px;line-height:1.45}
   </style>
 </head>
@@ -164,7 +157,7 @@
         <div class="logo" aria-hidden="true"></div>
         <div>
           <b>BION Technologies Corp</b>
-          <span>AI governance & adoption for high-stakes orgs</span>
+          <span>Warm, human-centered AI practices</span>
         </div>
       </div>
 
@@ -177,35 +170,35 @@
         <button disabled>Contact</button>
       </nav>
 
-      <div class="cta" aria-label="Trust statement">
+      <div class="trust" aria-label="Trust statement">
         <span class="dot" aria-hidden="true"></span>
-        <span><strong>TRUST ON US</strong> — defensible AI, faster rollout</span>
+        <span><strong>TRUST ON US</strong> — people-first AI adoption</span>
       </div>
     </header>
 
     <main class="card">
       <section class="hero">
         <div>
-          <h1>Govern AI like a safety-critical system.</h1>
+          <h1>Make AI feel safe, useful, and easy.</h1>
           <p>
-            We help CEOs, CIOs, CISOs, and Legal teams introduce AI with clarity:
-            policy, risk assessments, model inventory, vendor governance, and audit-ready evidence.
+            We help leaders introduce AI without confusion or fear—through workshops, clear rules,
+            and governance that fits how your teams actually work.
           </p>
-          <div class="trust">
+          <div class="pill">
             <strong>TRUST ON US</strong>
-            <span style="color:var(--muted)">to protect reputation, compliance, and operations.</span>
+            <span style="color:var(--muted)">to build habits that protect data and reputation.</span>
           </div>
           <div class="actions" aria-label="Buttons (disabled)">
-            <button class="btn" disabled>Start an engagement</button>
-            <button class="btn secondary" disabled>See how we work</button>
+            <button class="btn" disabled>Book a workshop</button>
+            <button class="btn secondary" disabled>See governance scope</button>
           </div>
         </div>
 
         <aside class="side" aria-label="Visual panel">
-          <div class="img" role="img" aria-label="Leadership team collaborating"></div>
+          <div class="img" role="img" aria-label="Team collaborating"></div>
           <div class="inner">
-            <b>Industries we support</b>
-            <small>Mining • Banks • Hospitals • Government — where trust, safety, and regulation matter.</small>
+            <b>Built for high-stakes orgs</b>
+            <small>Mining • Banks • Hospitals • Government — where trust must be earned every day.</small>
           </div>
         </aside>
       </section>
