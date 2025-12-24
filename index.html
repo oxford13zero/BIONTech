@@ -3,154 +3,218 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>BION Technologies Corp — AI Governance that Ships</title>
+  <title>BION Technologies Corp — Trusted AI Governance</title>
 
-  <!-- Font: IBM Plex Sans -->
+  <!-- Friendly + highly readable font: Source Sans 3 -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@500;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;600;700;800&display=swap" rel="stylesheet">
 
   <style>
     :root{
-      --bg:#0a0d12;     /* near-black */
-      --panel: rgba(255,255,255,.06);
-      --text:#f5f7ff;
-      --muted:#c6ccda;
-      --border: rgba(245,247,255,.14);
-      --accent:#ffcc66; /* warm gold */
-      --accent2:#7dd3fc;/* cool sky */
-      --shadow: 0 18px 60px rgba(0,0,0,.45);
-      --radius:16px;
+      /* Solid colors only (no gradients) */
+      --bg: #0B1220;         /* deep navy */
+      --panel: #0F1B33;      /* panel navy */
+      --panel2:#111F3D;      /* slightly lighter */
+      --text: #EAF0FF;       /* near-white */
+      --muted:#B7C4E6;       /* soft slate */
+      --border:#233458;      /* solid border */
+      --accent:#2DD4BF;      /* teal (trust/modern) */
+      --warm: #F4C38B;       /* warm accent */
+      --shadow: 0 18px 60px rgba(0,0,0,.40);
+      --radius: 18px;
     }
-    *{box-sizing:border-box}
+
+    *{ box-sizing:border-box; }
     body{
       margin:0;
-      font-family:"IBM Plex Sans", system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-      color:var(--text);
-      background:
-        radial-gradient(900px 650px at 20% 0%, rgba(125,211,252,.10), transparent 60%),
-        radial-gradient(900px 650px at 85% 10%, rgba(255,204,102,.10), transparent 55%),
-        var(--bg);
+      font-family: "Source Sans 3", system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      color: var(--text);
+      background: var(--bg); /* solid */
+      line-height: 1.55;
     }
-    .wrap{max-width:1040px;margin:0 auto;padding:18px 16px 72px}
+
+    .wrap{ max-width: 1100px; margin: 0 auto; padding: 18px 16px 72px; }
+
+    /* Top bar */
     .top{
-      position:sticky; top:12px; z-index:5;
-      display:flex; align-items:center; justify-content:space-between; gap:12px;
-      padding:12px 12px;
-      border-radius:14px;
-      background: rgba(255,255,255,.06);
-      border:1px solid var(--border);
-      backdrop-filter: blur(10px);
+      position: sticky;
+      top: 12px;
+      z-index: 5;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap: 12px;
+      padding: 12px 12px;
+      border-radius: 16px;
+      background: var(--panel);     /* solid */
+      border: 1px solid var(--border);
       box-shadow: var(--shadow);
     }
-    .brand{display:flex;align-items:center;gap:10px;min-width:220px}
-    .logo{
-      width:34px;height:34px;border-radius:12px;
-      background: linear-gradient(135deg, rgba(255,204,102,.22), rgba(125,211,252,.14));
-      border:1px solid rgba(245,247,255,.16);
-    }
-    .brand b{display:block;font-size:13.5px;letter-spacing:.2px}
-    .brand span{display:block;color:var(--muted);font-size:12px;margin-top:2px}
-    .menu{display:flex;gap:6px;flex-wrap:wrap;justify-content:center}
-    .menu button{
-      font:inherit;
-      padding:8px 10px;
-      border-radius:12px;
-      border:1px solid rgba(245,247,255,.10);
-      background: rgba(255,255,255,.04);
-      color: rgba(198,204,218,.92);
-      cursor:not-allowed;
-      opacity:.78;
-    }
-    .trust{
-      padding:8px 10px;
-      border-radius:999px;
-      border:1px solid rgba(255,204,102,.20);
-      background: rgba(255,204,102,.10);
-      font-size:12.5px;
-      white-space:nowrap;
-    }
-    .trust strong{color:var(--text); letter-spacing:.2px}
 
+    .brand{ display:flex; align-items:center; gap: 10px; min-width: 250px; }
+    .logo{
+      width: 38px; height: 38px;
+      border-radius: 14px;
+      background: var(--accent);          /* solid */
+      border: 1px solid var(--border);
+    }
+    .brand b{ display:block; font-weight: 800; font-size: 14px; letter-spacing: .2px; }
+    .brand span{ display:block; color: var(--muted); font-size: 12.5px; margin-top: 2px; }
+
+    /* Disabled menu (layout only) */
+    .menu{ display:flex; gap: 6px; flex-wrap: wrap; justify-content:center; }
+    .menu button{
+      font: inherit;
+      padding: 8px 10px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: var(--panel2);   /* solid */
+      color: var(--muted);
+      cursor: not-allowed;
+      opacity: .78;
+    }
+
+    .cta{
+      display:flex;
+      align-items:center;
+      gap: 10px;
+      padding: 8px 10px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: var(--panel2);   /* solid */
+      white-space: nowrap;
+      font-size: 13px;
+      color: var(--text);
+    }
+    .dot{
+      width: 9px; height: 9px;
+      border-radius: 99px;
+      background: var(--warm);     /* solid */
+    }
+
+    /* Main card */
     .card{
-      margin-top:18px;
-      border-radius:var(--radius);
-      border:1px solid var(--border);
-      background: rgba(255,255,255,.05);
-      backdrop-filter: blur(10px);
+      margin-top: 18px;
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      background: var(--panel);  /* solid */
       box-shadow: var(--shadow);
       overflow:hidden;
     }
+
     .hero{
       display:grid;
-      grid-template-columns: 1.2fr .8fr;
-      gap:16px;
-      padding:22px;
-      align-items:stretch;
+      grid-template-columns: 1.15fr .85fr;
+      gap: 16px;
+      padding: 22px;
+      align-items: stretch;
     }
-    @media (max-width:900px){ .hero{grid-template-columns:1fr} .trust{display:none} }
+    @media (max-width: 900px){
+      .hero{ grid-template-columns: 1fr; }
+      .cta{ display:none; }
+    }
 
     h1{
-      margin:0 0 10px;
-      font-size: clamp(30px, 3.8vw, 48px);
-      line-height:1.06;
-      letter-spacing:-.9px;
+      margin: 0 0 10px;
+      font-size: clamp(28px, 3.8vw, 46px);
+      line-height: 1.12;
+      letter-spacing: -0.6px;
     }
-    p{margin:0;color:var(--muted);font-size:15.5px;max-width:70ch}
-    .highlight{
-      margin-top:12px;
-      display:inline-flex; align-items:center; gap:10px;
-      padding:10px 12px;
-      border-radius:14px;
-      border:1px solid rgba(125,211,252,.22);
-      background: linear-gradient(135deg, rgba(125,211,252,.10), rgba(255,204,102,.08));
-      font-size:13.5px;
-    }
-    .actions{margin-top:14px;display:flex;gap:10px;flex-wrap:wrap}
-    .btn{
-      font:inherit;
-      font-weight:700;
-      padding:11px 14px;
-      border-radius:14px;
-      border:1px solid rgba(255,204,102,.35);
-      background: rgba(255,204,102,.12);
-      color:var(--text);
-      cursor:not-allowed;
-      opacity:.86;
-    }
-    .btn.secondary{
-      border-color: rgba(245,247,255,.16);
-      background: rgba(255,255,255,.05);
+    p{
+      margin: 0;
+      color: var(--muted);
+      font-size: 16px; /* readability */
+      max-width: 70ch;
     }
 
+    .trust{
+      margin-top: 12px;
+      display:inline-flex;
+      align-items:center;
+      gap: 10px;
+      padding: 10px 12px;
+      border-radius: 14px;
+      border: 1px solid var(--border);
+      background: var(--panel2); /* solid */
+      font-size: 14px;
+    }
+    .trust strong{ color: var(--text); letter-spacing: .2px; }
+
+    .actions{
+      margin-top: 14px;
+      display:flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    /* Buttons: solid colors + hover color change */
+    .btn{
+      font: inherit;
+      font-weight: 800;
+      padding: 11px 14px;
+      border-radius: 14px;
+      border: 1px solid var(--border);
+      background: var(--accent);  /* solid */
+      color: #041116;
+      cursor: pointer;
+      transition: background-color .15s ease, color .15s ease, transform .12s ease;
+    }
+    .btn:hover{
+      background: #19B6A6; /* solid hover */
+      color: #021012;
+      transform: translateY(-1px);
+    }
+    .btn:active{ transform: translateY(0px); }
+
+    .btn.secondary{
+      background: var(--panel2); /* solid */
+      color: var(--text);
+    }
+    .btn.secondary:hover{
+      background: #1A2C52; /* solid hover */
+      color: var(--text);
+      transform: translateY(-1px);
+    }
+
+    .btn:focus-visible{
+      outline: 3px solid rgba(45,212,191,.35);
+      outline-offset: 2px;
+    }
+
+    /* Side panel */
     .side{
-      border-radius:14px;
-      border:1px solid rgba(245,247,255,.12);
-      background: rgba(255,255,255,.04);
+      border-radius: 16px;
+      border: 1px solid var(--border);
+      background: var(--panel2); /* solid */
       overflow:hidden;
-      display:flex;flex-direction:column;
+      display:flex;
+      flex-direction:column;
     }
+
     .img{
-      height:190px;
+      height: 190px;
       background:
-        linear-gradient(0deg, rgba(10,13,18,.78), rgba(10,13,18,.10)),
-        url("https://images.unsplash.com/photo-1551434678-e076c223a692?auto=format&fit=crop&w=1400&q=80");
-      background-size:cover;
-      background-position:center;
-      border-bottom:1px solid rgba(245,247,255,.10);
+        url("https://images.unsplash.com/photo-1556761175-5973dc0f32e7?auto=format&fit=crop&w=1400&q=80");
+      background-size: cover;
+      background-position: center;
+      border-bottom: 1px solid var(--border);
+      position: relative;
     }
-    .side .inner{padding:14px}
-    .kpi{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
-    .kpi div{
-      border:1px solid rgba(245,247,255,.10);
-      background: rgba(255,255,255,.04);
-      border-radius:14px;
-      padding:10px;
+    /* Solid overlay (still solid color) */
+    .img::after{
+      content:"";
+      position:absolute;
+      inset:0;
+      background: rgba(11,18,32,.55);
     }
-    .k{color:var(--muted);font-size:12px}
-    .v{font-weight:700;margin-top:4px}
+
+    .side .inner{ padding: 14px; position: relative; }
+    .side b{ display:block; margin-bottom: 6px; font-weight: 800; }
+    .side small{ color: var(--muted); font-size: 13.5px; line-height: 1.45; }
   </style>
 </head>
+
 <body>
   <div class="wrap">
     <header class="top" aria-label="Top bar">
@@ -158,7 +222,7 @@
         <div class="logo" aria-hidden="true"></div>
         <div>
           <b>BION Technologies Corp</b>
-          <span>AI governance that ships</span>
+          <span>AI governance & adoption for high-stakes orgs</span>
         </div>
       </div>
 
@@ -171,38 +235,37 @@
         <button disabled>Contact</button>
       </nav>
 
-      <div class="trust" aria-label="Trust statement">
-        <strong>TRUST ON US</strong> — control + speed
+      <div class="cta" aria-label="Trust statement">
+        <span class="dot" aria-hidden="true"></span>
+        <span><strong>TRUST ON US</strong> — defensible AI, faster rollout</span>
       </div>
     </header>
 
     <main class="card">
       <section class="hero">
         <div>
-          <h1>Ship AI without losing control.</h1>
+          <h1>Govern AI like a safety-critical system.</h1>
           <p>
-            We help mining, banking, hospitals, and government deploy AI with the governance to keep it safe:
-            policy, risk assessments, model inventory, vendor oversight, and audit readiness.
+            We help CEOs, CIOs, CISOs, and Legal teams introduce AI with clarity:
+            policy, risk assessments, model inventory, vendor governance, and audit-ready evidence.
           </p>
-          <div class="highlight">
+
+          <div class="trust">
             <strong>TRUST ON US</strong>
-            <span style="color:var(--muted)">to make AI defensible from day one.</span>
+            <span style="color:var(--muted)">to protect reputation, compliance, and operations.</span>
           </div>
-          <div class="actions" aria-label="Buttons (disabled)">
-            <button class="btn" disabled>Start with governance</button>
-            <button class="btn secondary" disabled>Start with workshops</button>
+
+          <div class="actions" aria-label="Buttons">
+            <button class="btn" type="button">Start an engagement</button>
+            <button class="btn secondary" type="button">See how we work</button>
           </div>
         </div>
 
         <aside class="side" aria-label="Visual panel">
-          <div class="img" role="img" aria-label="Modern tech team"></div>
+          <div class="img" role="img" aria-label="Leadership team collaborating"></div>
           <div class="inner">
-            <div class="kpi" aria-label="Key outcomes">
-              <div><div class="k">Outcome</div><div class="v">Clear policy</div></div>
-              <div><div class="k">Outcome</div><div class="v">Risk reduced</div></div>
-              <div><div class="k">Outcome</div><div class="v">Vendor control</div></div>
-              <div><div class="k">Outcome</div><div class="v">Audit-ready</div></div>
-            </div>
+            <b>Industries we support</b>
+            <small>Mining • Banks • Hospitals • Government — where trust, safety, and regulation matter.</small>
           </div>
         </aside>
       </section>
