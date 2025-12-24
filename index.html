@@ -13,14 +13,19 @@
   <style>
     :root{
       /* Solid colors only (no gradients) */
-      --bg: #0B1220;         /* deep navy */
-      --panel: #0F1B33;      /* panel navy */
-      --panel2:#111F3D;      /* slightly lighter */
-      --text: #EAF0FF;       /* near-white */
-      --muted:#B7C4E6;       /* soft slate */
-      --border:#233458;      /* solid border */
-      --accent:#2DD4BF;      /* teal (trust/modern) */
-      --warm: #F4C38B;       /* warm accent */
+      --bg: #0B1220;
+      --panel: #0F1B33;
+      --panel2:#111F3D;
+      --text: #EAF0FF;
+      --muted:#B7C4E6;
+      --border:#233458;
+
+      /* Primary brand accent (kept teal) */
+      --accent:#2DD4BF;
+
+      /* Secondary accent (user can pick via buttons) */
+      --secondary:#F4C38B;
+
       --shadow: 0 18px 60px rgba(0,0,0,.40);
       --radius: 18px;
     }
@@ -30,7 +35,7 @@
       margin:0;
       font-family: "Source Sans 3", system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
       color: var(--text);
-      background: var(--bg); /* solid */
+      background: var(--bg);
       line-height: 1.55;
     }
 
@@ -47,7 +52,7 @@
       gap: 12px;
       padding: 12px 12px;
       border-radius: 16px;
-      background: var(--panel);     /* solid */
+      background: var(--panel);
       border: 1px solid var(--border);
       box-shadow: var(--shadow);
     }
@@ -56,7 +61,7 @@
     .logo{
       width: 38px; height: 38px;
       border-radius: 14px;
-      background: var(--accent);          /* solid */
+      background: var(--accent);
       border: 1px solid var(--border);
     }
     .brand b{ display:block; font-weight: 800; font-size: 14px; letter-spacing: .2px; }
@@ -69,7 +74,7 @@
       padding: 8px 10px;
       border-radius: 12px;
       border: 1px solid var(--border);
-      background: var(--panel2);   /* solid */
+      background: var(--panel2);
       color: var(--muted);
       cursor: not-allowed;
       opacity: .78;
@@ -82,7 +87,7 @@
       padding: 8px 10px;
       border-radius: 999px;
       border: 1px solid var(--border);
-      background: var(--panel2);   /* solid */
+      background: var(--panel2);
       white-space: nowrap;
       font-size: 13px;
       color: var(--text);
@@ -90,7 +95,7 @@
     .dot{
       width: 9px; height: 9px;
       border-radius: 99px;
-      background: var(--warm);     /* solid */
+      background: var(--secondary);
     }
 
     /* Main card */
@@ -98,7 +103,7 @@
       margin-top: 18px;
       border-radius: var(--radius);
       border: 1px solid var(--border);
-      background: var(--panel);  /* solid */
+      background: var(--panel);
       box-shadow: var(--shadow);
       overflow:hidden;
     }
@@ -124,7 +129,7 @@
     p{
       margin: 0;
       color: var(--muted);
-      font-size: 16px; /* readability */
+      font-size: 16px;
       max-width: 70ch;
     }
 
@@ -136,7 +141,7 @@
       padding: 10px 12px;
       border-radius: 14px;
       border: 1px solid var(--border);
-      background: var(--panel2); /* solid */
+      background: var(--panel2);
       font-size: 14px;
     }
     .trust strong{ color: var(--text); letter-spacing: .2px; }
@@ -146,6 +151,7 @@
       display:flex;
       gap: 10px;
       flex-wrap: wrap;
+      align-items:center;
     }
 
     /* Buttons: solid colors + hover color change */
@@ -155,24 +161,24 @@
       padding: 11px 14px;
       border-radius: 14px;
       border: 1px solid var(--border);
-      background: var(--accent);  /* solid */
+      background: var(--accent);
       color: #041116;
       cursor: pointer;
       transition: background-color .15s ease, color .15s ease, transform .12s ease;
     }
     .btn:hover{
-      background: #19B6A6; /* solid hover */
+      background: #19B6A6;
       color: #021012;
       transform: translateY(-1px);
     }
     .btn:active{ transform: translateY(0px); }
 
     .btn.secondary{
-      background: var(--panel2); /* solid */
+      background: var(--panel2);
       color: var(--text);
     }
     .btn.secondary:hover{
-      background: #1A2C52; /* solid hover */
+      background: #1A2C52;
       color: var(--text);
       transform: translateY(-1px);
     }
@@ -186,7 +192,7 @@
     .side{
       border-radius: 16px;
       border: 1px solid var(--border);
-      background: var(--panel2); /* solid */
+      background: var(--panel2);
       overflow:hidden;
       display:flex;
       flex-direction:column;
@@ -194,24 +200,113 @@
 
     .img{
       height: 190px;
-      background:
-        url("https://images.unsplash.com/photo-1556761175-5973dc0f32e7?auto=format&fit=crop&w=1400&q=80");
+      background: url("https://images.unsplash.com/photo-1556761175-5973dc0f32e7?auto=format&fit=crop&w=1400&q=80");
       background-size: cover;
       background-position: center;
       border-bottom: 1px solid var(--border);
       position: relative;
     }
-    /* Solid overlay (still solid color) */
     .img::after{
       content:"";
       position:absolute;
       inset:0;
-      background: rgba(11,18,32,.55);
+      background: rgba(11,18,32,.55); /* solid overlay */
     }
 
     .side .inner{ padding: 14px; position: relative; }
     .side b{ display:block; margin-bottom: 6px; font-weight: 800; }
     .side small{ color: var(--muted); font-size: 13.5px; line-height: 1.45; }
+
+    /* --- Color picker (secondary colors) --- */
+    .picker{
+      margin-top: 18px;
+      border-top: 1px solid rgba(35,52,88,.65);
+      padding-top: 16px;
+    }
+    .picker h2{
+      margin: 0 0 8px;
+      font-size: 14px;
+      letter-spacing: .2px;
+      color: var(--text);
+    }
+    .picker p{
+      margin: 0 0 10px;
+      font-size: 14px;
+      color: var(--muted);
+    }
+
+    .swatches{
+      display:flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items:center;
+    }
+
+    .swatch{
+      display:flex;
+      align-items:center;
+      gap: 10px;
+      padding: 10px 12px;
+      border-radius: 14px;
+      border: 1px solid var(--border);
+      background: var(--panel2);
+      cursor: pointer;
+      transition: background-color .15s ease, transform .12s ease, border-color .15s ease;
+      user-select:none;
+    }
+    .swatch:hover{
+      background: #1A2C52;
+      transform: translateY(-1px);
+      border-color: rgba(244,195,139,.35);
+    }
+    .swatch:active{ transform: translateY(0px); }
+    .swatch:focus-visible{
+      outline: 3px solid rgba(244,195,139,.35);
+      outline-offset: 2px;
+    }
+
+    .chip{
+      width: 22px; height: 22px;
+      border-radius: 8px;
+      border: 1px solid rgba(234,240,255,.18);
+      background: var(--secondary);
+      box-shadow: 0 0 0 4px rgba(0,0,0,.15) inset;
+      flex: 0 0 auto;
+    }
+    .swatch .label{
+      display:flex;
+      flex-direction:column;
+      gap: 2px;
+      line-height:1.1;
+    }
+    .swatch .label b{
+      font-size: 13px;
+      letter-spacing: .2px;
+    }
+    .swatch .label span{
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .swatch[aria-pressed="true"]{
+      border-color: rgba(234,240,255,.30);
+      background: #1A2C52;
+    }
+
+    .current{
+      margin-top: 10px;
+      display:flex;
+      align-items:center;
+      gap: 10px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+    .current strong{ color: var(--text); }
+    .current .mini-dot{
+      width: 10px; height: 10px; border-radius: 99px;
+      background: var(--secondary);
+      border: 1px solid rgba(234,240,255,.18);
+    }
   </style>
 </head>
 
@@ -259,6 +354,50 @@
             <button class="btn" type="button">Start an engagement</button>
             <button class="btn secondary" type="button">See how we work</button>
           </div>
+
+          <!-- Secondary color picker -->
+          <div class="picker" aria-label="Secondary color picker">
+            <h2>Pick a secondary color</h2>
+            <p>These change the small “trust” dot color (and can later style highlights). Choose what feels most “trustworthy” to you.</p>
+
+            <div class="swatches" role="group" aria-label="Secondary color options">
+              <button class="swatch" type="button" data-color="#F4C38B" aria-pressed="true">
+                <span class="chip" style="background:#F4C38B"></span>
+                <span class="label"><b>Warm Sand</b><span>#F4C38B</span></span>
+              </button>
+
+              <button class="swatch" type="button" data-color="#60A5FA" aria-pressed="false">
+                <span class="chip" style="background:#60A5FA"></span>
+                <span class="label"><b>Calm Blue</b><span>#60A5FA</span></span>
+              </button>
+
+              <button class="swatch" type="button" data-color="#A78BFA" aria-pressed="false">
+                <span class="chip" style="background:#A78BFA"></span>
+                <span class="label"><b>Soft Violet</b><span>#A78BFA</span></span>
+              </button>
+
+              <button class="swatch" type="button" data-color="#34D399" aria-pressed="false">
+                <span class="chip" style="background:#34D399"></span>
+                <span class="label"><b>Mint</b><span>#34D399</span></span>
+              </button>
+
+              <button class="swatch" type="button" data-color="#F87171" aria-pressed="false">
+                <span class="chip" style="background:#F87171"></span>
+                <span class="label"><b>Coral</b><span>#F87171</span></span>
+              </button>
+
+              <button class="swatch" type="button" data-color="#FBBF24" aria-pressed="false">
+                <span class="chip" style="background:#FBBF24"></span>
+                <span class="label"><b>Gold</b><span>#FBBF24</span></span>
+              </button>
+            </div>
+
+            <div class="current" aria-live="polite">
+              <span class="mini-dot" aria-hidden="true"></span>
+              Current secondary color: <strong id="currentColorName">Warm Sand</strong>
+              <span style="color:var(--muted)" id="currentColorHex">(#F4C38B)</span>
+            </div>
+          </div>
         </div>
 
         <aside class="side" aria-label="Visual panel">
@@ -271,5 +410,38 @@
       </section>
     </main>
   </div>
+
+  <script>
+    // Secondary color picker:
+    // Updates CSS variable --secondary, which drives the trust dot (and any future accents).
+    const root = document.documentElement;
+    const swatches = Array.from(document.querySelectorAll('.swatch'));
+    const currentName = document.getElementById('currentColorName');
+    const currentHex = document.getElementById('currentColorHex');
+
+    function nameFromButton(btn) {
+      const labelBold = btn.querySelector('.label b');
+      return labelBold ? labelBold.textContent.trim() : 'Selected';
+    }
+
+    swatches.forEach(btn => {
+      btn.addEventListener('click', () => {
+        const color = btn.getAttribute('data-color');
+        if (!color) return;
+
+        // Update CSS variable
+        root.style.setProperty('--secondary', color);
+
+        // Update aria pressed
+        swatches.forEach(b => b.setAttribute('aria-pressed', 'false'));
+        btn.setAttribute('aria-pressed', 'true');
+
+        // Update label
+        const name = nameFromButton(btn);
+        currentName.textContent = name;
+        currentHex.textContent = `(${color})`;
+      });
+    });
+  </script>
 </body>
 </html>
