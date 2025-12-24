@@ -12,14 +12,14 @@
   <style>
     :root{
       --bg:#0B1220;
-      --panel:#ffffff;        /* WHITE TOP PANEL */
+      --panel:#ffffff;
       --panel2:#111F3D;
       --text:#0B1220;
       --muted:#4B5563;
       --border:#E5E7EB;
 
       --accent:#2DD4BF;
-      --secondary:#F4C38B;   /* Warm sand */
+      --secondary:#F4C38B;
 
       --shadow:0 12px 30px rgba(0,0,0,.12);
       --radius:18px;
@@ -60,33 +60,15 @@
     .brand{
       display:flex;
       align-items:center;
-      gap:12px;
+      gap:14px;
       min-width:260px;
-      position:relative;
     }
 
-    /* Logo container */
-    .logo-wrap{
-      position:relative;
-      display:inline-block;
-    }
-
+    /* NEW LOGO */
     .logo-img{
-      height:34px;
+      height:48px;
       width:auto;
       display:block;
-    }
-
-    /* Warm-sand dot overlay for the "i" */
-    .logo-dot{
-      position:absolute;
-      width:6px;
-      height:6px;
-      border-radius:50%;
-      background:var(--secondary);
-      top:4px;      /* tuned visually */
-      left:28px;    /* tuned visually */
-      pointer-events:none;
     }
 
     .brand-text b{
@@ -173,12 +155,13 @@
       flex-wrap:wrap;
     }
 
+    /* BUTTON LABELS → WHITE */
     .label-btn{
       padding:10px 14px;
       border-radius:14px;
       border:1px solid #233458;
       background:#111F3D;
-      color:var(--secondary);
+      color:#FFFFFF; /* CHANGED */
       font-weight:800;
       text-decoration:none;
       transition:all .15s ease;
@@ -229,10 +212,7 @@
   <div class="wrap">
     <header class="top">
       <div class="brand">
-        <div class="logo-wrap">
-          <img src="BION.png" alt="BION logo" class="logo-img">
-          <span class="logo-dot"></span>
-        </div>
+        <img src="BION_logo_refined2.png" alt="BION logo" class="logo-img">
         <div class="brand-text">
           <b>BION Technologies Corp</b>
           <span>AI governance & adoption for high-stakes orgs</span>
