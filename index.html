@@ -66,17 +66,31 @@
     .brand b{ display:block; font-weight: 800; font-size: 14px; letter-spacing: .2px; }
     .brand span{ display:block; color: var(--muted); font-size: 12.5px; margin-top: 2px; }
 
-    /* Disabled menu (layout only) */
+    /* ENABLED menu */
     .menu{ display:flex; gap: 6px; flex-wrap: wrap; justify-content:center; }
-    .menu button{
+    .menu a{
+      display:inline-flex;
+      align-items:center;
       font: inherit;
       padding: 8px 10px;
       border-radius: 12px;
       border: 1px solid var(--border);
       background: var(--panel2);
       color: var(--muted);
-      cursor: not-allowed;
-      opacity: .78;
+      text-decoration:none;
+      cursor: pointer;
+      transition: background-color .15s ease, color .15s ease, transform .12s ease, border-color .15s ease;
+    }
+    .menu a:hover{
+      background: #1A2C52;         /* solid hover color */
+      color: var(--text);
+      border-color: rgba(244,195,139,.35); /* warm sand hint */
+      transform: translateY(-1px);
+    }
+    .menu a:active{ transform: translateY(0px); }
+    .menu a:focus-visible{
+      outline: 3px solid rgba(244,195,139,.35);
+      outline-offset: 2px;
     }
 
     /* Main card */
@@ -113,7 +127,7 @@
       max-width: 70ch;
     }
 
-    /* Color “labels” (chips) in the hero text */
+    /* Warm Sand “labels” (chips) */
     .chips{
       margin-top: 12px;
       display:flex;
@@ -127,10 +141,43 @@
       border-radius: 999px;
       border: 1px solid var(--border);
       background: var(--panel2);
-      color: var(--secondary); /* Warm Sand for labels */
+      color: var(--secondary);
       font-weight: 800;
       font-size: 12.5px;
       letter-spacing: .15px;
+    }
+
+    /* Buttons below hero: only Workshops + AI Governance */
+    .label-row{
+      margin-top: 16px;
+      display:flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items:center;
+    }
+    .label-btn{
+      font: inherit;
+      font-weight: 800;
+      padding: 10px 12px;
+      border-radius: 14px;
+      border: 1px solid var(--border);
+      background: var(--panel2);
+      color: var(--secondary); /* Warm Sand label */
+      cursor: pointer;
+      transition: background-color .15s ease, transform .12s ease, border-color .15s ease;
+      text-decoration:none;
+      display:inline-flex;
+      align-items:center;
+    }
+    .label-btn:hover{
+      background: #1A2C52; /* hover color change */
+      transform: translateY(-1px);
+      border-color: rgba(244,195,139,.35);
+    }
+    .label-btn:active{ transform: translateY(0px); }
+    .label-btn:focus-visible{
+      outline: 3px solid rgba(244,195,139,.35);
+      outline-offset: 2px;
     }
 
     /* Side panel */
@@ -164,29 +211,6 @@
       font-size: 13.5px;
       line-height: 1.45;
     }
-
-    /* Optional: small “button-like labels” area (not clickable) */
-    .label-row{
-      margin-top: 16px;
-      display:flex;
-      gap: 10px;
-      flex-wrap: wrap;
-      align-items:center;
-    }
-    .label-btn{
-      font: inherit;
-      font-weight: 800;
-      padding: 10px 12px;
-      border-radius: 14px;
-      border: 1px solid var(--border);
-      background: var(--panel2);
-      color: var(--secondary); /* Warm Sand label */
-      cursor: not-allowed;
-      opacity: .95;
-    }
-    .label-btn:hover{
-      background: #1A2C52; /* hover color change */
-    }
   </style>
 </head>
 
@@ -201,17 +225,17 @@
         </div>
       </div>
 
-      <!-- Disabled menu: layout only -->
-      <nav class="menu" aria-label="Menu (disabled)">
-        <button disabled>Home</button>
-        <button disabled>AI for your org</button>
-        <button disabled>AI governance</button>
-        <button disabled>Team</button>
-        <button disabled>Contact</button>
+      <!-- Enabled menu -->
+      <nav class="menu" aria-label="Menu">
+        <a href="#home">Home</a>
+        <a href="#ai-for-your-org">AI for your org</a>
+        <a href="#ai-governance">AI governance</a>
+        <a href="#team">Team</a>
+        <a href="#contact">Contact</a>
       </nav>
     </header>
 
-    <main class="card">
+    <main class="card" id="home">
       <section class="hero">
         <div>
           <h1>Govern AI like a safety-critical system.</h1>
@@ -220,7 +244,6 @@
             policy, risk assessments, model inventory, vendor governance, and audit-ready evidence.
           </p>
 
-          <!-- Warm Sand “labels” (chips) -->
           <div class="chips" aria-label="Key themes">
             <span class="chip">Trust</span>
             <span class="chip">Compliance</span>
@@ -228,11 +251,9 @@
             <span class="chip">Audit Readiness</span>
           </div>
 
-          <!-- Optional label-style buttons (disabled) -->
-          <div class="label-row" aria-label="Button labels (disabled)">
-            <button class="label-btn" type="button" disabled>Workshops</button>
-            <button class="label-btn" type="button" disabled>AI Governance</button>
-            <button class="label-btn" type="button" disabled>Risk Assessments</button>
+          <div class="label-row" aria-label="Primary links">
+            <a class="label-btn" href="#ai-for-your-org">Workshops</a>
+            <a class="label-btn" href="#ai-governance">AI Governance</a>
           </div>
         </div>
 
@@ -245,6 +266,12 @@
         </aside>
       </section>
     </main>
+
+    <!-- Placeholder anchors (no content added, as requested not to change anything else) -->
+    <div id="ai-for-your-org" style="height:1px;"></div>
+    <div id="ai-governance" style="height:1px;"></div>
+    <div id="team" style="height:1px;"></div>
+    <div id="contact" style="height:1px;"></div>
   </div>
 </body>
 </html>
