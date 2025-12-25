@@ -317,21 +317,20 @@
   .team-grid{ grid-template-columns:1fr; }
 }
 
-.team-member{
-  border:1px solid #233458;
-  background:#111F3D;
-  border-radius:16px;
-  overflow:hidden;
+.team-member:hover .team-photo{
+  filter: none;
 }
 
 .team-photo{
   height:190px;
   width:100%;
   object-fit:cover;
-  object-position: center 20%;   /* 👈 MOVE IMAGE CONTENT DOWN */
+  object-position: center 20%;
   display:block;
-  filter:grayscale(100%);
   opacity:.95;
+
+  filter: grayscale(100%);
+  transition: filter .35s ease;
 }
 
 
@@ -590,5 +589,6 @@
 </div>
 </body>
 </html>
+
 
 
