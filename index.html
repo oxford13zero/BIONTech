@@ -12,8 +12,8 @@
   <style>
     :root{
       --bg:#0B1220;
-      --panel:#111F3D;        /* header panel */
-      --panel2:#0F1B33;       /* menu buttons */
+      --panel:#111F3D;
+      --panel2:#0F1B33;
       --text:#EAF0FF;
       --muted:#B7C4E6;
       --border:#233458;
@@ -22,7 +22,9 @@
       --shadow:0 12px 30px rgba(0,0,0,.4);
       --radius:18px;
 
-      --panelGap: 48px;       /* ~1/2 inch separation between panels */
+      --panelGap:48px;   /* ~1/2 inch gap */
+      --logoH:170px;     /* adjust logo size here */
+      --logoBoxH:130px;  /* visual crop height (keeps panel tight) */
     }
 
     *{ box-sizing:border-box; }
@@ -51,39 +53,48 @@
       justify-content:space-between;
       gap:24px;
 
-      /* KEY: anchor both logo + menu to the bottom INSIDE the panel */
+      /* ✅ This pins BOTH logo area + menu to bottom of panel */
       align-items:flex-end;
 
-      padding:10px 24px;          /* keep panel tight */
+      padding:10px 24px;
       background:var(--panel);
       border:1px solid var(--border);
       border-radius:16px;
       box-shadow:var(--shadow);
 
-      /* IMPORTANT: no overflow tricks */
+      /* panel should not grow too tall */
       overflow:hidden;
     }
 
+    /* Logo area: fixed height that defines panel compactness */
     .brand{
       display:flex;
-      align-items:flex-end;       /* logo sits on bottom */
+      align-items:flex-end;
       flex:0 0 auto;
     }
 
-    /* Big logo, but INSIDE the panel */
+    /* ✅ Crop box removes any extra transparent space in the PNG */
+    .logo-box{
+      height:var(--logoBoxH);
+      overflow:hidden;
+      display:flex;
+      align-items:flex-end;  /* bottom anchor inside the crop box */
+    }
+
+    /* Big logo anchored to bottom of the crop box */
     .logo-img{
-      height:160px;               /* adjust this to make logo bigger/smaller */
+      height:var(--logoH);
       width:auto;
       display:block;
     }
 
-    /* Menu */
+    /* Menu pinned to bottom */
     .menu{
       display:flex;
       gap:10px;
       flex-wrap:wrap;
       justify-content:flex-end;
-      align-items:flex-end;       /* buttons sit on bottom */
+      align-items:flex-end;  /* bottom anchor */
     }
 
     .menu a{
@@ -107,7 +118,7 @@
 
     /* Main card */
     .card{
-      margin-top: var(--panelGap); /* ~1/2 inch separation from header */
+      margin-top: var(--panelGap);
       background:#0F1B33;
       border:1px solid #233458;
       border-radius:18px;
@@ -125,7 +136,6 @@
     @media (max-width:900px){
       .hero{ grid-template-columns:1fr; }
 
-      /* stack nicely on mobile */
       .top{
         flex-direction:column;
         align-items:flex-start;
@@ -133,15 +143,15 @@
         padding:12px 16px;
       }
 
-      .brand{ align-items:flex-start; }
-      .logo-img{ height:110px; }
+      :root{
+        --logoH:120px;
+        --logoBoxH:120px;
+        --panelGap:18px;
+      }
 
       .menu{
         justify-content:flex-start;
-        align-items:flex-start;
       }
-
-      .card{ margin-top: 18px; }
     }
 
     h1{
@@ -221,7 +231,9 @@
   <div class="wrap">
     <header class="top">
       <div class="brand">
-        <img src="Logobion99.png" alt="BION logo" class="logo-img">
+        <div class="logo-box">
+          <img src="Logobion99.png" alt="BION logo" class="logo-img">
+        </div>
       </div>
 
       <nav class="menu">
