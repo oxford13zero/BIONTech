@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>BION Technologies Corp — Trusted AI Governance</title>
+  <title>BION Technologies Corp — Trusted AI Control</title>
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -18,33 +18,27 @@
       --muted:#B7C4E6;
       --border:#233458;
       --secondary:#F4C38B;
-
       --shadow:0 12px 30px rgba(0,0,0,.4);
-      --radius:18px;
-
-      --panelGap:22px;     /* ~1/2 inch gap */
-      --logoH:175px;       /* logo size */
-      --logoBoxH:120px;    /* panel tightness (crop window) */
-      --logoNudge:31px;    /* IMPORTANT: pushes visible logo DOWN */
+      --panelGap:22px;
+      --logoH:175px;
+      --logoBoxH:120px;
+      --logoNudge:31px;
     }
 
     *{ box-sizing:border-box; }
 
+    html{ scroll-behavior:smooth; }
+
     body{
       margin:0;
-      font-family:"Source Sans 3", system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      font-family:"Source Sans 3", system-ui, sans-serif;
       background:var(--bg);
       color:var(--text);
       line-height:1.55;
     }
 
-    .warm-sand{
-  color: #F4C38B; /* Warm sand */
-   }
-
-    .bigger-line{
-  font-size: 1.1em; /* 10% bigger */
-    }
+    .warm-sand{ color:var(--secondary); }
+    .bigger-line{ font-size:1.1em; }
 
     .wrap{
       max-width:1100px;
@@ -52,61 +46,38 @@
       padding:18px 16px 72px;
     }
 
-    /* Header panel */
+    /* Header */
     .top{
       position:sticky;
       top:12px;
       z-index:5;
-
       display:flex;
       justify-content:space-between;
-      gap:24px;
-
-      /* ✅ pins BOTH logo block and menu block to bottom */
       align-items:flex-end;
-
-      /* keep panel visually tight */
-      padding:10px 24px 10px;
+      gap:24px;
+      padding:10px 24px;
       background:var(--panel);
       border:1px solid var(--border);
       border-radius:16px;
       box-shadow:var(--shadow);
-
-      overflow:hidden; /* keep everything inside */
     }
 
-    /* Logo area */
-    .brand{
-      display:flex;
-      align-items:flex-end;  /* bottom */
-      flex:0 0 auto;
-    }
-
-    /* Crop window to control header height */
     .logo-box{
       height:var(--logoBoxH);
       overflow:hidden;
       display:flex;
-      align-items:flex-end;   /* bottom */
+      align-items:flex-end;
     }
 
-    /* Big logo anchored to bottom (VISUALLY), with a nudge to counter PNG padding */
     .logo-img{
       height:var(--logoH);
-      width:auto;
-      display:block;
-
-      /* ✅ This is the fix for "logo still too high" */
-      transform: translateY(var(--logoNudge));
+      transform:translateY(var(--logoNudge));
     }
 
-    /* Menu */
     .menu{
       display:flex;
       gap:10px;
       flex-wrap:wrap;
-      justify-content:flex-end;
-      align-items:flex-end;   /* bottom */
     }
 
     .menu a{
@@ -117,22 +88,18 @@
       color:var(--text);
       text-decoration:none;
       font-weight:600;
-      transition:color .15s ease, background .15s ease, transform .12s ease, border-color .15s ease;
-      white-space:nowrap;
     }
 
     .menu a:hover{
       background:#1A2C52;
       color:var(--secondary);
-      border-color:rgba(244,195,139,.6);
-      transform:translateY(-1px);
     }
 
-    /* Main card */
+    /* Card */
     .card{
-      margin-top: var(--panelGap);
-      background:#0F1B33;
-      border:1px solid #233458;
+      margin-top:var(--panelGap);
+      background:var(--panel2);
+      border:1px solid var(--border);
       border-radius:18px;
       box-shadow:0 18px 60px rgba(0,0,0,.4);
       overflow:hidden;
@@ -145,38 +112,23 @@
       padding:22px;
     }
 
-    @media (max-width:900px){
+    @media(max-width:900px){
       .hero{ grid-template-columns:1fr; }
-
-      .top{
-        flex-direction:column;
-        align-items:flex-start;
-        gap:12px;
-        padding:12px 16px;
-      }
-
-      :root{
-        --logoH:120px;
-        --logoBoxH:120px;
-        --logoNudge:0px;
-        --panelGap:18px;
-      }
-
-      .menu{ justify-content:flex-start; }
+      .top{ flex-direction:column; align-items:flex-start; }
+      .logo-img{ transform:none; height:120px; }
     }
 
     h1{
       margin:0 0 10px;
       font-size:clamp(28px, 3.8vw, 46px);
       line-height:1.12;
-      letter-spacing:-0.6px;
     }
 
     p{
       margin:0;
-      font-size:16px;
       color:var(--muted);
       max-width:70ch;
+      font-size:16px;
     }
 
     .label-row{
@@ -189,123 +141,230 @@
     .label-btn{
       padding:10px 14px;
       border-radius:14px;
-      border:1px solid #233458;
-      background:#111F3D;
-      color:#FFFFFF;
+      border:1px solid var(--border);
+      background:var(--panel);
+      color:#fff;
       font-weight:800;
       text-decoration:none;
-      transition:all .15s ease;
     }
 
     .label-btn:hover{
       background:#1A2C52;
-      transform:translateY(-1px);
     }
 
     .side{
       border-radius:16px;
-      border:1px solid #233458;
-      background:#111F3D;
+      border:1px solid var(--border);
+      background:var(--panel);
       overflow:hidden;
-      display:flex;
-      flex-direction:column;
     }
 
     .img{
       height:220px;
-      background:url("https://images.unsplash.com/photo-1556761175-5973dc0f32e7?auto=format&fit=crop&w=1600&q=80");
-      background-size:cover;
-      background-position:center;
-      border-bottom:1px solid #233458;
+      background:url("https://images.unsplash.com/photo-1556761175-5973dc0f32e7?auto=format&fit=crop&w=1600&q=80") center/cover;
+      border-bottom:1px solid var(--border);
     }
 
     .side .inner{ padding:14px; }
 
-    .side b{
-      display:block;
-      margin-bottom:6px;
-      font-weight:800;
-      color:var(--secondary);
+    /* Bridge visual break */
+    .bridge-break{
+      height:320px;
+      background-image:url("https://images.unsplash.com/photo-1600891964599-f61ba0e24092?auto=format&fit=crop&w=2000&q=80");
+      background-size:cover;
+      background-position:center;
+      border-top:1px solid var(--border);
+      border-bottom:1px solid var(--border);
+      position:relative;
     }
 
-    .side small{
+    .bridge-break::after{
+      content:"";
+      position:absolute;
+      inset:0;
+      background:linear-gradient(
+        to bottom,
+        rgba(11,18,32,.85),
+        rgba(11,18,32,.2),
+        rgba(11,18,32,.85)
+      );
+    }
+
+    /* Sections */
+    .section{
+      padding:22px;
+    }
+
+    .grid-2{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:16px;
+    }
+
+    @media(max-width:900px){
+      .grid-2{ grid-template-columns:1fr; }
+    }
+
+    .panel{
+      background:var(--panel);
+      border:1px solid var(--border);
+      border-radius:16px;
+      padding:16px;
+    }
+
+    .panel h2{
+      margin:0 0 10px;
+      font-size:22px;
+    }
+
+    .contact-meta{
+      margin-top:12px;
+      font-size:15px;
       color:var(--muted);
-      font-size:13.5px;
-      line-height:1.45;
+    }
+
+    .contact-meta a{
+      color:var(--secondary);
+      font-weight:700;
+      text-decoration:none;
+    }
+
+    form{
+      display:grid;
+      gap:10px;
+      margin-top:10px;
+    }
+
+    label{
+      font-weight:700;
+      font-size:14px;
+    }
+
+    input, textarea{
+      padding:12px;
+      border-radius:12px;
+      border:1px solid var(--border);
+      background:var(--panel2);
+      color:#fff;
+    }
+
+    textarea{ min-height:120px; }
+
+    button{
+      padding:12px;
+      border-radius:14px;
+      border:1px solid rgba(244,195,139,.6);
+      background:#1A2C52;
+      color:#fff;
+      font-weight:800;
+      cursor:pointer;
+    }
+
+    button:hover{
+      background:#203765;
+    }
+
+    small{
+      font-size:12.5px;
+      color:var(--muted);
     }
   </style>
 </head>
 
 <body>
-  <div class="wrap">
-    <header class="top">
-      <div class="brand">
-        <div class="logo-box">
-          <img src="Logobion99.png" alt="BION logo" class="logo-img">
+<div class="wrap">
+
+  <header class="top">
+    <div class="logo-box">
+      <img src="Logobion99.png" alt="BION logo" class="logo-img">
+    </div>
+    <nav class="menu">
+      <a href="#home">Home</a>
+      <a href="#ai-for-your-org">AI for your org</a>
+      <a href="#ai-governance">AI control</a>
+      <a href="#team">Team</a>
+      <a href="#contact">Contact</a>
+    </nav>
+  </header>
+
+  <main class="card" id="home">
+
+    <!-- HERO -->
+    <section class="hero">
+      <div>
+        <h1>Artificial Intelligence is already inside your company</h1>
+
+        <p>
+          If you don’t control it, someone else will — or it will control you.<br><br>
+          Right now, data is being shared, AI answers go unchecked, and employees use AI badly or unsafely.<br>
+          We help teams use AI safely and responsibly, keep data protected, and stay competitive.<br><br>
+
+          <span class="warm-sand bigger-line">
+            <strong>Stay in control in a technology-driven world.</strong>
+          </span>
+        </p>
+
+        <div class="label-row">
+          <a class="label-btn" href="#ai-for-your-org">Workshops</a>
+          <a class="label-btn" href="#ai-governance">AI Control</a>
         </div>
       </div>
 
-      <nav class="menu">
-        <a href="#home">Home</a>
-        <a href="#ai-for-your-org">AI for your org</a>
-        <a href="#ai-governance">AI governance</a>
-        <a href="#team">Team</a>
-        <a href="#contact">Contact</a>
-      </nav>
-    </header>
-
-    <main class="card" id="home">
-      <section class="hero">
-        <div>
-          <h1>Artificial Intelligence is already inside your company</h1>
-
-   <p>
-  If you don’t control it, someone else will — or it will control you.<br><br>
-
-  Right now, data is being shared, AI answers go unchecked, and employees use AI badly or unsafely.<br>
-  We help teams use AI safely and responsibly, keep data protected, and stay competitive.<br><br>
-
-  <span class="warm-sand bigger-line">
-    <strong>Stay in control in a technology-driven world.</strong><br>
-  </span>
-   </p>
-
-
-          <div class="label-row">
-            <a class="label-btn" href="#ai-for-your-org">Workshops</a>
-            <a class="label-btn" href="#ai-governance">AI Governance</a>
-          </div>
+      <aside class="side">
+        <div class="img"></div>
+        <div class="inner">
+          <strong class="warm-sand">Industries we support</strong>
+          <p>Mining • Banking • Healthcare • Government</p>
         </div>
+      </aside>
+    </section>
 
-        <aside class="side">
-          <div class="img"></div>
-          <div class="inner">
-            <b>Industries we support</b>
-            <small>
-              Mining • Banks • Hospitals • Government — where trust,
-              safety, and regulation matter.
-            </small>
-          </div>
-        </aside>
-      </section>
-    </main>
-  </div>
+    <!-- BRIDGE IMAGE -->
+    <section class="bridge-break" aria-hidden="true"></section>
+
+    <!-- TEAM + CONTACT -->
+    <section class="section grid-2" id="team">
+      <div class="panel">
+        <h2>Built in Portland. Focused on what’s next.</h2>
+        <p>
+          We are a group of professionals working at the cutting edge of technology, based in Portland, Oregon —
+          a city that hosts global leaders like Intel, Nike, and Columbia Sportswear.
+          We help organizations adopt AI with clarity, responsibility, and control.
+        </p>
+
+        <div class="contact-meta">
+          <strong class="warm-sand">Office</strong><br>
+          851 SW 6th Ave<br>
+          Portland, Oregon<br><br>
+          <strong class="warm-sand">Email</strong><br>
+          <a href="mailto:hello@biontech-ai.com">hello@biontech-ai.com</a>
+        </div>
+      </div>
+
+      <div class="panel" id="contact">
+        <h2>Contact us</h2>
+        <p>Tell us what you’re trying to achieve. We’ll take it from there.</p>
+
+        <form>
+          <label>Name</label>
+          <input type="text" placeholder="Your name" required>
+
+          <label>Email</label>
+          <input type="email" placeholder="name@company.com" required>
+
+          <label>Company</label>
+          <input type="text" placeholder="Company name">
+
+          <label>Message</label>
+          <textarea placeholder="How can we help?" required></textarea>
+
+          <button type="submit">Send message</button>
+          <small>Please don’t include sensitive personal data.</small>
+        </form>
+      </div>
+    </section>
+
+  </main>
+</div>
 </body>
 </html>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
