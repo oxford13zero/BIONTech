@@ -17,9 +17,7 @@
       --text:#EAF0FF;
       --muted:#B7C4E6;
       --border:#233458;
-
       --secondary:#F4C38B;
-
       --shadow:0 12px 30px rgba(0,0,0,.4);
       --radius:18px;
     }
@@ -46,7 +44,7 @@
       top:12px;
       z-index:5;
       display:flex;
-      align-items:center;
+      align-items:flex-start;     /* KEY: stops vertical centering */
       justify-content:space-between;
       gap:24px;
       padding:7px 24px;
@@ -58,14 +56,15 @@
 
     .brand{
       display:flex;
-      align-items:center;
+      align-items:flex-start;
     }
 
-    /* LARGE LOGO */
+    /* BIG LOGO */
     .logo-img{
-      height:150px;
+      height:190px;              /* bigger logo */
       width:auto;
       display:block;
+      margin-top:-8px;           /* anchors logo visually to top */
     }
 
     /* Menu */
@@ -73,7 +72,8 @@
       display:flex;
       gap:10px;
       flex-wrap:wrap;
-      justify-content:center;
+      justify-content:flex-end;
+      margin-top:18px;           /* aligns menu with logo cap-height */
     }
 
     .menu a{
@@ -113,7 +113,9 @@
 
     @media (max-width:900px){
       .hero{ grid-template-columns:1fr; }
-      .logo-img{ height:90px; }
+      .logo-img{ height:130px; margin-top:0; }
+      .menu{ margin-top:10px; justify-content:flex-start; }
+      .top{ flex-direction:column; align-items:flex-start; }
     }
 
     h1{
@@ -236,17 +238,3 @@
   </div>
 </body>
 </html>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
