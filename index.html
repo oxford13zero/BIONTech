@@ -39,20 +39,20 @@
     }
 
     /* Top bar */
-    .top{
-      position:sticky;
-      top:12px;
-      z-index:5;
-      display:flex;
-      align-items:flex-start;     /* KEY: stops vertical centering */
-      justify-content:space-between;
-      gap:24px;
-      padding:7px 24px;
-      background:var(--panel);
-      border:1px solid var(--border);
-      border-radius:16px;
-      box-shadow:var(--shadow);
-    }
+.top{
+  position:sticky;
+  top:12px;
+  z-index:5;
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:24px;
+  padding:6px 24px;
+  background:var(--panel);
+  border:1px solid var(--border);
+  border-radius:16px;
+  box-shadow:var(--shadow);
+}
 
     .brand{
       display:flex;
@@ -60,21 +60,21 @@
     }
 
     /* BIG LOGO */
-    .logo-img{
-      height:190px;              /* bigger logo */
-      width:auto;
-      display:block;
-      margin-top:-8px;           /* anchors logo visually to top */
-    }
+  .logo-img{
+  height:190px;
+  width:auto;
+  display:block;
+  margin-top:-8px;
+}
 
     /* Menu */
-    .menu{
-      display:flex;
-      gap:10px;
-      flex-wrap:wrap;
-      justify-content:flex-end;
-      margin-top:18px;           /* aligns menu with logo cap-height */
-    }
+.menu{
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+  justify-content:flex-end;
+  margin-top:auto;   /* anchors menu to bottom */
+}
 
     .menu a{
       padding:10px 14px;
@@ -238,3 +238,4 @@
   </div>
 </body>
 </html>
+
