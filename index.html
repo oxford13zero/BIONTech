@@ -22,9 +22,10 @@
       --shadow:0 12px 30px rgba(0,0,0,.4);
       --radius:18px;
 
-      --panelGap:48px;   /* ~1/2 inch gap */
-      --logoH:170px;     /* adjust logo size here */
-      --logoBoxH:130px;  /* visual crop height (keeps panel tight) */
+      --panelGap:48px;     /* ~1/2 inch gap */
+      --logoH:175px;       /* logo size */
+      --logoBoxH:120px;    /* panel tightness (crop window) */
+      --logoNudge:28px;    /* IMPORTANT: pushes visible logo DOWN */
     }
 
     *{ box-sizing:border-box; }
@@ -53,48 +54,51 @@
       justify-content:space-between;
       gap:24px;
 
-      /* ✅ This pins BOTH logo area + menu to bottom of panel */
+      /* ✅ pins BOTH logo block and menu block to bottom */
       align-items:flex-end;
 
-      padding:10px 24px;
+      /* keep panel visually tight */
+      padding:10px 24px 10px;
       background:var(--panel);
       border:1px solid var(--border);
       border-radius:16px;
       box-shadow:var(--shadow);
 
-      /* panel should not grow too tall */
-      overflow:hidden;
+      overflow:hidden; /* keep everything inside */
     }
 
-    /* Logo area: fixed height that defines panel compactness */
+    /* Logo area */
     .brand{
       display:flex;
-      align-items:flex-end;
+      align-items:flex-end;  /* bottom */
       flex:0 0 auto;
     }
 
-    /* ✅ Crop box removes any extra transparent space in the PNG */
+    /* Crop window to control header height */
     .logo-box{
       height:var(--logoBoxH);
       overflow:hidden;
       display:flex;
-      align-items:flex-end;  /* bottom anchor inside the crop box */
+      align-items:flex-end;   /* bottom */
     }
 
-    /* Big logo anchored to bottom of the crop box */
+    /* Big logo anchored to bottom (VISUALLY), with a nudge to counter PNG padding */
     .logo-img{
       height:var(--logoH);
       width:auto;
       display:block;
+
+      /* ✅ This is the fix for "logo still too high" */
+      transform: translateY(var(--logoNudge));
     }
 
-    /* Menu pinned to bottom */
+    /* Menu */
     .menu{
       display:flex;
       gap:10px;
       flex-wrap:wrap;
       justify-content:flex-end;
-      align-items:flex-end;  /* bottom anchor */
+      align-items:flex-end;   /* bottom */
     }
 
     .menu a{
@@ -146,12 +150,11 @@
       :root{
         --logoH:120px;
         --logoBoxH:120px;
+        --logoNudge:0px;
         --panelGap:18px;
       }
 
-      .menu{
-        justify-content:flex-start;
-      }
+      .menu{ justify-content:flex-start; }
     }
 
     h1{
@@ -208,9 +211,7 @@
       border-bottom:1px solid #233458;
     }
 
-    .side .inner{
-      padding:14px;
-    }
+    .side .inner{ padding:14px; }
 
     .side b{
       display:block;
