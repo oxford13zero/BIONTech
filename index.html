@@ -168,16 +168,18 @@
     .side .inner{ padding:14px; }
 
     /* Bridge visual break */
-    .bridge-break{
-      height:320px;
-      background-image:url("Bridge.jpg");
-      background-size:cover;
-      background-position:center;
-      border-top:1px solid var(--border);
-      border-bottom:1px solid var(--border);
-      position:relative;
-      filter:grayscale(100%); /* CHANGED: bridge is black & white */
-    }
+ .bridge-break{
+  height:320px;
+  background-image:url("Bridge.jpg");
+  background-size:cover;
+  background-position:center;
+  border-top:1px solid var(--border);
+  border-bottom:1px solid var(--border);
+  position:relative;
+
+  filter: grayscale(100%) contrast(0.9) brightness(0.9);
+}
+
 
     .bridge-break::after{
       content:"";
@@ -186,7 +188,7 @@
       background:linear-gradient(
         to bottom,
         rgba(11,18,32,.85),
-        rgba(11,18,32,.2),
+        rgba(11,18,32,.35),
         rgba(11,18,32,.85)
       );
     }
@@ -626,3 +628,4 @@
 </div>
 </body>
 </html>
+
