@@ -18,8 +18,14 @@
       --muted:#B7C4E6;
       --border:#233458;
       --secondary:#F4C38B;
+
       --shadow:0 12px 30px rgba(0,0,0,.4);
       --radius:18px;
+
+      /* Header/Logo sizing */
+      --headerH: 96px;        /* keep panel compact */
+      --logoH: 190px;         /* BIG logo */
+      --logoOverflow: calc(var(--logoH) - var(--headerH)); /* how much it overflows */
     }
 
     *{ box-sizing:border-box; }
@@ -38,7 +44,7 @@
       padding:18px 16px 72px;
     }
 
-    /* Top bar (keep it NOT tall) */
+    /* Top bar (compact) */
     .top{
       position:sticky;
       top:12px;
@@ -48,8 +54,7 @@
       justify-content:space-between;
       gap:24px;
 
-      /* IMPORTANT: fixed compact header height */
-      height:96px;
+      height:var(--headerH);
       padding:10px 24px;
 
       background:var(--panel);
@@ -57,38 +62,35 @@
       border-radius:16px;
       box-shadow:var(--shadow);
 
-      /* Allow the big logo to exist without forcing header height */
-      overflow:visible;
-
-      /* Bottom-align children within the fixed height */
-      align-items:flex-end;
+      overflow:visible;         /* allow logo to overflow OUTSIDE */
+      align-items:flex-end;     /* menu sits on bottom edge */
     }
 
-    /* Logo slot: fixed to header height */
+    /* Left: logo slot */
     .brand{
       position:relative;
       height:100%;
-      width:320px;         /* keeps layout stable; adjust if needed */
+      width:340px;             /* keep layout stable */
       flex:0 0 auto;
     }
 
-    /* BIG LOGO anchored to the bottom of the panel */
+    /* BIG LOGO anchored to BOTTOM of panel, but overflow goes DOWN (not up) */
     .logo-img{
       position:absolute;
       left:0;
-      bottom:0;            /* THIS is the anchor */
-      height:190px;        /* BIG logo */
+      bottom: calc(-1 * var(--logoOverflow)); /* push overflow downward */
+      height:var(--logoH);
       width:auto;
       display:block;
     }
 
-    /* Menu stays bottom-aligned within the header */
+    /* Menu */
     .menu{
       display:flex;
       gap:10px;
       flex-wrap:wrap;
       justify-content:flex-end;
-      align-items:flex-end; /* keep buttons on the bottom edge */
+      align-items:flex-end;     /* anchors menu to bottom edge */
       height:100%;
     }
 
@@ -111,9 +113,9 @@
       transform:translateY(-1px);
     }
 
-    /* Main card */
+    /* Main card: add space to account for logo overflow */
     .card{
-      margin-top:18px;
+      margin-top: calc(18px + var(--logoOverflow)); /* prevents overlap */
       background:#0F1B33;
       border:1px solid #233458;
       border-radius:18px;
@@ -126,35 +128,6 @@
       grid-template-columns:1.15fr .85fr;
       gap:16px;
       padding:22px;
-    }
-
-    @media (max-width:900px){
-      .hero{ grid-template-columns:1fr; }
-
-      /* Make header responsive */
-      .top{
-        height:auto;
-        align-items:flex-start;
-        padding:12px 16px;
-      }
-
-      .brand{
-        width:auto;
-        height:120px;         /* slot for logo on mobile */
-      }
-
-      .logo-img{
-        height:120px;
-        position:relative;
-        bottom:auto;
-        left:auto;
-      }
-
-      .menu{
-        height:auto;
-        justify-content:flex-start;
-        align-items:flex-start;
-      }
     }
 
     h1{
@@ -226,6 +199,46 @@
       color:var(--muted);
       font-size:13.5px;
       line-height:1.45;
+    }
+
+    /* Mobile: avoid overflow tricks; stack naturally */
+    @media (max-width:900px){
+      :root{
+        --headerH: auto;
+        --logoH: 120px;
+        --logoOverflow: 0px;
+      }
+
+      .top{
+        height:auto;
+        align-items:flex-start;
+        padding:12px 16px;
+      }
+
+      .brand{
+        width:auto;
+        height:auto;
+      }
+
+      .logo-img{
+        position:static;
+        height:var(--logoH);
+        bottom:auto;
+      }
+
+      .menu{
+        height:auto;
+        justify-content:flex-start;
+        align-items:flex-start;
+      }
+
+      .card{
+        margin-top:18px;
+      }
+
+      .hero{
+        grid-template-columns:1fr;
+      }
     }
   </style>
 </head>
