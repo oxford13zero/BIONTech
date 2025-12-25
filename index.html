@@ -19,7 +19,6 @@
       --border:#233458;
       --secondary:#F4C38B;
       --shadow:0 12px 30px rgba(0,0,0,.4);
-      --radius:18px;
       --panelGap:22px;
       --logoH:175px;
       --logoBoxH:120px;
@@ -27,6 +26,8 @@
     }
 
     *{ box-sizing:border-box; }
+
+    html{ scroll-behavior:smooth; }
 
     body{
       margin:0;
@@ -101,6 +102,7 @@
       border:1px solid var(--border);
       border-radius:18px;
       box-shadow:0 18px 60px rgba(0,0,0,.4);
+      overflow:hidden;
     }
 
     .hero{
@@ -165,9 +167,32 @@
 
     .side .inner{ padding:14px; }
 
+    /* Bridge visual break */
+    .bridge-break{
+      height:320px;
+      background-image:url("https://images.unsplash.com/photo-1600891964599-f61ba0e24092?auto=format&fit=crop&w=2000&q=80");
+      background-size:cover;
+      background-position:center;
+      border-top:1px solid var(--border);
+      border-bottom:1px solid var(--border);
+      position:relative;
+    }
+
+    .bridge-break::after{
+      content:"";
+      position:absolute;
+      inset:0;
+      background:linear-gradient(
+        to bottom,
+        rgba(11,18,32,.85),
+        rgba(11,18,32,.2),
+        rgba(11,18,32,.85)
+      );
+    }
+
+    /* Sections */
     .section{
       padding:22px;
-      border-top:1px solid var(--border);
     }
 
     .grid-2{
@@ -263,6 +288,8 @@
   </header>
 
   <main class="card" id="home">
+
+    <!-- HERO -->
     <section class="hero">
       <div>
         <h1>Artificial Intelligence is already inside your company</h1>
@@ -292,6 +319,10 @@
       </aside>
     </section>
 
+    <!-- BRIDGE IMAGE -->
+    <section class="bridge-break" aria-hidden="true"></section>
+
+    <!-- TEAM + CONTACT -->
     <section class="section grid-2" id="team">
       <div class="panel">
         <h2>Built in Portland. Focused on what’s next.</h2>
@@ -332,8 +363,8 @@
         </form>
       </div>
     </section>
-  </main>
 
+  </main>
 </div>
 </body>
 </html>
