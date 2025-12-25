@@ -270,6 +270,116 @@
       font-size:12.5px;
       color:var(--muted);
     }
+
+
+    /* TEAM PANEL */
+.team-card{
+  margin-top: var(--panelGap);
+  background:#0F1B33;
+  border:1px solid #233458;
+  border-radius:18px;
+  box-shadow:0 18px 60px rgba(0,0,0,.4);
+  overflow:hidden;
+}
+
+.team-wrap{
+  padding:22px;
+}
+
+.team-head{
+  display:flex;
+  align-items:flex-end;
+  justify-content:space-between;
+  gap:16px;
+  margin-bottom:14px;
+}
+
+.team-head h2{
+  margin:0;
+  font-size:22px;
+  letter-spacing:-0.2px;
+}
+
+.team-head p{
+  margin:0;
+  max-width:72ch;
+  color:var(--muted);
+}
+
+.team-grid{
+  display:grid;
+  grid-template-columns:repeat(3, 1fr);
+  gap:14px;
+  margin-top:14px;
+}
+
+@media (max-width:900px){
+  .team-grid{ grid-template-columns:1fr; }
+}
+
+.team-member{
+  border:1px solid #233458;
+  background:#111F3D;
+  border-radius:16px;
+  overflow:hidden;
+}
+
+.team-photo{
+  height:190px;
+  width:100%;
+  object-fit:cover;
+  display:block;
+  filter:grayscale(100%);
+  opacity:.95;
+}
+
+.team-body{
+  padding:14px;
+}
+
+.team-name{
+  display:flex;
+  align-items:baseline;
+  justify-content:space-between;
+  gap:10px;
+}
+
+.team-name b{
+  font-size:16px;
+  color:#EAF0FF;
+}
+
+.team-role{
+  font-size:12.5px;
+  color:var(--secondary); /* warm sand */
+  font-weight:700;
+  letter-spacing:.2px;
+}
+
+.team-bio{
+  margin:10px 0 0;
+  color:#B7C4E6;
+  font-size:14.5px;
+  line-height:1.5;
+}
+
+.team-tags{
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+  margin-top:12px;
+}
+
+.team-tag{
+  font-size:12px;
+  padding:6px 10px;
+  border-radius:999px;
+  border:1px solid rgba(244,195,139,.35);
+  background:#0F1B33;
+  color:#FFFFFF; /* you wanted button label text white */
+}
+
+    
   </style>
 </head>
 
@@ -324,6 +434,95 @@
     <!-- BRIDGE IMAGE -->
     <section class="bridge-break" aria-hidden="true"></section>
 
+
+
+
+    <!-- TEAM PANEL (insert between Bridge and Contact) -->
+<section class="team-card" id="team">
+  <div class="team-wrap">
+    <div class="team-head">
+      <div>
+        <h2>Team</h2>
+        <p>Senior practitioners combining AI governance, safety-critical engineering, and adoption enablement.</p>
+      </div>
+    </div>
+
+    <div class="team-grid">
+      <!-- Lester -->
+      <article class="team-member">
+        <img class="team-photo" src="Lesterfoto.png" alt="Lester W. Lino">
+        <div class="team-body">
+          <div class="team-name">
+            <b>Lester W. Lino</b>
+            <span class="team-role">Data • AI • Governance</span>
+          </div>
+
+          <p class="team-bio">
+            Senior data, AI, and technology consultant with 20+ years modernizing and securing mission-critical systems
+            across public sector, healthcare, and mining. Co-developed an AI-driven safety device focused on preventing
+            accidents and improving human–technology interaction in high-risk environments. AI governance focus:
+            aligning data, systems, and human behavior so AI is deployed safely, responsibly, and with operational control.
+          </p>
+
+          <div class="team-tags">
+            <span class="team-tag">AI Governance</span>
+            <span class="team-tag">Risk & Control</span>
+            <span class="team-tag">Safety-critical systems</span>
+          </div>
+        </div>
+      </article>
+
+      <!-- Luis -->
+      <article class="team-member">
+        <img class="team-photo" src="foto portafolio.png" alt="Luis Eduardo Reinoso Pino">
+        <div class="team-body">
+          <div class="team-name">
+            <b>Luis Eduardo Reinoso Pino</b>
+            <span class="team-role">Policy • Risk • Adoption</span>
+          </div>
+
+          <p class="team-bio">
+            AI governance consultant with deep experience in innovation management, technology transfer, and responsible
+            use of advanced technologies. Led and advised digital transformation and technology intelligence initiatives
+            for universities, private organizations, and public institutions. Focus: how organizations adopt emerging
+            technologies, assess associated risks, and define practical guidelines for responsible AI use.
+          </p>
+
+          <div class="team-tags">
+            <span class="team-tag">Policy & Frameworks</span>
+            <span class="team-tag">Responsible AI</span>
+            <span class="team-tag">Tech Transfer</span>
+          </div>
+        </div>
+      </article>
+
+      <!-- Placeholder / Fake member -->
+      <article class="team-member">
+        <img class="team-photo" src="https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=1200&q=80"
+             alt="Placeholder team member">
+        <div class="team-body">
+          <div class="team-name">
+            <b>Jordan Patel</b>
+            <span class="team-role">Audit • Vendor Gov</span>
+          </div>
+
+          <p class="team-bio">
+            Placeholder profile — replace with your real team member later. (Example) Leads audit readiness,
+            vendor governance, and model inventory practices across regulated environments. Translates controls
+            into practical operating procedures that teams actually follow.
+          </p>
+
+          <div class="team-tags">
+            <span class="team-tag">Model Inventory</span>
+            <span class="team-tag">Vendor Governance</span>
+            <span class="team-tag">Audit Readiness</span>
+          </div>
+        </div>
+      </article>
+    </div>
+  </div>
+</section>
+
     <!-- TEAM + CONTACT -->
     <section class="section grid-2" id="team">
       <div class="panel">
@@ -370,4 +569,5 @@
 </div>
 </body>
 </html>
+
 
