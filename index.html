@@ -170,14 +170,13 @@
     /* Bridge visual break */
     .bridge-break{
       height:320px;
-     
       background-image:url("Bridge.jpg");
-
       background-size:cover;
       background-position:center;
       border-top:1px solid var(--border);
       border-bottom:1px solid var(--border);
       position:relative;
+      filter:grayscale(100%); /* CHANGED: bridge is black & white */
     }
 
     .bridge-break::after{
@@ -343,7 +342,7 @@
   display:block;
   opacity:.95;
 
-  filter: grayscale(100%);
+  filter:none; /* CHANGED: team photos are in color */
   transition: opacity .25s ease;
 }
 
