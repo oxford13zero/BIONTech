@@ -168,18 +168,18 @@
     .side .inner{ padding:14px; }
 
     /* Bridge visual break */
- .bridge-break{
-  height:320px;
-  background-image:url("Bridge.jpg");
-  background-size:cover;
-  background-position:center;
-  border-top:1px solid var(--border);
-  border-bottom:1px solid var(--border);
-  position:relative;
-
-  filter: grayscale(100%) contrast(0.9) brightness(0.9);
-}
-
+    .bridge-break{
+      height:320px;
+      background-image:url("Bridge.jpg");
+      background-size:cover;
+      background-position:center;
+      background-repeat:no-repeat;
+      will-change: background-position;
+      border-top:1px solid var(--border);
+      border-bottom:1px solid var(--border);
+      position:relative;
+      filter: grayscale(100%) contrast(0.9) brightness(0.9);
+    }
 
     .bridge-break::after{
       content:"";
@@ -274,167 +274,161 @@
 
 
     /* TEAM PANEL */
-.team-card{
-  margin-top: var(--panelGap);
-  background:#0F1B33;
-  border:1px solid #233458;
-  border-radius:18px;
-  box-shadow:0 18px 60px rgba(0,0,0,.4);
-  overflow:hidden;
-}
+    .team-card{
+      margin-top: var(--panelGap);
+      background:#0F1B33;
+      border:1px solid #233458;
+      border-radius:18px;
+      box-shadow:0 18px 60px rgba(0,0,0,.4);
+      overflow:hidden;
+    }
 
-.team-wrap{
-  padding:22px;
-}
+    .team-wrap{
+      padding:22px;
+    }
 
-.team-head{
-  display:flex;
-  align-items:flex-end;
-  justify-content:space-between;
-  gap:16px;
-  margin-bottom:14px;
-}
+    .team-head{
+      display:flex;
+      align-items:flex-end;
+      justify-content:space-between;
+      gap:16px;
+      margin-bottom:14px;
+    }
 
-.team-head h2{
-  margin:0;
-  font-size:22px;
-  letter-spacing:-0.2px;
-}
+    .team-head h2{
+      margin:0;
+      font-size:22px;
+      letter-spacing:-0.2px;
+    }
 
-.team-head p{
-  margin:0;
-  max-width:72ch;
-  color:var(--muted);
-}
+    .team-head p{
+      margin:0;
+      max-width:72ch;
+      color:var(--muted);
+    }
 
-.team-grid{
-  display:grid;
-  grid-template-columns:repeat(3, 1fr);
-  gap:14px;
-  margin-top:14px;
-}
+    .team-grid{
+      display:grid;
+      grid-template-columns:repeat(3, 1fr);
+      gap:14px;
+      margin-top:14px;
+    }
 
-@media (max-width:900px){
-  .team-grid{ grid-template-columns:1fr; }
-}
+    @media (max-width:900px){
+      .team-grid{ grid-template-columns:1fr; }
+    }
 
-/* Bio on hover + photo dims */
-.team-member{
-  border:1px solid #233458;
-  background:#111F3D;
-  border-radius:16px;
-  overflow:hidden;
-  position:relative;
-}
+    /* Bio on hover + photo dims */
+    .team-member{
+      border:1px solid #233458;
+      background:#111F3D;
+      border-radius:16px;
+      overflow:hidden;
+      position:relative;
+    }
 
-.team-member:hover .team-photo{
-  opacity:.35;
-}
+    .team-member:hover .team-photo{
+      opacity:.35;
+    }
 
-.team-member:hover .team-bio{
-  opacity:1;
-  pointer-events:auto;
-}
+    .team-member:hover .team-bio{
+      opacity:1;
+      pointer-events:auto;
+    }
 
-.team-photo{
-  height:190px;
-  width:100%;
-  object-fit:cover;
-  object-position: center 20%;
-  display:block;
-  opacity:.95;
+    .team-photo{
+      height:190px;
+      width:100%;
+      object-fit:cover;
+      object-position: center 20%;
+      display:block;
+      opacity:.95;
+      filter:none;
+      transition: opacity .25s ease;
+    }
 
-  filter:none; /* CHANGED: team photos are in color */
-  transition: opacity .25s ease;
-}
+    .team-body{
+      padding:14px;
+    }
 
+    /* Name/position/background stack vertically */
+    .team-name{
+      display:flex;
+      flex-direction:column;
+      align-items:flex-start;
+      gap:4px;
+    }
 
+    .team-name b{
+      font-size:16px;
+      color:#EAF0FF;
+    }
 
-.team-body{
-  padding:14px;
-}
+    .team-position{
+      font-size:13px;
+      font-weight:800;
+      color:var(--secondary);
+      letter-spacing:.2px;
+    }
 
-/* CHANGED: name/position/background stack vertically */
-.team-name{
-  display:flex;
-  flex-direction:column;
-  align-items:flex-start;
-  gap:4px;
-}
+    .team-background{
+      font-size:13px;
+      color:var(--muted);
+    }
 
-.team-name b{
-  font-size:16px;
-  color:#EAF0FF;
-}
+    .team-role{
+      font-size:12.5px;
+      color:var(--secondary);
+      font-weight:700;
+      letter-spacing:.2px;
+    }
 
-/* ADDED: position + background styling */
-.team-position{
-  font-size:13px;
-  font-weight:800;
-  color:var(--secondary);
-  letter-spacing:.2px;
-}
+    .team-bio{
+      margin:10px 0 0;
+      color:#B7C4E6;
+      font-size:14.5px;
+      line-height:1.5;
 
-.team-background{
-  font-size:13px;
-  color:var(--muted);
-}
+      position:absolute;
+      inset:0;
+      padding:18px;
+      background:rgba(15,27,51,.92);
+      opacity:0;
+      pointer-events:none;
+      transition: opacity .25s ease;
+    }
 
-.team-role{
-  font-size:12.5px;
-  color:var(--secondary); /* warm sand */
-  font-weight:700;
-  letter-spacing:.2px;
-}
+    @media (max-width:900px){
+      .team-bio{
+        position:static;
+        inset:auto;
+        padding:0;
+        background:transparent;
+        opacity:1;
+        pointer-events:auto;
+        margin:10px 0 0;
+      }
 
-.team-bio{
-  margin:10px 0 0;
-  color:#B7C4E6;
-  font-size:14.5px;
-  line-height:1.5;
+      .team-member:hover .team-photo{
+        opacity:.95;
+      }
+    }
 
-  position:absolute;
-  inset:0;
-  padding:18px;
-  background:rgba(15,27,51,.92);
-  opacity:0;
-  pointer-events:none;
-  transition: opacity .25s ease;
-}
+    .team-tags{
+      display:flex;
+      flex-wrap:wrap;
+      gap:8px;
+      margin-top:12px;
+    }
 
-@media (max-width:900px){
-  .team-bio{
-    position:static;
-    inset:auto;
-    padding:0;
-    background:transparent;
-    opacity:1;
-    pointer-events:auto;
-    margin:10px 0 0;
-  }
-
-  .team-member:hover .team-photo{
-    opacity:.95;
-  }
-}
-
-.team-tags{
-  display:flex;
-  flex-wrap:wrap;
-  gap:8px;
-  margin-top:12px;
-}
-
-.team-tag{
-  font-size:12px;
-  padding:6px 10px;
-  border-radius:999px;
-  border:1px solid rgba(244,195,139,.35);
-  background:#0F1B33;
-  color:#FFFFFF; /* you wanted button label text white */
-}
-
-    
+    .team-tag{
+      font-size:12px;
+      padding:6px 10px;
+      border-radius:999px;
+      border:1px solid rgba(244,195,139,.35);
+      background:#0F1B33;
+      color:#FFFFFF;
+    }
   </style>
 </head>
 
@@ -489,98 +483,80 @@
     <!-- BRIDGE IMAGE -->
     <section class="bridge-break" aria-hidden="true"></section>
 
+    <!-- TEAM PANEL -->
+    <section class="team-card" id="team">
+      <div class="team-wrap">
+        <div class="team-head">
+          <div>
+            <h2>Team</h2>
+            <!--<p>Senior practitioners combining AI governance, safety-critical engineering, and adoption enablement.</p> -->
+          </div>
+        </div>
 
+        <div class="team-grid">
+          <!-- Lester -->
+          <article class="team-member">
+            <img class="team-photo" src="Lesterfoto.png" alt="Lester W. Lino">
+            <div class="team-body">
+              <div class="team-name">
+                <b>Lester W Lino</b>
+                <div class="team-position">CEO</div>
+                <div class="team-background"><b>Master in Computer Engineering</b></div>
+              </div>
 
+              <p class="team-bio">
+                Senior data, AI, and technology consultant with 20+ years modernizing and securing mission-critical systems
+                across public sector, healthcare, and mining. Co-developed an AI-driven safety device focused on preventing
+                accidents and improving human–technology interaction in high-risk environments. 
+              </p>
+            </div>
+          </article>
 
-    <!-- TEAM PANEL (insert between Bridge and Contact) -->
-<section class="team-card" id="team">
-  <div class="team-wrap">
-    <div class="team-head">
-      <div>
-        <h2>Team</h2>
-        <!--<p>Senior practitioners combining AI governance, safety-critical engineering, and adoption enablement.</p> -->
+          <!-- Luis -->
+          <article class="team-member">
+            <img class="team-photo" src="Fotoportafolio2.png" alt="Luis Eduardo Reinoso Pino">
+            <div class="team-body">
+              <div class="team-name">
+                <b>Luis Reinoso</b>
+                <div class="team-position">Chief AI Management Officer</div>
+                <div class="team-background"><b>Master in Industrial Engineering</b>b></div>
+              </div>
+
+              <p class="team-bio">
+                AI governance consultant with deep experience in innovation management, technology transfer, and responsible
+                use of advanced technologies. Led and advised digital transformation and technology intelligence initiatives
+                for universities, private organizations, and public institutions. 
+              </p>
+            </div>
+          </article>
+
+          <!-- Placeholder -->
+          <article class="team-member">
+            <img class="team-photo" src="https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=1200&q=80"
+                 alt="Placeholder team member">
+            <div class="team-body">
+              <div class="team-name">
+                <b>Jordan Patel</b>
+                <div class="team-position">Audit • Vendor Gov</div>
+                <div class="team-background">Compliance & Risk Management</div>
+              </div>
+
+              <p class="team-bio">
+                Placeholder profile — replace with your real team member later. (Example) Leads audit readiness,
+                vendor governance, and model inventory practices across regulated environments. Translates controls
+                into practical operating procedures that teams actually follow.
+              </p>
+
+              <div class="team-tags">
+                <span class="team-tag">Model Inventory</span>
+                <span class="team-tag">Vendor Governance</span>
+                <span class="team-tag">Audit Readiness</span>
+              </div>
+            </div>
+          </article>
+        </div>
       </div>
-    </div>
-
-    <div class="team-grid">
-      <!-- Lester -->
-      <article class="team-member">
-        <img class="team-photo" src="Lesterfoto.png" alt="Lester W. Lino">
-        <div class="team-body">
-          <div class="team-name">
-            <b>Lester W Lino</b>
-            <div class="team-position">CEO</div>
-            <div class="team-background"><b>Master in Computer Engineering</b></div>
-            <!-- <span class="team-role">Data • AI • Governance</span>  -->
-          </div>
-
-          <p class="team-bio">
-            Senior data, AI, and technology consultant with 20+ years modernizing and securing mission-critical systems
-            across public sector, healthcare, and mining. Co-developed an AI-driven safety device focused on preventing
-            accidents and improving human–technology interaction in high-risk environments. 
-          </p>
-
-         <!-- <div class="team-tags">
-            <span class="team-tag">AI Governance</span>
-            <span class="team-tag">Risk & Control</span>
-            <span class="team-tag">Safety-critical systems</span>
-          </div> -->
-          
-        </div>
-      </article>
-
-      <!-- Luis -->
-      <article class="team-member">
-        <img class="team-photo" src="Fotoportafolio2.png" alt="Luis Eduardo Reinoso Pino">
-        <div class="team-body">
-          <div class="team-name">
-            <b>Luis Reinoso</b>
-            <div class="team-position">Chief AI Management Officer</div>
-            <div class="team-background"><b>Master in Industrial Engineering</b>b></div>
-          </div>
-
-          <p class="team-bio">
-            AI governance consultant with deep experience in innovation management, technology transfer, and responsible
-            use of advanced technologies. Led and advised digital transformation and technology intelligence initiatives
-            for universities, private organizations, and public institutions. 
-          </p>
-
-          <!--<div class="team-tags">
-            <span class="team-tag">Policy & Frameworks</span>
-            <span class="team-tag">Responsible AI</span>
-            <span class="team-tag">Tech Transfer</span>
-          </div>  -->
-          
-        </div>
-      </article>
-
-      <!-- Placeholder / Fake member -->
-      <article class="team-member">
-        <img class="team-photo" src="https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=1200&q=80"
-             alt="Placeholder team member">
-        <div class="team-body">
-          <div class="team-name">
-            <b>Jordan Patel</b>
-            <div class="team-position">Audit • Vendor Gov</div>
-            <div class="team-background">Compliance & Risk Management</div>
-          </div>
-
-          <p class="team-bio">
-            Placeholder profile — replace with your real team member later. (Example) Leads audit readiness,
-            vendor governance, and model inventory practices across regulated environments. Translates controls
-            into practical operating procedures that teams actually follow.
-          </p>
-
-          <div class="team-tags">
-            <span class="team-tag">Model Inventory</span>
-            <span class="team-tag">Vendor Governance</span>
-            <span class="team-tag">Audit Readiness</span>
-          </div>
-        </div>
-      </article>
-    </div>
-  </div>
-</section>
+    </section>
 
     <!-- TEAM + CONTACT -->
     <section class="section grid-2" id="team">
@@ -626,6 +602,40 @@
 
   </main>
 </div>
+
+<script>
+  (function () {
+    const bridge = document.querySelector('.bridge-break');
+    if (!bridge) return;
+
+    const reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    function update() {
+      if (reduceMotion) return;
+
+      const rect = bridge.getBoundingClientRect();
+      const vh = window.innerHeight || 1;
+
+      const progress = Math.min(1, Math.max(0, (vh - rect.top) / (vh + rect.height)));
+      const speed = 18;
+      const y = Math.round(progress * speed);
+
+      bridge.style.backgroundPosition = `center calc(50% + ${y}px)`;
+      requestAnimationFrame(() => ticking = false);
+    }
+
+    let ticking = false;
+    function onScroll() {
+      if (ticking) return;
+      ticking = true;
+      requestAnimationFrame(update);
+    }
+
+    window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', onScroll);
+    update();
+  })();
+</script>
+
 </body>
 </html>
-
