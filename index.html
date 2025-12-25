@@ -317,8 +317,22 @@
   .team-grid{ grid-template-columns:1fr; }
 }
 
+/* Bio on hover + photo dims */
+.team-member{
+  border:1px solid #233458;
+  background:#111F3D;
+  border-radius:16px;
+  overflow:hidden;
+  position:relative;
+}
+
 .team-member:hover .team-photo{
-  filter: none;
+  opacity:.35;
+}
+
+.team-member:hover .team-bio{
+  opacity:1;
+  pointer-events:auto;
 }
 
 .team-photo{
@@ -330,7 +344,7 @@
   opacity:.95;
 
   filter: grayscale(100%);
-  transition: filter .35s ease;
+  transition: opacity .25s ease;
 }
 
 
@@ -377,6 +391,30 @@
   color:#B7C4E6;
   font-size:14.5px;
   line-height:1.5;
+
+  position:absolute;
+  inset:0;
+  padding:18px;
+  background:rgba(15,27,51,.92);
+  opacity:0;
+  pointer-events:none;
+  transition: opacity .25s ease;
+}
+
+@media (max-width:900px){
+  .team-bio{
+    position:static;
+    inset:auto;
+    padding:0;
+    background:transparent;
+    opacity:1;
+    pointer-events:auto;
+    margin:10px 0 0;
+  }
+
+  .team-member:hover .team-photo{
+    opacity:.95;
+  }
 }
 
 .team-tags{
@@ -589,8 +627,3 @@
 </div>
 </body>
 </html>
-
-
-
-
-
