@@ -340,16 +340,30 @@
   padding:14px;
 }
 
+/* CHANGED: name/position/background stack vertically */
 .team-name{
   display:flex;
-  align-items:baseline;
-  justify-content:space-between;
-  gap:10px;
+  flex-direction:column;
+  align-items:flex-start;
+  gap:4px;
 }
 
 .team-name b{
   font-size:16px;
   color:#EAF0FF;
+}
+
+/* ADDED: position + background styling */
+.team-position{
+  font-size:13px;
+  font-weight:800;
+  color:var(--secondary);
+  letter-spacing:.2px;
+}
+
+.team-background{
+  font-size:13px;
+  color:var(--muted);
 }
 
 .team-role{
@@ -456,9 +470,9 @@
         <img class="team-photo" src="Lesterfoto.png" alt="Lester W. Lino">
         <div class="team-body">
           <div class="team-name">
-            <b>Lester W. Lino</b><br>
-            <b>CEO</b><br>
-            <b>Master in Computer Engineering </b>
+            <b>Lester W Lino</b>
+            <div class="team-position">CEO</div>
+            <div class="team-background">Master in Computer Engineering</div>
             <!-- <span class="team-role">Data • AI • Governance</span>  -->
           </div>
 
@@ -483,8 +497,9 @@
         <img class="team-photo" src="foto portafolio.png" alt="Luis Eduardo Reinoso Pino">
         <div class="team-body">
           <div class="team-name">
-            <b>Luis Reinoso Manager Technology Chief AI Management Officer</b>
-            <span class="team-role">Policy • Risk • Adoption</span>
+            <b>Luis Reinoso</b>
+            <div class="team-position">Manager Technology</div>
+            <div class="team-background">Chief AI Management Officer</div>
           </div>
 
           <p class="team-bio">
@@ -510,7 +525,8 @@
         <div class="team-body">
           <div class="team-name">
             <b>Jordan Patel</b>
-            <span class="team-role">Audit • Vendor Gov</span>
+            <div class="team-position">Audit • Vendor Gov</div>
+            <div class="team-background">Compliance & Risk Management</div>
           </div>
 
           <p class="team-bio">
@@ -576,9 +592,3 @@
 </div>
 </body>
 </html>
-
-
-
-
-
-
