@@ -188,8 +188,8 @@
       background:linear-gradient(
         to bottom,
         rgba(11,18,32,.65),
-    rgba(11,18,32,.25),
-    rgba(11,18,32,.65)
+        rgba(11,18,32,.25),
+        rgba(11,18,32,.65)
       );
     }
 
@@ -307,14 +307,13 @@
       color:var(--muted);
     }
 
-   .team-grid{
-  display:grid;
-  grid-template-columns:repeat(3, minmax(0, 1fr));
-  gap:14px;
-  margin-top:14px;
-  justify-items:center;
-}
-
+    .team-grid{
+      display:grid;
+      grid-template-columns:repeat(3, minmax(0, 1fr));
+      gap:14px;
+      margin-top:14px;
+      justify-items:center;
+    }
 
     @media (max-width:900px){
       .team-grid{ grid-template-columns:1fr; }
@@ -322,30 +321,31 @@
 
     /* Bio on hover + photo dims */
     .team-member{
-  border:1px solid #233458;
-  background:#111F3D;
-  border-radius:16px;
-  overflow:hidden;
-  position:relative;
+      border:1px solid #233458;
+      background:#111F3D;
+      border-radius:16px;
+      overflow:hidden;
+      position:relative;
 
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-}
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+    }
 
+    /* FIXED: On hover, hide photo + name/tags, but keep bio (bio is inside team-body) */
+    .team-member:hover .team-photo{
+      opacity:0;
+    }
 
-    /* Hide photo + name when hovering */
-.team-member:hover .team-photo,
-.team-member:hover .team-body{
-  opacity:0;
-}
+    .team-member:hover .team-name,
+    .team-member:hover .team-tags{
+      opacity:0;
+    }
 
-/* Show bio on hover */
-.team-member:hover .team-bio{
-  opacity:1;
-  pointer-events:auto;
-}
-
+    .team-member:hover .team-bio{
+      opacity:1;
+      pointer-events:auto;
+    }
 
     .team-photo{
       height:165px;
@@ -358,11 +358,9 @@
       transition: opacity .25s ease;
     }
 
-   .team-body{
-  padding:14px;
-  transition: opacity .25s ease;
-}
-
+    .team-body{
+      padding:14px;
+    }
 
     /* Name/position/background stack vertically */
     .team-name{
@@ -370,6 +368,7 @@
       flex-direction:column;
       align-items:flex-start;
       gap:4px;
+      transition: opacity .25s ease;
     }
 
     .team-name b{
@@ -409,6 +408,7 @@
       opacity:0;
       pointer-events:none;
       transition: opacity .25s ease;
+      z-index:2;
     }
 
     @media (max-width:900px){
@@ -425,6 +425,11 @@
       .team-member:hover .team-photo{
         opacity:.95;
       }
+
+      .team-member:hover .team-name,
+      .team-member:hover .team-tags{
+        opacity:1;
+      }
     }
 
     .team-tags{
@@ -432,6 +437,7 @@
       flex-wrap:wrap;
       gap:8px;
       margin-top:12px;
+      transition: opacity .25s ease;
     }
 
     .team-tag{
@@ -444,51 +450,49 @@
     }
 
 
-.panel-flex{
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  gap:24px;
-}
+    .panel-flex{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:24px;
+    }
 
-.panel-text{
-  max-width:70ch;
-}
+    .panel-text{
+      max-width:70ch;
+    }
 
     .cta-yellow{
-  display:inline-flex;
-  align-items:center;
-  justify-content:center;
-  padding:14px 22px;
-  border-radius:999px;
-  border:2px solid #FFD24D;
-  background:transparent;
-  color:#FFD24D;
-  font-weight:800;
-  letter-spacing:.3px;
-  cursor:pointer;
-  white-space:nowrap;
-  transition:background .2s ease, color .2s ease, transform .15s ease;
-}
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      padding:14px 22px;
+      border-radius:999px;
+      border:2px solid #FFD24D;
+      background:transparent;
+      color:#FFD24D;
+      font-weight:800;
+      letter-spacing:.3px;
+      cursor:pointer;
+      white-space:nowrap;
+      transition:background .2s ease, color .2s ease, transform .15s ease;
+    }
 
-.cta-yellow:hover{
-  background:#FFD24D;
-  color:#0B1220;
-  transform:translateY(-1px);
-}
+    .cta-yellow:hover{
+      background:#FFD24D;
+      color:#0B1220;
+      transform:translateY(-1px);
+    }
 
-.contact-image{
-  margin-top:14px;
-  height:200px;
-  border-radius:12px;
-  background-size:cover;
-  background-position:center;
-  filter:grayscale(100%) contrast(.9) brightness(1.05);
-  opacity:.85;
-  border:1px solid var(--border);
-}
-
-    
+    .contact-image{
+      margin-top:14px;
+      height:200px;
+      border-radius:12px;
+      background-size:cover;
+      background-position:center;
+      filter:grayscale(100%) contrast(.9) brightness(1.05);
+      opacity:.85;
+      border:1px solid var(--border);
+    }
   </style>
 </head>
 
@@ -529,19 +533,19 @@
          <!-- <a class="label-btn" href="#ai-for-your-org">Workshops</a>
           <a class="label-btn" href="#ai-governance">AI Control</a> -->
         </div>
-        
-      </div> 
+
+      </div>
 
       <aside class="side">
         <div class="img"></div>
         <div class="inner">
           <strong class="warm-sand">Industries we support</strong>
           <div class="team-tags">
-                <span class="team-tag">> Mining</span>
-                <span class="team-tag">> Banking</span>
-                <span class="team-tag">> Healthcare</span>
+            <span class="team-tag">> Mining</span>
+            <span class="team-tag">> Banking</span>
+            <span class="team-tag">> Healthcare</span>
             <span class="team-tag">> Government</span>
-              </div>
+          </div>
         </div>
       </aside>
     </section>
@@ -551,50 +555,38 @@
 
     <!-- AI FOR YOUR ORG PANEL -->
     <section class="section" id="ai-for-your-org">
+      <div class="panel panel-flex">
+        <div class="panel-text">
+          <h2>AI FOR YOU</h2>
+          <p>
+            We make AI practical for real teams — without the hype. In a focused workshop
+            format, we help your leaders and staff understand where AI fits, how to use it
+            safely day-to-day, and how to turn it into measurable efficiency.
+          </p>
+        </div>
 
-      
-     <div class="panel panel-flex">
-  <div class="panel-text">
-    <h2>AI FOR YOU</h2>
-    <p>
-      We make AI practical for real teams — without the hype. In a focused workshop
-      format, we help your leaders and staff understand where AI fits, how to use it
-      safely day-to-day, and how to turn it into measurable efficiency.
-    </p>
-  </div>
-
-       <button class="cta-yellow" type="button">
-  AI WORKSHOPS
-</button>
-
-  </div>
-
-
-      
+        <button class="cta-yellow" type="button">
+          AI WORKSHOPS
+        </button>
+      </div>
     </section>
 
     <!-- AI GOVERNANCE PROGRAM PANEL -->
     <section class="section" id="ai-governance">
+      <div class="panel panel-flex">
+        <div class="panel-text">
+          <h2>AI GOVERNANCE PROGRAM</h2>
+          <p>
+            We help organizations build an AI governance program that keeps you in control:
+            policies, responsible-use guidelines, risk reviews, vendor oversight, and model
+            inventories — so you’re ready for regulated markets and the AI tsunami ahead.
+          </p>
+        </div>
 
-      
-     <div class="panel panel-flex">
-  <div class="panel-text">
-    <h2>AI GOVERNANCE PROGRAM</h2>
-    <p>
-      We help organizations build an AI governance program that keeps you in control:
-      policies, responsible-use guidelines, risk reviews, vendor oversight, and model
-      inventories — so you’re ready for regulated markets and the AI tsunami ahead.
-    </p>
-  </div>
-
-  <button class="cta-yellow" type="button">
-  AI GOVERNANCE IMPLEMENTATION
-</button>
-
-</div>
-
-
-      
+        <button class="cta-yellow" type="button">
+          AI GOVERNANCE IMPLEMENTATION
+        </button>
+      </div>
     </section>
 
     <!-- TEAM PANEL -->
@@ -621,7 +613,7 @@
               <p class="team-bio">
                 Senior data, AI, and technology consultant with 20+ years modernizing and securing mission-critical systems
                 across public sector, healthcare, and mining. Co-developed an AI-driven safety device focused on preventing
-                accidents and improving human–technology interaction in high-risk environments. 
+                accidents and improving human–technology interaction in high-risk environments.
               </p>
             </div>
           </article>
@@ -639,7 +631,7 @@
               <p class="team-bio">
                 AI governance consultant with deep experience in innovation management, technology transfer, and responsible
                 use of advanced technologies. Led and advised digital transformation and technology intelligence initiatives
-                for universities, private organizations, and public institutions. 
+                for universities, private organizations, and public institutions.
               </p>
             </div>
           </article>
@@ -689,10 +681,8 @@
           <a href="mailto:hello@biontech-ai.com">hello@biontech-ai.com</a> <br><br>
 
           <div class="contact-image"
-     style="background-image:url('street.png');">
-</div>
-
-          
+               style="background-image:url('street.png');">
+          </div>
         </div>
       </div>
 
@@ -769,23 +759,3 @@
 
 </body>
 </html>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
