@@ -334,14 +334,18 @@
 }
 
 
-    .team-member:hover .team-photo{
-      opacity:.35;
-    }
+    /* Hide photo + name when hovering */
+.team-member:hover .team-photo,
+.team-member:hover .team-body{
+  opacity:0;
+}
 
-    .team-member:hover .team-bio{
-      opacity:1;
-      pointer-events:auto;
-    }
+/* Show bio on hover */
+.team-member:hover .team-bio{
+  opacity:1;
+  pointer-events:auto;
+}
+
 
     .team-photo{
       height:165px;
@@ -354,9 +358,11 @@
       transition: opacity .25s ease;
     }
 
-    .team-body{
-      padding:14px;
-    }
+   .team-body{
+  padding:14px;
+  transition: opacity .25s ease;
+}
+
 
     /* Name/position/background stack vertically */
     .team-name{
@@ -763,6 +769,7 @@
 
 </body>
 </html>
+
 
 
 
