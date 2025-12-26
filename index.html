@@ -449,7 +449,28 @@
   max-width:70ch;
 }
 
-    
+    .cta-yellow{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  padding:14px 22px;
+  border-radius:999px;
+  border:2px solid #FFD24D;
+  background:transparent;
+  color:#FFD24D;
+  font-weight:800;
+  letter-spacing:.3px;
+  cursor:pointer;
+  white-space:nowrap;
+  transition:background .2s ease, color .2s ease, transform .15s ease;
+}
+
+.cta-yellow:hover{
+  background:#FFD24D;
+  color:#0B1220;
+  transform:translateY(-1px);
+}
+
 
     
   </style>
@@ -526,8 +547,11 @@
     </p>
   </div>
 
-  <span class="cta-yellow">AI WORKSHOPS</span>
-</div>
+       <button class="cta-yellow" type="button">
+  AI WORKSHOPS
+</button>
+
+  </div>
 
 
       
@@ -547,7 +571,10 @@
     </p>
   </div>
 
-  <span class="cta-yellow">AI GOVERNANCE IMPLEMENTATION</span>
+  <button class="cta-yellow" type="button">
+  AI GOVERNANCE IMPLEMENTATION
+</button>
+
 </div>
 
 
@@ -720,6 +747,7 @@
 
 </body>
 </html>
+
 
 
 
