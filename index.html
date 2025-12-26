@@ -307,12 +307,14 @@
       color:var(--muted);
     }
 
-    .team-grid{
-      display:grid;
-      grid-template-columns:repeat(3, 1fr);
-      gap:14px;
-      margin-top:14px;
-    }
+   .team-grid{
+  display:grid;
+  grid-template-columns:repeat(3, minmax(0, 1fr));
+  gap:14px;
+  margin-top:14px;
+  justify-items:center;
+}
+
 
     @media (max-width:900px){
       .team-grid{ grid-template-columns:1fr; }
@@ -527,7 +529,7 @@
         <div class="team-grid">
           <!-- Lester -->
           <article class="team-member">
-            <img class="team-photo" src="Lesterfoto.png" alt="Lester W. Lino">
+            <img class="team-photo" src="Lesterfoto2.png" alt="Lester W. Lino">
             <div class="team-body">
               <div class="team-name">
                 <b>Lester W Lino</b>
@@ -545,7 +547,7 @@
 
           <!-- Luis -->
           <article class="team-member">
-            <img class="team-photo" src="Fotoportafolio2.png" alt="Luis Eduardo Reinoso Pino">
+            <img class="team-photo" src="Fotoportafolio22.png" alt="Luis Eduardo Reinoso Pino">
             <div class="team-body">
               <div class="team-name">
                 <b>Luis Reinoso</b>
@@ -681,5 +683,6 @@
 
 </body>
 </html>
+
 
 
