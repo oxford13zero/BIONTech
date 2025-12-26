@@ -26,6 +26,7 @@
     }
 
     *{ box-sizing:border-box; }
+
     html{ scroll-behavior:smooth; }
 
     body{
@@ -35,6 +36,9 @@
       color:var(--text);
       line-height:1.55;
     }
+
+    .warm-sand{ color:var(--secondary); }
+    .bigger-line{ font-size:1.1em; }
 
     .wrap{
       max-width:1100px;
@@ -114,26 +118,67 @@
       .logo-img{ transform:none; height:120px; }
     }
 
-    /* =========================
-       VIDEO BRIDGE SECTION
-       ========================= */
-    .bridge-break{
-      height:320px;
-      position:relative;
-      overflow:hidden;
-      border-top:1px solid var(--border);
-      border-bottom:1px solid var(--border);
-      background:#0B1220;
+    h1{
+      margin:0 0 10px;
+      font-size:clamp(28px, 3.8vw, 46px);
+      line-height:1.12;
     }
 
-    .bridge-video{
-      position:absolute;
-      inset:0;
-      width:100%;
-      height:100%;
-      object-fit:cover;
+    p{
+      margin:0;
+      color:var(--muted);
+      max-width:70ch;
+      font-size:16px;
+    }
+
+    .label-row{
+      margin-top:18px;
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+    }
+
+    .label-btn{
+      padding:10px 14px;
+      border-radius:14px;
+      border:1px solid var(--border);
+      background:var(--panel);
+      color:#fff;
+      font-weight:800;
+      text-decoration:none;
+    }
+
+    .label-btn:hover{
+      background:#1A2C52;
+    }
+
+    .side{
+      border-radius:16px;
+      border:1px solid var(--border);
+      background:var(--panel);
+      overflow:hidden;
+    }
+
+    .img{
+      height:220px;
+      background:url("https://images.unsplash.com/photo-1556761175-5973dc0f32e7?auto=format&fit=crop&w=1600&q=80") center/cover;
+      border-bottom:1px solid var(--border);
+    }
+
+    .side .inner{ padding:14px; }
+
+    /* Bridge visual break */
+    .bridge-break{
+      height:320px;
+      background-image:url("oregon.jpg");
+      background-size:cover;
+      background-position: center 50%;
+      background-repeat:no-repeat;
+      will-change: background-position;
+      border-top:1px solid var(--border);
+      border-bottom:1px solid var(--border);
+      position:relative;
       filter: grayscale(100%) contrast(0.9) brightness(0.9);
-      opacity:.55;
     }
 
     .bridge-break::after{
@@ -148,15 +193,85 @@
       );
     }
 
-    /* Reduced motion fallback */
-    @media (prefers-reduced-motion: reduce){
-      .bridge-video{ display:none; }
-      .bridge-break{
-        background-image:url("oregon.jpg");
-        background-size:cover;
-        background-position:center;
-      }
+    /* Sections */
+    .section{
+      padding:22px;
     }
+
+    .grid-2{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:16px;
+    }
+
+    @media(max-width:900px){
+      .grid-2{ grid-template-columns:1fr; }
+    }
+
+    .panel{
+      background:var(--panel);
+      border:1px solid var(--border);
+      border-radius:16px;
+      padding:16px;
+    }
+
+    .panel h2{
+      margin:0 0 10px;
+      font-size:22px;
+    }
+
+    .contact-meta{
+      margin-top:12px;
+      font-size:15px;
+      color:var(--muted);
+    }
+
+    .contact-meta a{
+      color:var(--secondary);
+      font-weight:700;
+      text-decoration:none;
+    }
+
+    form{
+      display:grid;
+      gap:10px;
+      margin-top:10px;
+    }
+
+    label{
+      font-weight:700;
+      font-size:14px;
+    }
+
+    input, textarea{
+      padding:12px;
+      border-radius:12px;
+      border:1px solid var(--border);
+      background:var(--panel2);
+      color:#fff;
+    }
+
+    textarea{ min-height:120px; }
+
+    button{
+      padding:12px;
+      border-radius:14px;
+      border:1px solid rgba(244,195,139,.6);
+      background:#1A2C52;
+      color:#fff;
+      font-weight:800;
+      cursor:pointer;
+    }
+
+    button:hover{
+      background:#203765;
+    }
+
+    small{
+      font-size:12.5px;
+      color:var(--muted);
+    }
+
 
     /* TEAM PANEL */
     .team-card{
@@ -168,50 +283,52 @@
       overflow:hidden;
     }
 
-    .team-wrap{ padding:22px; }
+    .team-wrap{
+      padding:22px;
+    }
+
+    .team-head{
+      display:flex;
+      align-items:flex-end;
+      justify-content:space-between;
+      gap:16px;
+      margin-bottom:14px;
+    }
+
+    .team-head h2{
+      margin:0;
+      font-size:22px;
+      letter-spacing:-0.2px;
+    }
+
+    .team-head p{
+      margin:0;
+      max-width:72ch;
+      color:var(--muted);
+    }
 
     .team-grid{
       display:grid;
-      grid-template-columns:repeat(3,1fr);
+      grid-template-columns:repeat(3, 1fr);
       gap:14px;
+      margin-top:14px;
     }
 
-    @media(max-width:900px){
+    @media (max-width:900px){
       .team-grid{ grid-template-columns:1fr; }
     }
 
+    /* Bio on hover + photo dims */
     .team-member{
-      position:relative;
       border:1px solid #233458;
       background:#111F3D;
       border-radius:16px;
       overflow:hidden;
-    }
-
-    .team-photo{
-      height:190px;
-      width:100%;
-      object-fit:cover;
-      object-position:center 20%;
-      display:block;
-      transition:opacity .25s ease;
+      position:relative;
     }
 
     .team-member:hover .team-photo{
       opacity:.35;
-    }
-
-    .team-bio{
-      position:absolute;
-      inset:0;
-      padding:18px;
-      background:rgba(15,27,51,.92);
-      color:#B7C4E6;
-      font-size:14.5px;
-      line-height:1.5;
-      opacity:0;
-      pointer-events:none;
-      transition:opacity .25s ease;
     }
 
     .team-member:hover .team-bio{
@@ -219,15 +336,98 @@
       pointer-events:auto;
     }
 
-    @media(max-width:900px){
+    .team-photo{
+      height:190px;
+      width:100%;
+      object-fit:cover;
+      object-position: center 20%;
+      display:block;
+      opacity:.95;
+      filter:none;
+      transition: opacity .25s ease;
+    }
+
+    .team-body{
+      padding:14px;
+    }
+
+    /* Name/position/background stack vertically */
+    .team-name{
+      display:flex;
+      flex-direction:column;
+      align-items:flex-start;
+      gap:4px;
+    }
+
+    .team-name b{
+      font-size:16px;
+      color:#EAF0FF;
+    }
+
+    .team-position{
+      font-size:13px;
+      font-weight:800;
+      color:var(--secondary);
+      letter-spacing:.2px;
+    }
+
+    .team-background{
+      font-size:13px;
+      color:var(--muted);
+    }
+
+    .team-role{
+      font-size:12.5px;
+      color:var(--secondary);
+      font-weight:700;
+      letter-spacing:.2px;
+    }
+
+    .team-bio{
+      margin:10px 0 0;
+      color:#B7C4E6;
+      font-size:14.5px;
+      line-height:1.5;
+
+      position:absolute;
+      inset:0;
+      padding:18px;
+      background:rgba(15,27,51,.92);
+      opacity:0;
+      pointer-events:none;
+      transition: opacity .25s ease;
+    }
+
+    @media (max-width:900px){
       .team-bio{
         position:static;
-        opacity:1;
-        background:none;
+        inset:auto;
         padding:0;
+        background:transparent;
+        opacity:1;
         pointer-events:auto;
+        margin:10px 0 0;
       }
-      .team-photo{ opacity:1; }
+
+      .team-member:hover .team-photo{
+        opacity:.95;
+      }
+    }
+
+    .team-tags{
+      display:flex;
+      flex-wrap:wrap;
+      gap:8px;
+      margin-top:12px;
+    }
+
+    .team-tag{
+      font-size:12px;
+      padding:6px 10px;
+      border-radius:999px;
+      border:1px solid rgba(244,195,139,.35);
+      background:#0F1B33;
+      color:#FFFFFF;
     }
   </style>
 </head>
@@ -254,23 +454,217 @@
     <section class="hero">
       <div>
         <h1>AI is already inside your company</h1>
+
         <p>
           If you don’t control it, someone else will — or it will control you.<br><br>
-          We help teams use AI safely and responsibly, keep data protected, and stay competitive.
+          Right now, data is being shared, AI answers go unchecked, and employees use AI badly or unsafely.<br>
+          We help teams use AI safely and responsibly, keep data protected, and stay competitive.<br><br>
+
+          <span class="warm-sand bigger-line">
+           <h2> <strong>Stay in control in a technology-driven world.</strong> </h2>
+          </span>
         </p>
+
+        <div class="label-row">
+         <!-- <a class="label-btn" href="#ai-for-your-org">Workshops</a>
+          <a class="label-btn" href="#ai-governance">AI Control</a> -->
+        </div>
+        
+      </div> 
+
+      <aside class="side">
+        <div class="img"></div>
+        <div class="inner">
+          <strong class="warm-sand">Industries we support</strong>
+          <div class="team-tags">
+                <span class="team-tag">> Mining</span>
+                <span class="team-tag">> Banking</span>
+                <span class="team-tag">> Healthcare</span>
+            <span class="team-tag">> Government</span>
+              </div>
+        </div>
+      </aside>
+    </section>
+
+    <!-- BRIDGE IMAGE -->
+    <section class="bridge-break" aria-hidden="true"></section>
+
+    <!-- TEAM PANEL -->
+    <section class="team-card" id="team">
+      <div class="team-wrap">
+        <div class="team-head">
+          <div>
+            <h2>Team</h2>
+            <!--<p>Senior practitioners combining AI governance, safety-critical engineering, and adoption enablement.</p> -->
+          </div>
+        </div>
+
+        <div class="team-grid">
+          <!-- Lester -->
+          <article class="team-member">
+            <img class="team-photo" src="Lesterfoto.png" alt="Lester W. Lino">
+            <div class="team-body">
+              <div class="team-name">
+                <b>Lester W Lino</b>
+                <div class="team-position">CEO</div>
+                <div class="team-background"><b>Master in Computer Engineering</b></div>
+              </div>
+
+              <p class="team-bio">
+                Senior data, AI, and technology consultant with 20+ years modernizing and securing mission-critical systems
+                across public sector, healthcare, and mining. Co-developed an AI-driven safety device focused on preventing
+                accidents and improving human–technology interaction in high-risk environments. 
+              </p>
+            </div>
+          </article>
+
+          <!-- Luis -->
+          <article class="team-member">
+            <img class="team-photo" src="Fotoportafolio2.png" alt="Luis Eduardo Reinoso Pino">
+            <div class="team-body">
+              <div class="team-name">
+                <b>Luis Reinoso</b>
+                <div class="team-position">Chief AI Management Officer</div>
+                <div class="team-background"><b>Master in Industrial Engineering</b>b></div>
+              </div>
+
+              <p class="team-bio">
+                AI governance consultant with deep experience in innovation management, technology transfer, and responsible
+                use of advanced technologies. Led and advised digital transformation and technology intelligence initiatives
+                for universities, private organizations, and public institutions. 
+              </p>
+            </div>
+          </article>
+
+          <!-- Placeholder -->
+          <article class="team-member">
+            <img class="team-photo" src="https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=1200&q=80"
+                 alt="Placeholder team member">
+            <div class="team-body">
+              <div class="team-name">
+                <b>Jordan Patel</b>
+                <div class="team-position">Audit • Vendor Gov</div>
+                <div class="team-background">Compliance & Risk Management</div>
+              </div>
+
+              <p class="team-bio">
+                Placeholder profile — replace with your real team member later. (Example) Leads audit readiness,
+                vendor governance, and model inventory practices across regulated environments. Translates controls
+                into practical operating procedures that teams actually follow.
+              </p>
+
+              <div class="team-tags">
+                <span class="team-tag">Model Inventory</span>
+                <span class="team-tag">Vendor Governance</span>
+                <span class="team-tag">Audit Readiness</span>
+              </div>
+            </div>
+          </article>
+        </div>
       </div>
     </section>
 
-    <!-- VIDEO BRIDGE -->
-    <section class="bridge-break" aria-hidden="true">
-      <video class="bridge-video" autoplay muted loop playsinline preload="metadata">
-        <source src="videopdx.mp4" type="video/mp4">
-      </video>
-    </section>
+    <!-- TEAM + CONTACT -->
+    <section class="section grid-2" id="team">
+      <div class="panel">
+        <h2>Built in Portland. Focused on what’s next.</h2>
+        <p>
+          We are a group of professionals working at the cutting edge of technology, based in Portland, Oregon —
+          a city that hosts global leaders like Intel, Nike, and Columbia Sportswear.
+          We help organizations adopt AI with clarity, responsibility, and control.
+        </p>
 
-    <!-- TEAM PANEL (unchanged below) -->
+        <div class="contact-meta">
+          <strong class="warm-sand">Office</strong><br>
+          851 SW 6th Ave<br>
+          Portland, Oregon<br><br>
+          <strong class="warm-sand">Email</strong><br>
+          <a href="mailto:hello@biontech-ai.com">hello@biontech-ai.com</a>
+        </div>
+      </div>
+
+      <div class="panel" id="contact">
+        <h2>Contact us</h2>
+        <p>Tell us what you’re trying to achieve. We’ll take it from there.</p>
+
+        <form>
+          <label>Name</label>
+          <input type="text" placeholder="Your name" required>
+
+          <label>Email</label>
+          <input type="email" placeholder="name@company.com" required>
+
+          <label>Company</label>
+          <input type="text" placeholder="Company name">
+
+          <label>Message</label>
+          <textarea placeholder="How can we help?" required></textarea>
+
+          <button type="submit">Send message</button>
+          <small>Please don’t include sensitive personal data.</small>
+        </form>
+      </div>
+    </section>
 
   </main>
 </div>
+
+<script>
+  (function () {
+    const bridge = document.querySelector('.bridge-break');
+    if (!bridge) return;
+
+    const reduceMotion =
+      window.matchMedia &&
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    // Bigger number = more visible "different speed"
+    const strength = 160; // try 80..180
+
+    let ticking = false;
+
+    function update() {
+      if (reduceMotion) { ticking = false; return; }
+
+      const rect = bridge.getBoundingClientRect();
+      const vh = window.innerHeight || 1;
+
+      // 0 when bridge is below viewport, 1 when fully past top
+      const progress = (vh - rect.top) / (vh + rect.height);
+      const clamped = Math.min(1, Math.max(0, progress));
+
+      // Map 0..1 to -strength..+strength (more noticeable)
+      const y = Math.round((clamped - 0.5) * 2 * strength);
+
+      bridge.style.backgroundPosition = `center calc(50% + ${y}px)`;
+
+      ticking = false;
+    }
+
+    function onScroll() {
+      if (ticking) return;
+      ticking = true;
+      requestAnimationFrame(update);
+    }
+
+    window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', onScroll);
+    update();
+  })();
+</script>
+
+
 </body>
 </html>
+
+
+
+
+
+
+
+
+
+
+
+
