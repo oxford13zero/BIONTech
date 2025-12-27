@@ -26,6 +26,7 @@
     }
 
     *{ box-sizing:border-box; }
+
     html{ scroll-behavior:smooth; }
 
     body{
@@ -45,6 +46,7 @@
       padding:18px 16px 72px;
     }
 
+    /* Header */
     .top{
       position:sticky;
       top:12px;
@@ -93,6 +95,7 @@
       color:var(--secondary);
     }
 
+    /* Card */
     .card{
       margin-top:var(--panelGap);
       background:var(--panel2);
@@ -128,6 +131,27 @@
       font-size:16px;
     }
 
+    .label-row{
+      margin-top:18px;
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+    }
+
+    .label-btn{
+      padding:10px 14px;
+      border-radius:14px;
+      border:1px solid var(--border);
+      background:var(--panel);
+      color:#fff;
+      font-weight:800;
+      text-decoration:none;
+    }
+
+    .label-btn:hover{
+      background:#1A2C52;
+    }
+
     .side{
       border-radius:16px;
       border:1px solid var(--border);
@@ -143,6 +167,7 @@
 
     .side .inner{ padding:14px; }
 
+    /* Bridge visual break */
     .bridge-break{
       height:320px;
       background-image:url("fondo33.png");
@@ -168,36 +193,10 @@
       );
     }
 
-    /* CONTACT TRANSITION */
-    .contact-break{
-      height:260px;
-      background-image:url("YOUR_ATTACHED_IMAGE_FILENAME_HERE.png");
-      background-size:cover;
-      background-position:center 40%;
-      background-repeat:no-repeat;
-      will-change: background-position;
-      border:1px solid var(--border);
-      border-radius:16px;
-      position:relative;
-      filter: grayscale(100%) contrast(0.95) brightness(1);
-      opacity:.95;
-      grid-column:1 / -1;
+    /* Sections */
+    .section{
+      padding:22px;
     }
-
-    .contact-break::after{
-      content:"";
-      position:absolute;
-      inset:0;
-      border-radius:16px;
-      background:linear-gradient(
-        to bottom,
-        rgba(11,18,32,.75),
-        rgba(11,18,32,.22),
-        rgba(11,18,32,.75)
-      );
-    }
-
-    .section{ padding:22px; }
 
     .grid-2{
       display:grid;
@@ -216,6 +215,279 @@
       padding:16px;
     }
 
+    .panel h2{
+      margin:0 0 10px;
+      font-size:22px;
+    }
+
+    .contact-meta{
+      margin-top:12px;
+      font-size:15px;
+      color:var(--muted);
+    }
+
+    .contact-meta a{
+      color:var(--secondary);
+      font-weight:700;
+      text-decoration:none;
+    }
+
+    form{
+      display:grid;
+      gap:10px;
+      margin-top:10px;
+    }
+
+    label{
+      font-weight:700;
+      font-size:14px;
+    }
+
+    input, textarea{
+      padding:12px;
+      border-radius:12px;
+      border:1px solid var(--border);
+      background:var(--panel2);
+      color:#fff;
+    }
+
+    textarea{ min-height:120px; }
+
+    button{
+      padding:12px;
+      border-radius:14px;
+      border:1px solid rgba(244,195,139,.6);
+      background:#1A2C52;
+      color:#fff;
+      font-weight:800;
+      cursor:pointer;
+    }
+
+    button:hover{
+      background:#203765;
+    }
+
+    small{
+      font-size:12.5px;
+      color:var(--muted);
+    }
+
+
+    /* TEAM PANEL */
+    .team-card{
+      margin-top: var(--panelGap);
+      background:#0F1B33;
+      border:1px solid #233458;
+      border-radius:18px;
+      box-shadow:0 18px 60px rgba(0,0,0,.4);
+      overflow:hidden;
+    }
+
+    .team-wrap{
+      padding:22px;
+    }
+
+    .team-head{
+      display:flex;
+      align-items:flex-end;
+      justify-content:space-between;
+      gap:16px;
+      margin-bottom:14px;
+    }
+
+    .team-head h2{
+      margin:0;
+      font-size:22px;
+      letter-spacing:-0.2px;
+    }
+
+    .team-head p{
+      margin:0;
+      max-width:72ch;
+      color:var(--muted);
+    }
+
+    .team-grid{
+      display:grid;
+      grid-template-columns:repeat(4, minmax(0, 1fr));
+      gap:14px;
+      margin-top:14px;
+      justify-items:center;
+    }
+
+    @media (max-width:900px){
+      .team-grid{ grid-template-columns:1fr; }
+    }
+
+    /* Bio on hover + photo dims */
+    .team-member{
+      border:1px solid #233458;
+      background:#111F3D;
+      border-radius:16px;
+      overflow:hidden;
+      position:relative;
+
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+    }
+
+    /* FIXED: On hover, hide photo + name/tags, but keep bio (bio is inside team-body) */
+    .team-member:hover .team-photo{
+      opacity:0;
+    }
+
+    .team-member:hover .team-name,
+    .team-member:hover .team-tags{
+      opacity:0;
+    }
+
+    .team-member:hover .team-bio{
+      opacity:1;
+      pointer-events:auto;
+    }
+
+    .team-photo{
+      height:165px;
+      width:80%;
+      object-fit:cover;
+      object-position: center 20%;
+      display:block;
+      opacity:.95;
+      filter:none;
+      transition: opacity .25s ease;
+    }
+
+.photo-faye{
+  object-position: center 55%;
+}
+
+    
+    .team-body{
+      padding:14px;
+    }
+
+    /* Name/position/background stack vertically */
+    .team-name{
+      display:flex;
+      flex-direction:column;
+      align-items:flex-start;
+      gap:4px;
+      transition: opacity .25s ease;
+    }
+
+    .team-name b{
+      font-size:16px;
+      color:#EAF0FF;
+    }
+
+    .team-position{
+      font-size:18px;
+      font-weight:800;
+      color:var(--secondary);
+      letter-spacing:.2px;
+    }
+
+    .team-background{
+      font-size:13px;
+      color:var(--muted);
+    }
+
+    .team-role{
+      font-size:15px;
+      color:var(--secondary);
+      font-weight:700;
+      letter-spacing:.2px;
+    }
+
+    .team-bio{
+      margin:10px 0 0;
+      color:#B7C4E6;
+      font-size:14.5px;
+      line-height:1.5;
+
+      position:absolute;
+      inset:0;
+      padding:18px;
+      background:rgba(15,27,51,.92);
+      opacity:0;
+      pointer-events:none;
+      transition: opacity .25s ease;
+      z-index:2;
+    }
+
+    @media (max-width:900px){
+      .team-bio{
+        position:static;
+        inset:auto;
+        padding:0;
+        background:transparent;
+        opacity:1;
+        pointer-events:auto;
+        margin:10px 0 0;
+      }
+
+      .team-member:hover .team-photo{
+        opacity:.95;
+      }
+
+      .team-member:hover .team-name,
+      .team-member:hover .team-tags{
+        opacity:1;
+      }
+    }
+
+    .team-tags{
+      display:flex;
+      flex-wrap:wrap;
+      gap:8px;
+      margin-top:12px;
+      transition: opacity .25s ease;
+    }
+
+    .team-tag{
+      font-size:12px;
+      padding:6px 10px;
+      border-radius:999px;
+      border:1px solid rgba(244,195,139,.35);
+      background:#0F1B33;
+      color:#FFFFFF;
+    }
+
+
+    .panel-flex{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:24px;
+    }
+
+    .panel-text{
+      max-width:70ch;
+    }
+
+    .cta-yellow{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      padding:14px 22px;
+      border-radius:999px;
+      border:2px solid #FFD24D;
+      background:transparent;
+      color:#FFD24D;
+      font-weight:800;
+      letter-spacing:.3px;
+      cursor:pointer;
+      white-space:nowrap;
+      transition:background .2s ease, color .2s ease, transform .15s ease;
+    }
+
+    .cta-yellow:hover{
+      background:#FFD24D;
+      color:#0B1220;
+      transform:translateY(-1px);
+    }
+
     .contact-image{
       margin-top:14px;
       height:200px;
@@ -225,6 +497,39 @@
       filter:grayscale(100%) contrast(.9) brightness(1.05);
       opacity:.85;
       border:1px solid var(--border);
+    }
+
+    /* === ADDED: TRANSITION IMAGE STRIP IMMEDIATELY BEFORE CONTACT PANEL (NO LAYOUT CHANGES) === */
+    #contact{
+      --contactParallax: 0px;
+      position:relative;
+      overflow:hidden;
+    }
+
+    #contact::before{
+      content:"";
+      display:block;
+      height:220px;
+
+      /* Pull the strip to the panel edges (because .panel has padding:16px) */
+      margin:-16px -16px 14px;
+
+      background-image:
+        linear-gradient(
+          to bottom,
+          rgba(11,18,32,.72),
+          rgba(11,18,32,.20),
+          rgba(11,18,32,.72)
+        ),
+        url("Consulting.png");
+      background-size:cover;
+      background-repeat:no-repeat;
+      background-position:center calc(50% + var(--contactParallax));
+      will-change: background-position;
+
+      border-bottom:1px solid var(--border);
+      filter: grayscale(100%) contrast(0.95) brightness(1);
+      opacity:.95;
     }
   </style>
 </head>
@@ -247,34 +552,227 @@
 
   <main class="card" id="home">
 
+    <!-- HERO -->
     <section class="hero">
       <div>
         <h1>AI is already inside your company</h1>
-        <p>If you don’t control it, someone else will — or it will control you.</p>
+
+        <p>
+          If you don’t control it, someone else will — or it will control you.<br><br>
+          Right now, data is being shared, AI answers go unchecked, and employees use AI badly or unsafely.<br>
+          We help teams use AI safely and responsibly, keep data protected, and stay competitive.<br><br>
+
+          <span class="warm-sand bigger-line">
+           <h2> <strong>Stay in control in a technology-driven world.</strong> </h2>
+          </span>
+        </p>
+
+        <div class="label-row">
+         <!-- <a class="label-btn" href="#ai-for-your-org">Workshops</a>
+          <a class="label-btn" href="#ai-governance">AI Control</a> -->
+        </div>
+
       </div>
+
       <aside class="side">
         <div class="img"></div>
+        <div class="inner">
+          <strong class="warm-sand">Industries we support</strong>
+          <div class="team-tags">
+            <span class="team-tag">> Mining</span>
+            <span class="team-tag">> Banking</span>
+            <span class="team-tag">> Healthcare</span>
+            <span class="team-tag">> Government</span>
+          </div>
+        </div>
       </aside>
     </section>
 
+    <!-- BRIDGE IMAGE -->
     <section class="bridge-break" aria-hidden="true"></section>
 
-    <section class="section grid-2">
+    <!-- AI FOR YOUR ORG PANEL -->
+    <section class="section" id="ai-for-your-org">
+      <div class="panel panel-flex">
+        <div class="panel-text">
+          <h2>AI FOR YOU</h2>
+          <p>
+            We make AI practical for real teams — without the hype. In a focused workshop
+            format, we help your leaders and staff understand where AI fits, how to use it
+            safely day-to-day, and how to turn it into measurable efficiency.
+          </p>
+        </div>
+
+        <button class="warm-sand" type="button">
+          AI WORKSHOPS
+        </button>
+      </div>
+    </section>
+
+    <!-- AI GOVERNANCE PROGRAM PANEL -->
+    <section class="section" id="ai-governance">
+      <div class="panel panel-flex">
+        <div class="panel-text">
+          <h2>AI GOVERNANCE PROGRAM</h2>
+          <p>
+            We help organizations build an AI governance program that keeps you in control:
+            policies, responsible-use guidelines, risk reviews, vendor oversight, and model
+            inventories — so you’re ready for regulated markets and the AI tsunami ahead.
+          </p>
+        </div>
+
+        <button class="warm-sand" type="button">
+          AI GOVERNANCE IMPLEMENTATION
+        </button>
+      </div>
+    </section>
+
+    <!-- TEAM PANEL -->
+    <section class="team-card" id="team">
+      <div class="team-wrap">
+        <div class="team-head">
+          <div>
+            <h2>Team</h2>
+            <!--<p>Senior practitioners combining AI governance, safety-critical engineering, and adoption enablement.</p> -->
+          </div>
+        </div>
+
+        <div class="team-grid">
+          <!-- Lester -->
+          <article class="team-member">
+            <img class="team-photo" src="Lesterfoto33.png" alt="Lester W. Lino">
+            <div class="team-body">
+              <div class="team-name">
+                <b>Lester W Lino</b>
+                <div class="team-position">CEO</div>
+                <div class="team-background"><b>Master in Computer Engineering</b></div>
+              </div>
+
+              <p class="team-bio">
+                Senior data, AI, and technology consultant with 20+ years modernizing and securing mission-critical systems
+                across public sector, healthcare, and mining. Co-developed an AI-driven safety device focused on preventing
+                accidents and improving human–technology interaction in high-risk environments.
+              </p>
+            </div>
+          </article>
+
+
+          <!-- Faye -->
+<article class="team-member">
+ <img class="team-photo photo-faye" src="Fayefoto.jfif"
+       alt="Placeholder team member">
+  <div class="team-body">
+    <div class="team-name">
+      <b>Faye Douangchit</b>
+      <div class="team-position">Director of Enterprise AI Delivery</div>
+      <div class="team-background"><b>Doctor of Business Administration (DBA)</b></div>
+    </div>
+
+    <p class="team-bio">
+      leads strategic program and transformation initiatives, ensuring AI governance efforts are aligned with business strategy 
+      and executed effectively at scale. With deep experience in enterprise PMO, portfolio leadership, and agile transformation, 
+      she helps organizations turn AI governance into structured, measurable programs that drive adoption while managing risk.
+    </p>
+
+   <!-- <div class="team-tags">
+      <span class="team-tag">AI Risk</span>
+      <span class="team-tag">Privacy</span>
+      <span class="team-tag">Compliance</span>
+    </div> -->
+  </div>
+</article>
+
+          
+          <!-- Luis -->
+          <article class="team-member">
+            <img class="team-photo" src="Fotoportafolio55.png" alt="Luis Eduardo Reinoso Pino">
+            <div class="team-body">
+              <div class="team-name">
+                <b>Luis Reinoso</b>
+                <div class="team-position">Director of AI Management</div>
+                <div class="team-background"><b>Master in Industrial Engineering</b></div>
+              </div>
+
+              <p class="team-bio">
+                AI governance consultant with deep experience in innovation management, technology transfer, and responsible
+                use of advanced technologies. Led and advised digital transformation and technology intelligence initiatives
+                for universities, private organizations, and public institutions.
+              </p>
+            </div>
+          </article>
+
+          <!-- Rodolfo -->
+          <article class="team-member">
+            <img class="team-photo" src="Rodyfoto.png" alt="Rodolfo O. Lino">
+            <div class="team-body">
+              <div class="team-name">
+                <b>Rodolfo O. Lino</b>
+                <div class="team-position">Director of Learning & AI Adoption</div>
+                <div class="team-background"><b>MSc in Educational Psychology</b></div>
+              </div>
+
+              <p class="team-bio">
+                Placeholder profile — replace with your real team member later. (Example) Leads audit readiness,
+                vendor governance, and model inventory practices across regulated environments. Translates controls
+                into practical operating procedures that teams actually follow.
+              </p>
+
+            <!--  <div class="team-tags">
+                <span class="team-tag">Model Inventory</span>
+                <span class="team-tag">Vendor Governance</span>
+                <span class="team-tag">Audit Readiness</span>
+              </div>   -->
+            </div>
+          </article>
+
+
+         
+        </div>
+      </div>
+    </section>
+
+    <!-- TEAM + CONTACT -->
+    <section class="section grid-2" id="team">
       <div class="panel">
         <h2>Built in Portland. Focused on what’s next.</h2>
-        <div class="contact-image" style="background-image:url('street.png');"></div>
-      </div>
+        <p>
+          We are a group of professionals working at the cutting edge of technology, based in Portland, Oregon —
+          a city that hosts global leaders like Intel, Nike, and Columbia Sportswear.
+          We help organizations adopt AI with clarity, responsibility, and control.
+        </p>
 
-      <!-- ADDED TRANSITION -->
-      <div class="contact-break" aria-hidden="true"></div>
+        <div class="contact-meta">
+          <strong class="warm-sand"> </strong><br>
+          851 SW 6th Ave<br>
+          Portland, Oregon<br>
+          <strong class="warm-sand"> </strong>
+          <a href="mailto:hello@biontech-ai.com">hello@biontech-ai.com</a> <br><br>
+
+          <div class="contact-image"
+               style="background-image:url('street.png');">
+          </div>
+        </div>
+      </div>
 
       <div class="panel" id="contact">
         <h2>Contact us</h2>
+        <p>Tell us what you’re trying to achieve. We’ll take it from there.</p>
+
         <form>
+          <label>Name</label>
           <input type="text" placeholder="Your name" required>
+
+          <label>Email</label>
           <input type="email" placeholder="name@company.com" required>
+
+          <label>Company</label>
+          <input type="text" placeholder="Company name">
+
+          <label>Message</label>
           <textarea placeholder="How can we help?" required></textarea>
+
           <button type="submit">Send message</button>
+          <small>Please don’t include sensitive personal data.</small>
         </form>
       </div>
     </section>
@@ -283,39 +781,89 @@
 </div>
 
 <script>
-(function () {
-  const bridge = document.querySelector('.bridge-break');
-  if (!bridge) return;
+  (function () {
+    const bridge = document.querySelector('.bridge-break');
+    if (!bridge) return;
 
-  const strength = 160;
-  function update() {
-    const rect = bridge.getBoundingClientRect();
-    const vh = window.innerHeight || 1;
-    const progress = (vh - rect.top) / (vh + rect.height);
-    const y = Math.round((progress - 0.5) * 2 * strength);
-    bridge.style.backgroundPosition = `center calc(50% + ${y}px)`;
-  }
-  window.addEventListener('scroll', update, { passive:true });
-  update();
-})();
+    const reduceMotion =
+      window.matchMedia &&
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    // Bigger number = more visible "different speed"
+    const strength = 160; // try 80..180
+
+    let ticking = false;
+
+    function update() {
+      if (reduceMotion) { ticking = false; return; }
+
+      const rect = bridge.getBoundingClientRect();
+      const vh = window.innerHeight || 1;
+
+      // 0 when bridge is below viewport, 1 when fully past top
+      const progress = (vh - rect.top) / (vh + rect.height);
+      const clamped = Math.min(1, Math.max(0, progress));
+
+      // Map 0..1 to -strength..+strength (more noticeable)
+      const y = Math.round((clamped - 0.5) * 2 * strength);
+
+      bridge.style.backgroundPosition = `center calc(50% + ${y}px)`;
+
+      ticking = false;
+    }
+
+    function onScroll() {
+      if (ticking) return;
+      ticking = true;
+      requestAnimationFrame(update);
+    }
+
+    window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', onScroll);
+    update();
+  })();
 </script>
 
 <script>
-(function () {
-  const contactBreak = document.querySelector('.contact-break');
-  if (!contactBreak) return;
+  (function () {
+    const contact = document.querySelector('#contact');
+    if (!contact) return;
 
-  const strength = 220;
-  function update() {
-    const rect = contactBreak.getBoundingClientRect();
-    const vh = window.innerHeight || 1;
-    const progress = (vh - rect.top) / (vh + rect.height);
-    const y = Math.round((progress - 0.5) * 2 * strength);
-    contactBreak.style.backgroundPosition = `center calc(50% + ${y}px)`;
-  }
-  window.addEventListener('scroll', update, { passive:true });
-  update();
-})();
+    const reduceMotion =
+      window.matchMedia &&
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    // Different speed from the bridge (make this larger/smaller as you like)
+    const strength = 220; // try 140..260
+
+    let ticking = false;
+
+    function update() {
+      if (reduceMotion) { ticking = false; return; }
+
+      const rect = contact.getBoundingClientRect();
+      const vh = window.innerHeight || 1;
+
+      const progress = (vh - rect.top) / (vh + rect.height);
+      const clamped = Math.min(1, Math.max(0, progress));
+
+      const y = Math.round((clamped - 0.5) * 2 * strength);
+
+      contact.style.setProperty('--contactParallax', `${y}px`);
+
+      ticking = false;
+    }
+
+    function onScroll() {
+      if (ticking) return;
+      ticking = true;
+      requestAnimationFrame(update);
+    }
+
+    window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', onScroll);
+    update();
+  })();
 </script>
 
 </body>
