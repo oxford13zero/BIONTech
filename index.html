@@ -498,39 +498,6 @@
       opacity:.85;
       border:1px solid var(--border);
     }
-
-    /* === ADDED: TRANSITION IMAGE STRIP IMMEDIATELY BEFORE CONTACT PANEL (NO LAYOUT CHANGES) === */
-    #contact{
-      --contactParallax: 0px;
-      position:relative;
-      overflow:hidden;
-    }
-
-    #contact::before{
-      content:"";
-      display:block;
-      height:220px;
-
-      /* Pull the strip to the panel edges (because .panel has padding:16px) */
-      margin:-16px -16px 14px;
-
-      background-image:
-        linear-gradient(
-          to bottom,
-          rgba(11,18,32,.72),
-          rgba(11,18,32,.20),
-          rgba(11,18,32,.72)
-        ),
-        url("Consulting.png");
-      background-size:cover;
-      background-repeat:no-repeat;
-      background-position:center calc(50% + var(--contactParallax));
-      will-change: background-position;
-
-      border-bottom:1px solid var(--border);
-      filter: grayscale(100%) contrast(0.95) brightness(1);
-      opacity:.95;
-    }
   </style>
 </head>
 
@@ -824,47 +791,27 @@
   })();
 </script>
 
-<script>
-  (function () {
-    const contact = document.querySelector('#contact');
-    if (!contact) return;
-
-    const reduceMotion =
-      window.matchMedia &&
-      window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-
-    // Different speed from the bridge (make this larger/smaller as you like)
-    const strength = 220; // try 140..260
-
-    let ticking = false;
-
-    function update() {
-      if (reduceMotion) { ticking = false; return; }
-
-      const rect = contact.getBoundingClientRect();
-      const vh = window.innerHeight || 1;
-
-      const progress = (vh - rect.top) / (vh + rect.height);
-      const clamped = Math.min(1, Math.max(0, progress));
-
-      const y = Math.round((clamped - 0.5) * 2 * strength);
-
-      contact.style.setProperty('--contactParallax', `${y}px`);
-
-      ticking = false;
-    }
-
-    function onScroll() {
-      if (ticking) return;
-      ticking = true;
-      requestAnimationFrame(update);
-    }
-
-    window.addEventListener('scroll', onScroll, { passive: true });
-    window.addEventListener('resize', onScroll);
-    update();
-  })();
-</script>
 
 </body>
 </html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
