@@ -729,21 +729,24 @@
       method="post"
       enctype="text/plain">
           
-          <label>Name</label>
-          <input type="text" placeholder="Your name" required>
+         <label>Name</label>
+          <input type="text" name="name" placeholder="Your name" required>
 
           <label>Email</label>
-          <input type="email" placeholder="name@company.com" required>
+          <input type="email" name="email" placeholder="name@company.com" required>
 
-          <label>Company</label>
-          <input type="text" placeholder="Company name">
+           <label>Company</label>
+           <input type="text" name="company" placeholder="Company name">
 
           <label>Message</label>
-          <textarea placeholder="How can we help?" required></textarea>
+          <textarea name="message" placeholder="How can we help?" required></textarea>
+
 
           <button type="submit">Send message</button>
           <small>Please don’t include sensitive personal data.</small>
         </form>
+
+        
       </div>
     </section>
 
@@ -797,6 +800,7 @@
 
 </body>
 </html>
+
 
 
 
