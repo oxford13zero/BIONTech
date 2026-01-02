@@ -11,14 +11,15 @@
 
   <style>
     :root{
-      --bg:#0B1220;
-      --panel:#111F3D;
-      --panel2:#0F1B33;
+      /* slightly lighter (your request) */
+      --bg:#111A2C;
+      --panel:#152A52;
+      --panel2:#132242;
       --text:#EAF0FF;
-      --muted:#B7C4E6;
-      --border:#233458;
+      --muted:#C2CDED;
+      --border:#2C3F6A;
       --secondary:#F4C38B;
-      --shadow:0 12px 30px rgba(0,0,0,.4);
+      --shadow:0 12px 30px rgba(0,0,0,.35);
       --panelGap:22px;
       --logoH:175px;
       --logoBoxH:120px;
@@ -101,7 +102,7 @@
       background:var(--panel2);
       border:1px solid var(--border);
       border-radius:18px;
-      box-shadow:0 18px 60px rgba(0,0,0,.4);
+      box-shadow:0 18px 60px rgba(0,0,0,.35);
       overflow:hidden;
     }
 
@@ -272,14 +273,13 @@
       color:var(--muted);
     }
 
-
     /* TEAM PANEL */
     .team-card{
       margin-top: var(--panelGap);
       background:#0F1B33;
       border:1px solid #233458;
       border-radius:18px;
-      box-shadow:0 18px 60px rgba(0,0,0,.4);
+      box-shadow:0 18px 60px rgba(0,0,0,.35);
       overflow:hidden;
     }
 
@@ -358,11 +358,10 @@
       transition: opacity .25s ease;
     }
 
-.photo-faye{
-  object-position: center 55%;
-}
+    .photo-faye{
+      object-position: center 55%;
+    }
 
-    
     .team-body{
       padding:14px;
     }
@@ -454,7 +453,6 @@
       color:#FFFFFF;
     }
 
-
     .panel-flex{
       display:flex;
       align-items:center;
@@ -498,6 +496,10 @@
       opacity:.85;
       border:1px solid var(--border);
     }
+
+    /* NEW behavior: "one page per menu option" inside the same HTML (no long page) */
+    [data-page]{ display:none; }
+    [data-page].active{ display:block; }
   </style>
 </head>
 
@@ -509,18 +511,18 @@
       <img src="Logobion99.png" alt="BION logo" class="logo-img">
     </div>
     <nav class="menu">
-      <a href="#home">Home</a>
-      <a href="#ai-for-your-org">AI for your org</a>
-      <a href="#ai-governance">AI control</a>
-      <a href="#team">Team</a>
-      <a href="#contact">Contact</a>
+      <a href="#home" target="_blank" rel="noopener">Home</a>
+      <a href="#ai-for-your-org" target="_blank" rel="noopener">AI for your org</a>
+      <a href="#ai-governance" target="_blank" rel="noopener">AI control</a>
+      <a href="#team" target="_blank" rel="noopener">Team</a>
+      <a href="#contact" target="_blank" rel="noopener">Contact</a>
     </nav>
   </header>
 
   <main class="card" id="home">
 
     <!-- HERO -->
-    <section class="hero">
+    <section class="hero" data-page="home">
       <div>
         <h1>AI is already inside your company</h1>
 
@@ -556,18 +558,18 @@
     </section>
 
     <!-- BRIDGE IMAGE -->
-    <section class="bridge-break" aria-hidden="true"></section>
+    <section class="bridge-break" aria-hidden="true" data-page="home"></section>
 
     <!-- AI FOR YOUR ORG PANEL -->
-    <section class="section" id="ai-for-your-org">
+    <section class="section" id="ai-for-your-org" data-page="ai-for-your-org">
       <div class="panel panel-flex">
         <div class="panel-text">
           <h2>Turn the technological tsunami into a wave you can safetely ride.</h2>
           <p>
               AI is already being used across mining, banking, healthcare, and public institutions—often without supervision or clear rules.
-              Employees at all levels, with or without technical backgrounds, use AI to summarize safety incidents, create or modify programming code, 
+              Employees at all levels, with or without technical backgrounds, use AI to summarize safety incidents, create or modify programming code,
               analyze production reports, and organize client data—often without realizing the risks involved.<br><br>
-              We make AI practical for real teams through focused <b>workshops</b>. We help leaders and staff understand where AI truly fits, 
+              We make AI practical for real teams through focused <b>workshops</b>. We help leaders and staff understand where AI truly fits,
               how to use it safely in day-to-day work, and how to turn it into a tool that improves efficiency without putting the organization’s assets and value at risk.<br><br>
          </p>
         </div>
@@ -579,7 +581,7 @@
     </section>
 
     <!-- AI GOVERNANCE PROGRAM PANEL -->
-    <section class="section" id="ai-governance">
+    <section class="section" id="ai-governance" data-page="ai-governance">
       <div class="panel panel-flex">
         <div class="panel-text">
           <h2>AI GOVERNANCE PROGRAM</h2>
@@ -597,7 +599,7 @@
     </section>
 
     <!-- TEAM PANEL -->
-    <section class="team-card" id="team">
+    <section class="team-card" id="team" data-page="team">
       <div class="team-wrap">
         <div class="team-head">
           <div>
@@ -625,33 +627,24 @@
             </div>
           </article>
 
-
           <!-- Faye -->
-<article class="team-member">
- <img class="team-photo photo-faye" src="Fayefoto.jfif"
-       alt="Placeholder team member">
-  <div class="team-body">
-    <div class="team-name">
-      <b>Faye Douangchit</b>
-      <div class="team-position">Director of Enterprise AI Delivery</div>
-      <div class="team-background"><b>Doctor of Business Administration (DBA)</b></div>
-    </div>
+          <article class="team-member">
+            <img class="team-photo photo-faye" src="Fayefoto.jfif" alt="Placeholder team member">
+            <div class="team-body">
+              <div class="team-name">
+                <b>Faye Douangchit</b>
+                <div class="team-position">Director of Enterprise AI Delivery</div>
+                <div class="team-background"><b>Doctor of Business Administration (DBA)</b></div>
+              </div>
 
-    <p class="team-bio">
-      leads strategic program and transformation initiatives, ensuring AI governance efforts are aligned with business strategy 
-      and executed effectively at scale. With deep experience in enterprise PMO, portfolio leadership, and agile transformation, 
-      she helps organizations turn AI governance into structured, measurable programs that drive adoption while managing risk.
-    </p>
+              <p class="team-bio">
+                leads strategic program and transformation initiatives, ensuring AI governance efforts are aligned with business strategy
+                and executed effectively at scale. With deep experience in enterprise PMO, portfolio leadership, and agile transformation,
+                she helps organizations turn AI governance into structured, measurable programs that drive adoption while managing risk.
+              </p>
+            </div>
+          </article>
 
-   <!-- <div class="team-tags">
-      <span class="team-tag">AI Risk</span>
-      <span class="team-tag">Privacy</span>
-      <span class="team-tag">Compliance</span>
-    </div> -->
-  </div>
-</article>
-
-          
           <!-- Luis -->
           <article class="team-member">
             <img class="team-photo" src="Fotoportafolio55.png" alt="Luis Eduardo Reinoso Pino">
@@ -685,23 +678,14 @@
                 vendor governance, and model inventory practices across regulated environments. Translates controls
                 into practical operating procedures that teams actually follow.
               </p>
-
-            <!--  <div class="team-tags">
-                <span class="team-tag">Model Inventory</span>
-                <span class="team-tag">Vendor Governance</span>
-                <span class="team-tag">Audit Readiness</span>
-              </div>   -->
             </div>
           </article>
-
-
-         
         </div>
       </div>
     </section>
 
     <!-- TEAM + CONTACT -->
-    <section class="section grid-2" id="team">
+    <section class="section grid-2" id="team" data-page="contact">
       <div class="panel">
         <h2>Built in Portland. Focused on what’s next.</h2>
         <p>
@@ -717,9 +701,7 @@
           <strong class="warm-sand"> </strong>
           <a href="mailto:hello@biontech-ai.com">hello@biontech-ai.com</a> <br><br>
 
-          <div class="contact-image"
-               style="background-image:url('street.png');">
-          </div>
+          <div class="contact-image" style="background-image:url('street.png');"></div>
         </div>
       </div>
 
@@ -727,26 +709,22 @@
         <h2>Contact us</h2>
         <p>Tell us what you’re trying to achieve. We’ll take it from there.</p>
 
-   <form action="https://formspree.io/f/xjkybgkw" method="POST">
+        <form action="https://formspree.io/f/xjkybgkw" method="POST">
+          <label>Name</label>
+          <input type="text" name="name" placeholder="Your name" required>
 
-  <label>Name</label>
-  <input type="text" name="name" placeholder="Your name" required>
+          <label>Email</label>
+          <input type="email" name="email" placeholder="name@company.com" required>
 
-  <label>Email</label>
-  <input type="email" name="email" placeholder="name@company.com" required>
+          <label>Company</label>
+          <input type="text" name="company" placeholder="Company name">
 
-  <label>Company</label>
-  <input type="text" name="company" placeholder="Company name">
+          <label>Message</label>
+          <textarea name="message" placeholder="How can we help?" required></textarea>
 
-  <label>Message</label>
-  <textarea name="message" placeholder="How can we help?" required></textarea>
-
-  <button type="submit">Send message</button>
-  <small>Please don’t include sensitive personal data.</small>
-</form>
-
-
-        
+          <button type="submit">Send message</button>
+          <small>Please don’t include sensitive personal data.</small>
+        </form>
       </div>
     </section>
 
@@ -756,32 +734,24 @@
 <script>
   (function () {
     const bridge = document.querySelector('.bridge-break');
-    if (!bridge) return;
-
     const reduceMotion =
       window.matchMedia &&
       window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-    // Bigger number = more visible "different speed"
-    const strength = 160; // try 80..180
-
+    const strength = 160;
     let ticking = false;
 
     function update() {
-      if (reduceMotion) { ticking = false; return; }
+      if (!bridge || reduceMotion) { ticking = false; return; }
 
       const rect = bridge.getBoundingClientRect();
       const vh = window.innerHeight || 1;
 
-      // 0 when bridge is below viewport, 1 when fully past top
       const progress = (vh - rect.top) / (vh + rect.height);
       const clamped = Math.min(1, Math.max(0, progress));
-
-      // Map 0..1 to -strength..+strength (more noticeable)
       const y = Math.round((clamped - 0.5) * 2 * strength);
 
       bridge.style.backgroundPosition = `center calc(50% + ${y}px)`;
-
       ticking = false;
     }
 
@@ -797,43 +767,24 @@
   })();
 </script>
 
+<script>
+  (function(){
+    function setActivePage() {
+      const hash = (location.hash || '#home').replace('#','').trim();
+      const page = hash === 'contact' ? 'contact' : hash;
+
+      const nodes = document.querySelectorAll('[data-page]');
+      nodes.forEach(n => {
+        n.classList.toggle('active', n.getAttribute('data-page') === page);
+      });
+
+      window.scrollTo({ top: 0, behavior: 'auto' });
+    }
+
+    window.addEventListener('hashchange', setActivePage);
+    setActivePage();
+  })();
+</script>
 
 </body>
 </html>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
