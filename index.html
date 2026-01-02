@@ -11,6 +11,7 @@
 
   <style>
     :root{
+      /* slightly lighter (your request) */
       --bg:#111A2C;
       --panel:#152A52;
       --panel2:#132242;
@@ -37,7 +38,7 @@
     }
 
     .warm-sand{ color:var(--secondary); }
-    .bigger-line{ font-size:1.08em; }
+    .bigger-line{ font-size:1.1em; }
 
     .wrap{
       max-width:1100px;
@@ -88,16 +89,17 @@
       text-decoration:none;
       font-weight:600;
       transition:background .15s ease, color .15s ease, transform .12s ease, border-color .15s ease;
+      white-space:nowrap;
     }
 
     .menu a:hover{
       background:#1A2C52;
       color:var(--secondary);
+      border-color:rgba(244,195,139,.6);
       transform:translateY(-1px);
-      border-color:rgba(244,195,139,.5);
     }
 
-    /* Card */
+    /* Main card */
     .card{
       margin-top:var(--panelGap);
       background:var(--panel2);
@@ -107,9 +109,9 @@
       overflow:hidden;
     }
 
-    /* Shared primary button (matches Send message) */
+    /* Buttons (match SEND MESSAGE) */
     .btn-primary{
-      padding:12px 14px;
+      padding:12px 16px;
       border-radius:14px;
       border:1px solid rgba(244,195,139,.6);
       background:#1A2C52;
@@ -120,27 +122,23 @@
       display:inline-flex;
       align-items:center;
       justify-content:center;
-      transition:transform .12s ease, background .15s ease, border-color .15s ease;
+      transition:background .15s ease, transform .12s ease, border-color .15s ease;
       white-space:nowrap;
+      min-width:150px;
     }
+
     .btn-primary:hover{
       background:#203765;
-      border-color:rgba(244,195,139,.95);
       transform:translateY(-1px);
+      border-color:rgba(244,195,139,.95);
     }
 
     /* HERO */
     .hero{
       display:grid;
-      grid-template-columns:1.15fr .85fr;
-      gap:16px;
+      grid-template-columns:1fr;
+      gap:14px;
       padding:22px;
-    }
-
-    @media(max-width:900px){
-      .hero{ grid-template-columns:1fr; }
-      .top{ flex-direction:column; align-items:flex-start; }
-      .logo-img{ transform:none; height:120px; }
     }
 
     h1{
@@ -159,13 +157,12 @@
 
     .hero-sub{
       margin-top:6px;
-      font-size:17px;
       color:#D7DFFF;
-      max-width:68ch;
+      font-size:16px;
     }
 
-    /* NEW: split left copy + right CTA column */
-    .hero-copy{
+    /* --- This creates the exact layout in your screenshot --- */
+    .hero-top{
       display:grid;
       grid-template-columns: 1fr auto;
       gap:18px;
@@ -175,28 +172,19 @@
     .hero-ctas{
       display:flex;
       flex-direction:column;
-      gap:10px;
+      gap:14px;
       align-items:flex-end;
-      padding-top:6px;
+      padding-top:40px; /* pushes buttons down visually like your screenshot */
     }
 
-    @media (max-width:900px){
-      .hero-copy{ grid-template-columns:1fr; }
-      .hero-ctas{
-        align-items:flex-start;
-        flex-direction:row;
-        flex-wrap:wrap;
-        padding-top:0;
-      }
-    }
-
+    /* bullet list */
     .risk-list{
-      margin:14px 0 0;
+      margin:12px 0 0;
       padding:0;
       list-style:none;
       display:grid;
-      gap:8px;
-      max-width:68ch;
+      gap:10px;
+      max-width:70ch;
     }
 
     .risk-list li{
@@ -214,15 +202,48 @@
       border-radius:999px;
       background:rgba(244,195,139,.95);
       flex:0 0 auto;
-      box-shadow:0 0 0 4px rgba(244,195,139,.10);
+      box-shadow:0 0 0 4px rgba(244,195,139,.12);
     }
 
-    .cta-note{
+    .home-strip-title{
       margin-top:10px;
-      color:rgba(194,205,237,.9);
-      font-size:14.5px;
+      font-weight:800;
+      color:#D7DFFF;
+      font-size:15px;
     }
 
+    /* --- Image strip: NO container border --- */
+    .home-cards{
+      padding:10px 0 0;       /* no big box feeling */
+      border:none;
+      box-shadow:none;
+      background:transparent;
+    }
+
+    .cards-grid{
+      display:grid;
+      grid-template-columns:repeat(3, minmax(0, 1fr));
+      gap:14px;
+    }
+
+    /* Cards have NO border and NO frame */
+    .home-card{
+      border:none;
+      background:transparent;
+      border-radius:0;
+      overflow:visible;
+      box-shadow:none;
+    }
+
+    .home-card .photo{
+      height:170px;
+      background-size:cover;
+      background-position:center;
+      border-radius:0; /* looks like a strip, not “cards” */
+      display:block;
+    }
+
+    /* Right panel in hero (your side image) */
     .side{
       border-radius:16px;
       border:1px solid var(--border);
@@ -237,103 +258,34 @@
 
     .side .inner{ padding:14px; }
 
-    /* Home “service cards” (3 images with meaning) */
-    .home-cards{
-      padding:0 22px 22px;
-      border:none;
-      box-shadow:none;
-      background:transparent;
-    }
-
-    .cards-grid{
-      display:grid;
-      grid-template-columns:repeat(3, minmax(0,1fr));
-      gap:14px;
-    }
-
-    @media(max-width:900px){
-      .cards-grid{ grid-template-columns:1fr; }
-    }
-
-    /* UPDATED: remove border around picture containers */
-    .home-card{
-      border:none;
-      border-radius:16px;
-      background:transparent;
-      overflow:hidden;
-      box-shadow:none;
-      transition:transform .15s ease;
-    }
-
-    .home-card:hover{
-      transform:translateY(-2px);
-    }
-
-    .home-card .photo{
-      height:170px;
-      background-size:cover;
-      background-position:center;
-      position:relative;
-      border-radius:16px;
-      filter:contrast(1.02) saturate(1.02);
-    }
-
-    .home-card .photo::after{
-      content:"";
-      position:absolute;
-      inset:0;
-      border-radius:16px;
-      background:linear-gradient(
-        to bottom,
-        rgba(17,26,44,.10),
-        rgba(17,26,44,.55)
-      );
-    }
-
-    .home-card .body{
-      padding:12px 2px 0;
-    }
-
-    .home-card .title{
-      margin:0;
-      font-size:16px;
-      font-weight:900;
-      color:var(--secondary);
-      letter-spacing:.2px;
-    }
-
-    .home-card .desc{
-      margin-top:6px;
-      color:var(--muted);
-      font-size:14.8px;
-      line-height:1.45;
-    }
-
-    .home-card .link{
-      margin-top:10px;
-      display:inline-flex;
+    .team-tags{
+      display:flex;
+      flex-wrap:wrap;
       gap:8px;
-      align-items:center;
-      color:#fff;
-      font-weight:800;
-      text-decoration:none;
-      border-bottom:1px solid rgba(244,195,139,.45);
-      padding-bottom:2px;
+      margin-top:12px;
     }
-    .home-card .link:hover{ color:var(--secondary); }
+
+    .team-tag{
+      font-size:12px;
+      padding:6px 10px;
+      border-radius:999px;
+      border:1px solid rgba(244,195,139,.35);
+      background:#0F1B33;
+      color:#FFFFFF;
+    }
 
     /* Bridge visual break */
     .bridge-break{
       height:320px;
       background-image:url("fondo33.png");
       background-size:cover;
-      background-position:center 20%;
+      background-position: center 20%;
       background-repeat:no-repeat;
-      will-change:background-position;
+      will-change: background-position;
       border-top:1px solid var(--border);
       border-bottom:1px solid var(--border);
       position:relative;
-      filter:grayscale(100%) contrast(0.95) brightness(1);
+      filter: grayscale(100%) contrast(0.95) brightness(1);
     }
 
     .bridge-break::after{
@@ -358,6 +310,18 @@
     }
 
     @media(max-width:900px){
+      .top{ flex-direction:column; align-items:flex-start; }
+      .logo-img{ transform:none; height:120px; }
+
+      .hero-top{ grid-template-columns:1fr; }
+      .hero-ctas{
+        padding-top:0;
+        align-items:flex-start;
+        flex-direction:row;
+        flex-wrap:wrap;
+      }
+
+      .cards-grid{ grid-template-columns:1fr; }
       .grid-2{ grid-template-columns:1fr; }
     }
 
@@ -413,7 +377,7 @@
     textarea{ min-height:120px; }
 
     button{
-      padding:12px;
+      padding:12px 14px;
       border-radius:14px;
       border:1px solid rgba(244,195,139,.6);
       background:#1A2C52;
@@ -421,11 +385,12 @@
       font-weight:800;
       cursor:pointer;
     }
+
     button:hover{ background:#203765; }
 
     small{ font-size:12.5px; color:var(--muted); }
 
-    /* TEAM PANEL (kept as-is) */
+    /* TEAM PANEL */
     .team-card{
       margin-top: var(--panelGap);
       background:#0F1B33;
@@ -436,16 +401,6 @@
     }
 
     .team-wrap{ padding:22px; }
-
-    .team-head{
-      display:flex;
-      align-items:flex-end;
-      justify-content:space-between;
-      gap:16px;
-      margin-bottom:14px;
-    }
-
-    .team-head h2{ margin:0; font-size:22px; letter-spacing:-0.2px; }
 
     .team-grid{
       display:grid;
@@ -471,8 +426,7 @@
     }
 
     .team-member:hover .team-photo{ opacity:0; }
-    .team-member:hover .team-name,
-    .team-member:hover .team-tags{ opacity:0; }
+    .team-member:hover .team-name{ opacity:0; }
     .team-member:hover .team-bio{
       opacity:1;
       pointer-events:auto;
@@ -537,25 +491,7 @@
         margin:10px 0 0;
       }
       .team-member:hover .team-photo{ opacity:.95; }
-      .team-member:hover .team-name,
-      .team-member:hover .team-tags{ opacity:1; }
-    }
-
-    .team-tags{
-      display:flex;
-      flex-wrap:wrap;
-      gap:8px;
-      margin-top:12px;
-      transition: opacity .25s ease;
-    }
-
-    .team-tag{
-      font-size:12px;
-      padding:6px 10px;
-      border-radius:999px;
-      border:1px solid rgba(244,195,139,.35);
-      background:#0F1B33;
-      color:#FFFFFF;
+      .team-member:hover .team-name{ opacity:1; }
     }
 
     .contact-image{
@@ -569,7 +505,7 @@
       border:1px solid var(--border);
     }
 
-    /* One page per menu option */
+    /* "one page per menu option" inside the same HTML */
     [data-page]{ display:none; }
     [data-page].active{ display:block; }
   </style>
@@ -594,9 +530,9 @@
 
   <main class="card" id="home">
 
-    <!-- HERO (Home page) -->
+    <!-- HOME -->
     <section class="hero active" data-page="home">
-      <div class="hero-copy">
+      <div class="hero-top">
         <div>
           <h1>AI is already inside your company</h1>
 
@@ -610,7 +546,7 @@
             <li><span class="dot"></span><span><b>Employees use AI</b> without clear rules or guidance.</span></li>
           </ul>
 
-          <p class="cta-note">
+          <p class="hero-sub" style="margin-top:12px;">
             We help teams use AI safely, keep control, and stay competitive — without slowing the business.
           </p>
         </div>
@@ -621,60 +557,30 @@
         </div>
       </div>
 
-      <p class="cta-note warm-sand bigger-line" style="margin-top:12px;">
-        <strong>Stay in control in a technology-driven world.</strong>
-      </p>
+      <div class="home-strip-title">Stay in control in a technology-driven world.</div>
 
-      <aside class="side">
-        <div class="img"></div>
-        <div class="inner">
-          <strong class="warm-sand">Industries we support</strong>
-          <div class="team-tags">
-            <span class="team-tag">> Mining</span>
-            <span class="team-tag">> Banking</span>
-            <span class="team-tag">> Healthcare</span>
-            <span class="team-tag">> Government</span>
-          </div>
+      <!-- Image strip (no border container) -->
+      <section class="home-cards">
+        <div class="cards-grid">
+          <article class="home-card">
+            <div class="photo" style="background-image:url('home_healthcare.jpg');"></div>
+          </article>
+
+          <article class="home-card">
+            <div class="photo" style="background-image:url('home_mining.jpg');"></div>
+          </article>
+
+          <article class="home-card">
+            <div class="photo" style="background-image:url('home_workshop.jpg');"></div>
+          </article>
         </div>
-      </aside>
+      </section>
     </section>
 
-    <!-- Home service cards (3 images) -->
-    <section class="home-cards active" data-page="home">
-      <div class="cards-grid">
-        <article class="home-card">
-          <div class="photo" style="background-image:url('home_healthcare.jpg');"></div>
-          <div class="body">
-            <h3 class="title">AI Workshops</h3>
-            <div class="desc">Train teams to use AI safely, avoid data leaks, and improve day-to-day work.</div>
-            <a class="link" href="#ai-for-your-org">Learn more →</a>
-          </div>
-        </article>
-
-        <article class="home-card">
-          <div class="photo" style="background-image:url('home_mining.jpg');"></div>
-          <div class="body">
-            <h3 class="title">AI Control</h3>
-            <div class="desc">Put guardrails in place so AI supports decisions instead of creating new risk.</div>
-            <a class="link" href="#ai-governance">Learn more →</a>
-          </div>
-        </article>
-
-        <article class="home-card">
-          <div class="photo" style="background-image:url('home_workshop.jpg');"></div>
-          <div class="body">
-            <h3 class="title">High-Risk Environments</h3>
-            <div class="desc">Support regulated and safety-critical teams where trust and accuracy matter.</div>
-            <a class="link" href="#contact">Talk to us →</a>
-          </div>
-        </article>
-      </div>
-    </section>
-
-    <!-- BRIDGE IMAGE (Home page) -->
+    <!-- BRIDGE IMAGE (optional; keep or remove) -->
     <section class="bridge-break active" aria-hidden="true" data-page="home"></section>
 
-    <!-- AI FOR YOUR ORG PANEL -->
+    <!-- AI FOR YOUR ORG -->
     <section class="section" id="ai-for-your-org" data-page="ai-for-your-org">
       <div class="panel panel-flex">
         <div class="panel-text">
@@ -692,7 +598,7 @@
       </div>
     </section>
 
-    <!-- AI GOVERNANCE PROGRAM PANEL -->
+    <!-- AI GOVERNANCE -->
     <section class="section" id="ai-governance" data-page="ai-governance">
       <div class="panel panel-flex">
         <div class="panel-text">
@@ -700,7 +606,7 @@
           <p>
             We help organizations build an AI governance program that keeps you in control:
             policies, responsible-use guidelines, risk reviews, vendor oversight, and model
-            inventories — so you’re ready for regulated markets and what comes next.
+            inventories — so you’re ready for regulated markets and the AI tsunami ahead.
           </p>
         </div>
 
@@ -708,7 +614,7 @@
       </div>
     </section>
 
-    <!-- TEAM PANEL -->
+    <!-- TEAM -->
     <section class="team-card" id="team" data-page="team">
       <div class="team-wrap">
         <div class="team-head">
@@ -800,6 +706,7 @@
           851 SW 6th Ave<br>
           Portland, Oregon<br><br>
           <a href="mailto:hello@biontech-ai.com">hello@biontech-ai.com</a><br><br>
+
           <div class="contact-image" style="background-image:url('street.png');"></div>
         </div>
       </div>
@@ -821,7 +728,7 @@
           <label>Message</label>
           <textarea name="message" placeholder="How can we help?" required></textarea>
 
-          <button class="btn-primary" type="submit">Send message</button>
+          <button type="submit">Send message</button>
           <small>Please don’t include sensitive personal data.</small>
         </form>
       </div>
@@ -872,8 +779,7 @@
       const hash = (location.hash || '#home').replace('#','').trim();
       const page = hash === 'contact' ? 'contact' : hash;
 
-      const nodes = document.querySelectorAll('[data-page]');
-      nodes.forEach(n => {
+      document.querySelectorAll('[data-page]').forEach(n => {
         n.classList.toggle('active', n.getAttribute('data-page') === page);
       });
 
