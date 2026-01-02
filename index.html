@@ -11,7 +11,6 @@
 
   <style>
     :root{
-      /* slightly lighter (your request) */
       --bg:#111A2C;
       --panel:#152A52;
       --panel2:#132242;
@@ -27,7 +26,6 @@
     }
 
     *{ box-sizing:border-box; }
-
     html{ scroll-behavior:smooth; }
 
     body{
@@ -39,7 +37,7 @@
     }
 
     .warm-sand{ color:var(--secondary); }
-    .bigger-line{ font-size:1.1em; }
+    .bigger-line{ font-size:1.08em; }
 
     .wrap{
       max-width:1100px;
@@ -89,11 +87,14 @@
       color:var(--text);
       text-decoration:none;
       font-weight:600;
+      transition:background .15s ease, color .15s ease, transform .12s ease, border-color .15s ease;
     }
 
     .menu a:hover{
       background:#1A2C52;
       color:var(--secondary);
+      transform:translateY(-1px);
+      border-color:rgba(244,195,139,.5);
     }
 
     /* Card */
@@ -106,6 +107,29 @@
       overflow:hidden;
     }
 
+    /* Shared primary button (matches Send message) */
+    .btn-primary{
+      padding:12px 14px;
+      border-radius:14px;
+      border:1px solid rgba(244,195,139,.6);
+      background:#1A2C52;
+      color:#fff;
+      font-weight:800;
+      cursor:pointer;
+      text-decoration:none;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      transition:transform .12s ease, background .15s ease, border-color .15s ease;
+      white-space:nowrap;
+    }
+    .btn-primary:hover{
+      background:#203765;
+      border-color:rgba(244,195,139,.95);
+      transform:translateY(-1px);
+    }
+
+    /* HERO */
     .hero{
       display:grid;
       grid-template-columns:1.15fr .85fr;
@@ -123,6 +147,7 @@
       margin:0 0 10px;
       font-size:clamp(28px, 3.8vw, 46px);
       line-height:1.12;
+      letter-spacing:-0.6px;
     }
 
     p{
@@ -132,25 +157,52 @@
       font-size:16px;
     }
 
-    .label-row{
-      margin-top:18px;
+    .hero-sub{
+      margin-top:6px;
+      font-size:17px;
+      color:#D7DFFF;
+      max-width:68ch;
+    }
+
+    .risk-list{
+      margin:14px 0 0;
+      padding:0;
+      list-style:none;
+      display:grid;
+      gap:8px;
+      max-width:68ch;
+    }
+
+    .risk-list li{
+      display:flex;
+      gap:10px;
+      align-items:flex-start;
+      color:var(--muted);
+      font-size:16px;
+    }
+
+    .dot{
+      margin-top:7px;
+      width:8px;
+      height:8px;
+      border-radius:999px;
+      background:rgba(244,195,139,.95);
+      flex:0 0 auto;
+      box-shadow:0 0 0 4px rgba(244,195,139,.10);
+    }
+
+    .cta-row{
+      margin-top:16px;
       display:flex;
       gap:10px;
       flex-wrap:wrap;
+      align-items:center;
     }
 
-    .label-btn{
-      padding:10px 14px;
-      border-radius:14px;
-      border:1px solid var(--border);
-      background:var(--panel);
-      color:#fff;
-      font-weight:800;
-      text-decoration:none;
-    }
-
-    .label-btn:hover{
-      background:#1A2C52;
+    .cta-note{
+      margin-top:10px;
+      color:rgba(194,205,237,.9);
+      font-size:14.5px;
     }
 
     .side{
@@ -162,28 +214,106 @@
 
     .img{
       height:220px;
-      <!-- background:url("https://images.unsplash.com/photo-1556761175-5973dc0f32e7?auto=format&fit=crop&w=1600&q=80") center/cover; -->
-      background-color: red;  
       background:url("splash.jpg") center/cover no-repeat;
-      <!--border-bottom:1px solid var(--border);  -->
     }
 
-   
-
     .side .inner{ padding:14px; }
+
+    /* Home “service cards” (3 images with meaning) */
+    .home-cards{
+      padding:0 22px 22px;
+    }
+
+    .cards-grid{
+      display:grid;
+      grid-template-columns:repeat(3, minmax(0,1fr));
+      gap:14px;
+    }
+
+    @media(max-width:900px){
+      .cards-grid{ grid-template-columns:1fr; }
+    }
+
+    .home-card{
+      border:1px solid var(--border);
+      border-radius:16px;
+      background:var(--panel);
+      overflow:hidden;
+      box-shadow:0 14px 40px rgba(0,0,0,.25);
+      transition:transform .15s ease, border-color .15s ease;
+    }
+
+    .home-card:hover{
+      transform:translateY(-2px);
+      border-color:rgba(244,195,139,.6);
+    }
+
+    .home-card .photo{
+      height:170px;
+      background-size:cover;
+      background-position:center;
+      position:relative;
+      border-bottom:1px solid var(--border);
+      filter:contrast(1.02) saturate(1.02);
+    }
+
+    .home-card .photo::after{
+      content:"";
+      position:absolute;
+      inset:0;
+      background:linear-gradient(
+        to bottom,
+        rgba(17,26,44,.10),
+        rgba(17,26,44,.55)
+      );
+    }
+
+    .home-card .body{
+      padding:14px;
+    }
+
+    .home-card .title{
+      margin:0;
+      font-size:16px;
+      font-weight:900;
+      color:var(--secondary);
+      letter-spacing:.2px;
+    }
+
+    .home-card .desc{
+      margin-top:6px;
+      color:var(--muted);
+      font-size:14.8px;
+      line-height:1.45;
+    }
+
+    .home-card .link{
+      margin-top:12px;
+      display:inline-flex;
+      gap:8px;
+      align-items:center;
+      color:#fff;
+      font-weight:800;
+      text-decoration:none;
+      border-bottom:1px solid rgba(244,195,139,.45);
+      padding-bottom:2px;
+    }
+    .home-card .link:hover{
+      color:var(--secondary);
+    }
 
     /* Bridge visual break */
     .bridge-break{
       height:320px;
       background-image:url("fondo33.png");
       background-size:cover;
-      background-position: center 20%;
+      background-position:center 20%;
       background-repeat:no-repeat;
-      will-change: background-position;
+      will-change:background-position;
       border-top:1px solid var(--border);
       border-bottom:1px solid var(--border);
       position:relative;
-      filter: grayscale(100%) contrast(0.95) brightness(1);
+      filter:grayscale(100%) contrast(0.95) brightness(1);
     }
 
     .bridge-break::after{
@@ -199,9 +329,7 @@
     }
 
     /* Sections */
-    .section{
-      padding:22px;
-    }
+    .section{ padding:22px; }
 
     .grid-2{
       display:grid;
@@ -224,6 +352,15 @@
       margin:0 0 10px;
       font-size:22px;
     }
+
+    .panel-flex{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:24px;
+    }
+
+    .panel-text{ max-width:70ch; }
 
     .contact-meta{
       margin-top:12px;
@@ -258,6 +395,7 @@
 
     textarea{ min-height:120px; }
 
+    /* Keep button base, but we will use btn-primary class */
     button{
       padding:12px;
       border-radius:14px;
@@ -267,17 +405,14 @@
       font-weight:800;
       cursor:pointer;
     }
-
-    button:hover{
-      background:#203765;
-    }
+    button:hover{ background:#203765; }
 
     small{
       font-size:12.5px;
       color:var(--muted);
     }
 
-    /* TEAM PANEL */
+    /* TEAM PANEL (kept as you had it) */
     .team-card{
       margin-top: var(--panelGap);
       background:#0F1B33;
@@ -287,9 +422,7 @@
       overflow:hidden;
     }
 
-    .team-wrap{
-      padding:22px;
-    }
+    .team-wrap{ padding:22px; }
 
     .team-head{
       display:flex;
@@ -305,12 +438,6 @@
       letter-spacing:-0.2px;
     }
 
-    .team-head p{
-      margin:0;
-      max-width:72ch;
-      color:var(--muted);
-    }
-
     .team-grid{
       display:grid;
       grid-template-columns:repeat(4, minmax(0, 1fr));
@@ -323,29 +450,20 @@
       .team-grid{ grid-template-columns:1fr; }
     }
 
-    /* Bio on hover + photo dims */
     .team-member{
       border:1px solid #233458;
       background:#111F3D;
       border-radius:16px;
       overflow:hidden;
       position:relative;
-
       display:flex;
       flex-direction:column;
       align-items:center;
     }
 
-    /* FIXED: On hover, hide photo + name/tags, but keep bio (bio is inside team-body) */
-    .team-member:hover .team-photo{
-      opacity:0;
-    }
-
+    .team-member:hover .team-photo{ opacity:0; }
     .team-member:hover .team-name,
-    .team-member:hover .team-tags{
-      opacity:0;
-    }
-
+    .team-member:hover .team-tags{ opacity:0; }
     .team-member:hover .team-bio{
       opacity:1;
       pointer-events:auto;
@@ -355,22 +473,16 @@
       height:165px;
       width:80%;
       object-fit:cover;
-      object-position: center 20%;
+      object-position:center 20%;
       display:block;
       opacity:.95;
-      filter:none;
       transition: opacity .25s ease;
     }
 
-    .photo-faye{
-      object-position: center 55%;
-    }
+    .photo-faye{ object-position:center 55%; }
 
-    .team-body{
-      padding:14px;
-    }
+    .team-body{ padding:14px; }
 
-    /* Name/position/background stack vertically */
     .team-name{
       display:flex;
       flex-direction:column;
@@ -396,19 +508,11 @@
       color:var(--muted);
     }
 
-    .team-role{
-      font-size:15px;
-      color:var(--secondary);
-      font-weight:700;
-      letter-spacing:.2px;
-    }
-
     .team-bio{
       margin:10px 0 0;
       color:#B7C4E6;
       font-size:14.5px;
       line-height:1.5;
-
       position:absolute;
       inset:0;
       padding:18px;
@@ -430,14 +534,9 @@
         margin:10px 0 0;
       }
 
-      .team-member:hover .team-photo{
-        opacity:.95;
-      }
-
+      .team-member:hover .team-photo{ opacity:.95; }
       .team-member:hover .team-name,
-      .team-member:hover .team-tags{
-        opacity:1;
-      }
+      .team-member:hover .team-tags{ opacity:1; }
     }
 
     .team-tags{
@@ -457,39 +556,6 @@
       color:#FFFFFF;
     }
 
-    .panel-flex{
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:24px;
-    }
-
-    .panel-text{
-      max-width:70ch;
-    }
-
-    .cta-yellow{
-      display:inline-flex;
-      align-items:center;
-      justify-content:center;
-      padding:14px 22px;
-      border-radius:999px;
-      border:2px solid #FFD24D;
-      background:transparent;
-      color:#FFD24D;
-      font-weight:800;
-      letter-spacing:.3px;
-      cursor:pointer;
-      white-space:nowrap;
-      transition:background .2s ease, color .2s ease, transform .15s ease;
-    }
-
-    .cta-yellow:hover{
-      background:#FFD24D;
-      color:#0B1220;
-      transform:translateY(-1px);
-    }
-
     .contact-image{
       margin-top:14px;
       height:200px;
@@ -501,7 +567,7 @@
       border:1px solid var(--border);
     }
 
-    /* NEW behavior: "one page per menu option" inside the same HTML (no long page) */
+    /* NEW behavior: "one page per menu option" */
     [data-page]{ display:none; }
     [data-page].active{ display:block; }
   </style>
@@ -514,41 +580,45 @@
     <div class="logo-box">
       <img src="Logobion99.png" alt="BION logo" class="logo-img">
     </div>
-    
+
     <nav class="menu">
-  <a href="#home">Home</a>
-  <a href="#ai-for-your-org">AI for your org</a>
-  <a href="#ai-governance">AI control</a>
-  <a href="#team">Team</a>
-  <a href="#contact">Contact</a>
-</nav>
-
-
-    
+      <a href="#home">Home</a>
+      <a href="#ai-for-your-org">AI for your org</a>
+      <a href="#ai-governance">AI control</a>
+      <a href="#team">Team</a>
+      <a href="#contact">Contact</a>
+    </nav>
   </header>
 
   <main class="card" id="home">
 
-    <!-- HERO -->
-    <section class="hero" data-page="home">
+    <!-- HERO (Home page) -->
+    <section class="hero active" data-page="home">
       <div>
         <h1>AI is already inside your company</h1>
 
-        <p>
-          If you don’t control it, someone else will — or it will control you.<br><br>
-          Right now, data is being shared, AI answers go unchecked, and employees use AI badly or unsafely.<br>
-          We help teams use AI safely and responsibly, keep data protected, and stay competitive.<br><br>
-
-          <span class="warm-sand bigger-line">
-           <h2> <strong>Stay in control in a technology-driven world.</strong> </h2>
-          </span>
+        <p class="hero-sub">
+          If you don’t control it, someone else will — or it will control you.
         </p>
 
-        <div class="label-row">
-         <!-- <a class="label-btn" href="#ai-for-your-org">Workshops</a>
-          <a class="label-btn" href="#ai-governance">AI Control</a> -->
+        <ul class="risk-list">
+          <li><span class="dot"></span><span><b>Sensitive data</b> is being shared through AI tools.</span></li>
+          <li><span class="dot"></span><span><b>AI answers</b> go unchecked and shape real decisions.</span></li>
+          <li><span class="dot"></span><span><b>Employees use AI</b> without clear rules or guidance.</span></li>
+        </ul>
+
+        <p class="cta-note">
+          We help teams use AI safely, keep control, and stay competitive — without slowing the business.
+        </p>
+
+        <div class="cta-row">
+          <a class="btn-primary" href="#ai-for-your-org">AI WORKSHOPS</a>
+          <a class="btn-primary" href="#ai-governance">AI GOVERNANCE</a>
         </div>
 
+        <p class="cta-note warm-sand bigger-line" style="margin-top:12px;">
+          <strong>Stay in control in a technology-driven world.</strong>
+        </p>
       </div>
 
       <aside class="side">
@@ -565,26 +635,55 @@
       </aside>
     </section>
 
-    <!-- BRIDGE IMAGE -->
-    <section class="bridge-break" aria-hidden="true" data-page="home"></section>
+    <!-- Home service cards (3 images with meaning) -->
+    <section class="home-cards active" data-page="home">
+      <div class="cards-grid">
+        <article class="home-card">
+          <div class="photo" style="background-image:url('home_healthcare.jpg');"></div>
+          <div class="body">
+            <h3 class="title">AI Workshops</h3>
+            <div class="desc">Train teams to use AI safely, avoid data leaks, and improve day-to-day work.</div>
+            <a class="link" href="#ai-for-your-org">Learn more →</a>
+          </div>
+        </article>
+
+        <article class="home-card">
+          <div class="photo" style="background-image:url('home_mining.jpg');"></div>
+          <div class="body">
+            <h3 class="title">AI Control</h3>
+            <div class="desc">Put guardrails in place so AI supports decisions instead of creating new risk.</div>
+            <a class="link" href="#ai-governance">Learn more →</a>
+          </div>
+        </article>
+
+        <article class="home-card">
+          <div class="photo" style="background-image:url('home_workshop.jpg');"></div>
+          <div class="body">
+            <h3 class="title">High-Risk Environments</h3>
+            <div class="desc">Support regulated and safety-critical teams where trust and accuracy matter.</div>
+            <a class="link" href="#contact">Talk to us →</a>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <!-- BRIDGE IMAGE (Home page) -->
+    <section class="bridge-break active" aria-hidden="true" data-page="home"></section>
 
     <!-- AI FOR YOUR ORG PANEL -->
     <section class="section" id="ai-for-your-org" data-page="ai-for-your-org">
       <div class="panel panel-flex">
         <div class="panel-text">
-          <h2>Turn the technological tsunami into a wave you can safetely ride.</h2>
+          <h2>Turn the technological tsunami into a wave you can safely ride.</h2>
           <p>
-              AI is already being used across mining, banking, healthcare, and public institutions—often without supervision or clear rules.
-              Employees at all levels, with or without technical backgrounds, use AI to summarize safety incidents, create or modify programming code,
-              analyze production reports, and organize client data—often without realizing the risks involved.<br><br>
-              We make AI practical for real teams through focused <b>workshops</b>. We help leaders and staff understand where AI truly fits,
-              how to use it safely in day-to-day work, and how to turn it into a tool that improves efficiency without putting the organization’s assets and value at risk.<br><br>
-         </p>
+            AI is already being used across mining, banking, healthcare, and public institutions—often without supervision or clear rules.
+            Employees at all levels use AI to summarize safety incidents, create or modify programming code, analyze reports, and organize client data—often without realizing the risks involved.<br><br>
+            We make AI practical for real teams through focused <b>workshops</b>. We help leaders and staff understand where AI truly fits,
+            how to use it safely day-to-day, and how to turn it into measurable efficiency without putting the organization’s assets and value at risk.
+          </p>
         </div>
 
-        <button class="warm-sand" type="button">
-          AI WORKSHOPS
-        </button>
+        <a class="btn-primary" href="#contact">AI WORKSHOPS</a>
       </div>
     </section>
 
@@ -596,13 +695,11 @@
           <p>
             We help organizations build an AI governance program that keeps you in control:
             policies, responsible-use guidelines, risk reviews, vendor oversight, and model
-            inventories — so you’re ready for regulated markets and the AI tsunami ahead.
+            inventories — so you’re ready for regulated markets and what comes next.
           </p>
         </div>
 
-        <button class="warm-sand" type="button">
-          AI GOVERNANCE IMPLEMENTATION
-        </button>
+        <a class="btn-primary" href="#contact">AI GOVERNANCE IMPLEMENTATION</a>
       </div>
     </section>
 
@@ -610,10 +707,7 @@
     <section class="team-card" id="team" data-page="team">
       <div class="team-wrap">
         <div class="team-head">
-          <div>
-            <h2>Team</h2>
-            <!--<p>Senior practitioners combining AI governance, safety-critical engineering, and adoption enablement.</p> -->
-          </div>
+          <div><h2>Team</h2></div>
         </div>
 
         <div class="team-grid">
@@ -626,7 +720,6 @@
                 <div class="team-position">CEO</div>
                 <div class="team-background"><b>Master in Computer Engineering</b></div>
               </div>
-
               <p class="team-bio">
                 Senior data, AI, and technology consultant with 20+ years modernizing and securing mission-critical systems
                 across public sector, healthcare, and mining. Co-developed an AI-driven safety device focused on preventing
@@ -637,16 +730,15 @@
 
           <!-- Faye -->
           <article class="team-member">
-            <img class="team-photo photo-faye" src="Fayefoto.jfif" alt="Placeholder team member">
+            <img class="team-photo photo-faye" src="Fayefoto.jfif" alt="Faye Douangchit">
             <div class="team-body">
               <div class="team-name">
                 <b>Faye Douangchit</b>
                 <div class="team-position">Director of Enterprise AI Delivery</div>
                 <div class="team-background"><b>Doctor of Business Administration (DBA)</b></div>
               </div>
-
               <p class="team-bio">
-                leads strategic program and transformation initiatives, ensuring AI governance efforts are aligned with business strategy
+                Leads strategic program and transformation initiatives, ensuring AI governance efforts are aligned with business strategy
                 and executed effectively at scale. With deep experience in enterprise PMO, portfolio leadership, and agile transformation,
                 she helps organizations turn AI governance into structured, measurable programs that drive adoption while managing risk.
               </p>
@@ -662,7 +754,6 @@
                 <div class="team-position">Director of AI Management</div>
                 <div class="team-background"><b>Master in Industrial Engineering</b></div>
               </div>
-
               <p class="team-bio">
                 AI governance consultant with deep experience in innovation management, technology transfer, and responsible
                 use of advanced technologies. Led and advised digital transformation and technology intelligence initiatives
@@ -680,20 +771,19 @@
                 <div class="team-position">Director of Learning & AI Adoption</div>
                 <div class="team-background"><b>MSc in Educational Psychology</b></div>
               </div>
-
               <p class="team-bio">
-                Placeholder profile — replace with your real team member later. (Example) Leads audit readiness,
-                vendor governance, and model inventory practices across regulated environments. Translates controls
-                into practical operating procedures that teams actually follow.
+                Placeholder profile — replace with your real team member later. Leads adoption enablement and practical learning
+                so teams use AI confidently without creating unnecessary risk.
               </p>
             </div>
           </article>
+
         </div>
       </div>
     </section>
 
-    <!-- TEAM + CONTACT -->
-    <section class="section grid-2" id="team" data-page="contact">
+    <!-- CONTACT -->
+    <section class="section grid-2" data-page="contact">
       <div class="panel">
         <h2>Built in Portland. Focused on what’s next.</h2>
         <p>
@@ -703,11 +793,10 @@
         </p>
 
         <div class="contact-meta">
-          <strong class="warm-sand"> </strong><br>
           851 SW 6th Ave<br>
-          Portland, Oregon<br>
-          <strong class="warm-sand"> </strong>
-          <a href="mailto:hello@biontech-ai.com">hello@biontech-ai.com</a> <br><br>
+          Portland, Oregon<br><br>
+
+          <a href="mailto:hello@biontech-ai.com">hello@biontech-ai.com</a><br><br>
 
           <div class="contact-image" style="background-image:url('street.png');"></div>
         </div>
@@ -730,7 +819,7 @@
           <label>Message</label>
           <textarea name="message" placeholder="How can we help?" required></textarea>
 
-          <button type="submit">Send message</button>
+          <button class="btn-primary" type="submit">Send message</button>
           <small>Please don’t include sensitive personal data.</small>
         </form>
       </div>
@@ -796,14 +885,3 @@
 
 </body>
 </html>
-
-
-
-
-
-
-
-
-
-
-
