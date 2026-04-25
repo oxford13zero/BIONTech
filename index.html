@@ -1277,15 +1277,17 @@ applyLang(currentLang);
       </div>
     </div>
     <hr class="modal-divider">
+    <div id="loginError" style="display:none;background:rgba(226,75,74,.15);border:1px solid rgba(226,75,74,.4);border-radius:8px;padding:8px 12px;font-size:13px;color:#F09595;margin-bottom:12px;"></div>
+    <div id="loginSuccess" style="display:none;background:rgba(29,158,117,.15);border:1px solid rgba(29,158,117,.4);border-radius:8px;padding:8px 12px;font-size:13px;color:#5DCAA5;margin-bottom:12px;"></div>
     <div class="modal-field">
       <label class="modal-label" data-i18n="login_email">Email address</label>
-      <input class="modal-input" type="email" data-i18n-placeholder="login_email_ph" placeholder="name@company.com">
+      <input class="modal-input" id="loginEmail" type="email" data-i18n-placeholder="login_email_ph" placeholder="name@company.com">
     </div>
     <div class="modal-field">
       <label class="modal-label" data-i18n="login_password">Password</label>
-      <input class="modal-input" type="password" data-i18n-placeholder="login_pass_ph" placeholder="••••••••">
+      <input class="modal-input" id="loginPassword" type="password" data-i18n-placeholder="login_pass_ph" placeholder="••••••••">
     </div>
-    <button class="modal-submit" data-i18n="login_submit">Sign in</button>
+    <button class="modal-submit" id="loginSubmit" onclick="handleLogin()" data-i18n="login_submit">Sign in</button>
     <a class="modal-forgot" data-i18n="login_forgot">Forgot your password?</a>
   </div>
 </div>
@@ -1308,32 +1310,109 @@ applyLang(currentLang);
       </div>
     </div>
     <hr class="modal-divider">
+    <div id="adminError" style="display:none;background:rgba(226,75,74,.15);border:1px solid rgba(226,75,74,.4);border-radius:8px;padding:8px 12px;font-size:13px;color:#F09595;margin-bottom:12px;"></div>
+    <div id="adminSuccess" style="display:none;background:rgba(29,158,117,.15);border:1px solid rgba(29,158,117,.4);border-radius:8px;padding:8px 12px;font-size:13px;color:#5DCAA5;margin-bottom:12px;"></div>
     <div class="modal-field">
       <label class="modal-label" data-i18n="login_email">Email address</label>
-      <input class="modal-input" type="email" data-i18n-placeholder="login_email_ph" placeholder="name@company.com">
+      <input class="modal-input" id="adminEmail" type="email" data-i18n-placeholder="login_email_ph" placeholder="name@company.com">
     </div>
     <div class="modal-field">
       <label class="modal-label" data-i18n="login_password">Password</label>
-      <input class="modal-input" type="password" data-i18n-placeholder="login_pass_ph" placeholder="••••••••">
+      <input class="modal-input" id="adminPassword" type="password" data-i18n-placeholder="login_pass_ph" placeholder="••••••••">
     </div>
-    <button class="modal-submit" data-i18n="login_submit">Sign in</button>
+    <button class="modal-submit" id="adminSubmit" onclick="handleAdminLogin()" data-i18n="login_submit">Sign in</button>
     <a class="modal-forgot" data-i18n="login_forgot">Forgot your password?</a>
   </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script>
-  function openLoginModal(){ document.getElementById('loginModal').classList.add('open'); }
-  function openAdminModal(){ document.getElementById('adminModal').classList.add('open'); }
+  const SUPABASE_URL  = 'https://stigduimnybyqrosfncn.supabase.co';
+  const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN0aWdkdWltbnlieXFyb3NmbmNuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzcwNzU1MDQsImV4cCI6MjA5MjY1MTUwNH0.h6sDfa14t6cS1iupeZyaEhWcgJirvgI5zqBGpn7FYbc';
+  const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+
+  function openLoginModal(){ clearModal('login'); document.getElementById('loginModal').classList.add('open'); }
+  function openAdminModal(){ clearModal('admin'); document.getElementById('adminModal').classList.add('open'); }
   function closeModal(id)  { document.getElementById(id).classList.remove('open'); }
+
   function handleOverlayClick(e, id){
     if(e.target === document.getElementById(id)) closeModal(id);
   }
+
   document.addEventListener('keydown', function(e){
     if(e.key === 'Escape'){
       closeModal('loginModal');
       closeModal('adminModal');
     }
   });
+
+  function clearModal(prefix){
+    document.getElementById(prefix+'Error').style.display   = 'none';
+    document.getElementById(prefix+'Success').style.display = 'none';
+    document.getElementById(prefix+'Email').value    = '';
+    document.getElementById(prefix+'Password').value = '';
+  }
+
+  function showError(prefix, msg){
+    const el = document.getElementById(prefix+'Error');
+    el.textContent = msg;
+    el.style.display = 'block';
+    document.getElementById(prefix+'Success').style.display = 'none';
+  }
+
+  function showSuccess(prefix, msg){
+    const el = document.getElementById(prefix+'Success');
+    el.textContent = msg;
+    el.style.display = 'block';
+    document.getElementById(prefix+'Error').style.display = 'none';
+  }
+
+  function setLoading(btnId, loading){
+    const btn = document.getElementById(btnId);
+    btn.disabled = loading;
+    btn.textContent = loading ? '...' : (currentLang === 'es' ? 'Iniciar sesión' : 'Sign in');
+  }
+
+  async function handleLogin(){
+    const email    = document.getElementById('loginEmail').value.trim();
+    const password = document.getElementById('loginPassword').value;
+    if(!email || !password){ showError('login', currentLang === 'es' ? 'Por favor completa todos los campos.' : 'Please fill in all fields.'); return; }
+    setLoading('loginSubmit', true);
+    const { data, error } = await sb.auth.signInWithPassword({ email, password });
+    setLoading('loginSubmit', false);
+    if(error){
+      showError('login', error.message);
+    } else {
+      showSuccess('login', currentLang === 'es' ? '¡Acceso correcto! Redirigiendo...' : 'Login successful! Redirecting...');
+      setTimeout(() => closeModal('loginModal'), 1500);
+    }
+  }
+
+  async function handleAdminLogin(){
+    const email    = document.getElementById('adminEmail').value.trim();
+    const password = document.getElementById('adminPassword').value;
+    if(!email || !password){ showError('admin', currentLang === 'es' ? 'Por favor completa todos los campos.' : 'Please fill in all fields.'); return; }
+    setLoading('adminSubmit', true);
+    const { data, error } = await sb.auth.signInWithPassword({ email, password });
+    setLoading('adminSubmit', false);
+    if(error){
+      showError('admin', error.message);
+    } else {
+      const { data: profile } = await sb.from('profiles').select('role').eq('user_id', data.user.id).single();
+      if(!profile || profile.role !== 'bion_admin'){
+        await sb.auth.signOut();
+        showError('admin', currentLang === 'es' ? 'No tienes permisos de administrador.' : 'You do not have admin permissions.');
+      } else {
+        showSuccess('admin', currentLang === 'es' ? '¡Acceso correcto! Redirigiendo...' : 'Admin login successful! Redirecting...');
+        setTimeout(() => closeModal('adminModal'), 1500);
+      }
+    }
+  }
+
+  document.getElementById('loginEmail').addEventListener('keydown',    function(e){ if(e.key==='Enter') handleLogin(); });
+  document.getElementById('loginPassword').addEventListener('keydown', function(e){ if(e.key==='Enter') handleLogin(); });
+  document.getElementById('adminEmail').addEventListener('keydown',    function(e){ if(e.key==='Enter') handleAdminLogin(); });
+  document.getElementById('adminPassword').addEventListener('keydown', function(e){ if(e.key==='Enter') handleAdminLogin(); });
 </script>
 
 <!-- ── Parallax bridge ───────────────────────────────────────── -->
