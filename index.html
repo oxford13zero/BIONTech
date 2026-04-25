@@ -11,12 +11,12 @@
 
   <style>
     :root{
-      --bg:#192F52;
-      --panel:#1F3D68; 
-      --panel2:#1B3560;
+      --bg:#111A2C;
+      --panel:#152A52;
+      --panel2:#132242;
       --text:#EAF0FF;
       --muted:#C2CDED;
-      --border: #2E4E7A;
+      --border:#2C3F6A;
       --secondary:#F4C38B;
       --shadow:0 12px 30px rgba(0,0,0,.35);
       --panelGap:22px;
@@ -77,6 +77,7 @@
       display:flex;
       gap:10px;
       flex-wrap:wrap;
+      align-items:center;
     }
 
     .menu a{
@@ -97,6 +98,26 @@
       border-color:rgba(244,195,139,.5);
     }
 
+    /* Language toggle button */
+    .lang-toggle{
+      padding:10px 16px;
+      border-radius:12px;
+      border:1px solid rgba(244,195,139,.6);
+      background:var(--panel2);
+      color:var(--secondary);
+      font-weight:800;
+      font-size:14px;
+      cursor:pointer;
+      letter-spacing:.04em;
+      transition:background .15s ease, transform .12s ease, border-color .15s ease;
+      font-family:"Source Sans 3", system-ui, sans-serif;
+    }
+    .lang-toggle:hover{
+      background:#1A2C52;
+      border-color:rgba(244,195,139,.95);
+      transform:translateY(-1px);
+    }
+
     /* Card */
     .card{
       margin-top:var(--panelGap);
@@ -107,7 +128,7 @@
       overflow:hidden;
     }
 
-    /* Shared primary button (matches Send message) */
+    /* Shared primary button */
     .btn-primary{
       padding:12px 14px;
       border-radius:14px;
@@ -164,7 +185,6 @@
       max-width:68ch;
     }
 
-    /* split left copy + right CTA column */
     .hero-copy{
       display:grid;
       grid-template-columns: 1fr auto;
@@ -178,9 +198,7 @@
       gap:10px;
       align-items:flex-start;
       padding-top:100px;
-
-      /* ✅ move the CTA column LEFT */
-      margin-left:-34px; /* <-- adjust: -20px ... -60px */
+      margin-left:-34px;
     }
 
     @media (max-width:900px){
@@ -196,7 +214,7 @@
 
     .risk-list{
       margin:14px 0 0;
-      padding:0 0 0 44px; 
+      padding:0 0 0 44px;
       list-style:none;
       display:grid;
       gap:8px;
@@ -241,7 +259,7 @@
 
     .side .inner{ padding:14px; }
 
-    /* Home “service cards” */
+    /* Home "service cards" */
     .home-cards{
       padding:0 22px 22px;
       border:none;
@@ -268,9 +286,7 @@
       transition:transform .15s ease;
     }
 
-    .home-card:hover{
-      transform:translateY(-2px);
-    }
+    .home-card:hover{ transform:translateY(-2px); }
 
     .home-card .photo{
       height:170px;
@@ -293,9 +309,7 @@
       );
     }
 
-    .home-card .body{
-      padding:12px 2px 0;
-    }
+    .home-card .body{ padding:12px 2px 0; }
 
     .home-card .title{
       margin:0;
@@ -371,10 +385,7 @@
       padding:16px;
     }
 
-    .panel h2{
-      margin:0 0 10px;
-      font-size:22px;
-    }
+    .panel h2{ margin:0 0 10px; font-size:22px; }
 
     .panel-flex{
       display:flex;
@@ -397,11 +408,7 @@
       text-decoration:none;
     }
 
-    form{
-      display:grid;
-      gap:10px;
-      margin-top:10px;
-    }
+    form{ display:grid; gap:10px; margin-top:10px; }
 
     label{ font-weight:700; font-size:14px; }
 
@@ -428,7 +435,7 @@
 
     small{ font-size:12.5px; color:var(--muted); }
 
-    /* TEAM PANEL (kept as-is) */
+    /* TEAM PANEL */
     .team-card{
       margin-top: var(--panelGap);
       background:#0F1B33;
@@ -577,11 +584,9 @@
     [data-page].active{ display:block; }
 
     .highlight-white{
-  color:#FFFFFF;
-  font-weight:700;
-}
-
-    
+      color:#FFFFFF;
+      font-weight:700;
+    }
   </style>
 </head>
 
@@ -594,135 +599,134 @@
     </div>
 
     <nav class="menu">
-      <a href="#home">Home</a>
-      <a href="#ai-for-your-org">AI for your org</a>
-      <a href="#ai-governance">AI control</a>
-      <a href="#team">Team</a>
-      <a href="#contact">Contact</a>
+      <a href="#home"          data-i18n="nav_home">Home</a>
+      <a href="#ai-for-your-org" data-i18n="nav_ai_org">AI for your org</a>
+      <a href="#ai-governance" data-i18n="nav_ai_control">AI control</a>
+      <a href="#team"          data-i18n="nav_team">Team</a>
+      <a href="#contact"       data-i18n="nav_contact">Contact</a>
+      <button class="lang-toggle" id="langBtn" onclick="toggleLang()">ES</button>
     </nav>
   </header>
 
   <main class="card" id="home">
 
-    <!-- HERO (Home page) -->
+    <!-- HERO -->
     <section class="hero active" data-page="home">
       <div class="hero-copy">
         <div>
-          <h1>AI is already inside your company</h1>
+          <h1 data-i18n="hero_title">AI is already inside your company</h1>
 
-          <p class="hero-sub">
-            If you don’t control it, someone else will — or it will control you.<br><br>
+          <p class="hero-sub" data-i18n="hero_sub">
+            If you don't control it, someone else will — or it will control you.
           </p>
 
           <ul class="risk-list">
             <li><span class="dot"></span>
-                <span><span class="highlight-white">Private data</span> is being shared through AI tools.</span>
+                <span><span class="highlight-white" data-i18n="risk1_bold">Private data</span> <span data-i18n="risk1_text">is being shared through AI tools.</span></span></li>
             <li><span class="dot"></span>
-                <span><span class="highlight-white">AI answers</span> go unchecked risking real decisions.</span></li>
+                <span><span class="highlight-white" data-i18n="risk2_bold">AI answers</span> <span data-i18n="risk2_text">go unchecked risking real decisions.</span></span></li>
             <li><span class="dot"></span>
-                <span><span class="highlight-white">Employees use AI</span> without any rules or guidance.</span></li><br>
+                <span><span class="highlight-white" data-i18n="risk3_bold">Employees use AI</span> <span data-i18n="risk3_text">without any rules or guidance.</span></span></li>
           </ul>
 
-          <p class="hero-sub">
-            <strong class="warm-sand">We help teams use AI safely, keep control, and stay competitive — without slowing the business.</strong><br><br><br>
+          <p class="hero-sub" style="margin-top:14px;">
+            <strong class="warm-sand" data-i18n="hero_cta_text">We help teams use AI safely, keep control, and stay competitive — without slowing the business.</strong>
           </p>
         </div>
 
         <div class="hero-ctas">
-          <a class="btn-primary" href="#ai-for-your-org">AI GOVERNANCE: CONSULTING & TRAINING</a>
-          <a class="btn-primary" href="#ai-governance">PRIVACY AND DATA ASSESSMENT</a>
-          <a class="btn-primary" href="#ai-governance">AI TRUST &amp; QUALITY REVIEW</a>
+          <a class="btn-primary" href="#ai-for-your-org" data-i18n="btn_consulting">AI GOVERNANCE: CONSULTING &amp; TRAINING</a>
+          <a class="btn-primary" href="#ai-governance"   data-i18n="btn_privacy">PRIVACY AND DATA ASSESSMENT</a>
+          <a class="btn-primary" href="#ai-governance"   data-i18n="btn_trust">AI TRUST &amp; QUALITY REVIEW</a>
         </div>
       </div>
 
       <aside class="side">
         <div class="img"></div>
         <div class="inner">
-          <strong class="warm-sand">Industries we support</strong>
+          <strong class="warm-sand" data-i18n="industries_label">Industries we support</strong>
           <div class="team-tags">
-            <span class="team-tag">> Mining</span>
-            <span class="team-tag">> Banking</span>
-            <span class="team-tag">> Healthcare</span>
-            <span class="team-tag">> Government</span>
+            <span class="team-tag" data-i18n="ind_mining">&gt; Mining</span>
+            <span class="team-tag" data-i18n="ind_banking">&gt; Banking</span>
+            <span class="team-tag" data-i18n="ind_health">&gt; Healthcare</span>
+            <span class="team-tag" data-i18n="ind_gov">&gt; Government</span>
           </div>
         </div>
       </aside>
     </section>
 
-    <!-- Home service cards (3 images) -->
+    <!-- Home service cards -->
     <section class="home-cards active" data-page="home">
       <div class="cards-grid">
         <article class="home-card">
           <div class="photo" style="background-image:url('home_healthcare.jpg');"></div>
           <div class="body">
-            <h3 class="title">AI Workshops</h3>
-            <div class="desc">Train teams to use AI safely, avoid data leaks, and improve day-to-day work.</div>
-            <a class="link" href="#ai-for-your-org">Learn more →</a>
+            <h3 class="title" data-i18n="card1_title">AI Workshops</h3>
+            <div class="desc" data-i18n="card1_desc">Train teams to use AI safely, avoid data leaks, and improve day-to-day work.</div>
+            <a class="link" href="#ai-for-your-org" data-i18n="card1_link">Learn more →</a>
           </div>
         </article>
 
         <article class="home-card">
           <div class="photo" style="background-image:url('home_mining.jpg');"></div>
           <div class="body">
-            <h3 class="title">AI Control</h3>
-            <div class="desc">Put guardrails in place so AI supports decisions instead of creating new risk.</div>
-            <a class="link" href="#ai-governance">Learn more →</a>
+            <h3 class="title" data-i18n="card2_title">AI Control</h3>
+            <div class="desc" data-i18n="card2_desc">Put guardrails in place so AI supports decisions instead of creating new risk.</div>
+            <a class="link" href="#ai-governance" data-i18n="card2_link">Learn more →</a>
           </div>
         </article>
 
         <article class="home-card">
           <div class="photo" style="background-image:url('home_workshop.jpg');"></div>
           <div class="body">
-            <h3 class="title">High-Risk Environments</h3>
-            <div class="desc">Support regulated and safety-critical teams where trust and accuracy matter.</div>
-            <a class="link" href="#contact">Talk to us →</a>
+            <h3 class="title" data-i18n="card3_title">High-Risk Environments</h3>
+            <div class="desc" data-i18n="card3_desc">Support regulated and safety-critical teams where trust and accuracy matter.</div>
+            <a class="link" href="#contact" data-i18n="card3_link">Talk to us →</a>
           </div>
         </article>
       </div>
     </section>
 
-    <!-- BRIDGE IMAGE (Home page) -->
+    <!-- BRIDGE IMAGE -->
     <section class="bridge-break active" aria-hidden="true" data-page="home"></section>
 
-    <!-- AI FOR YOUR ORG PANEL -->
+    <!-- AI FOR YOUR ORG -->
     <section class="section" id="ai-for-your-org" data-page="ai-for-your-org">
       <div class="panel panel-flex">
         <div class="panel-text">
-          <h2>Turn the technological tsunami into a wave you can safely ride.</h2>
-          <p>
+          <h2 data-i18n="aiorg_title">Turn the technological tsunami into a wave you can safely ride.</h2>
+          <p data-i18n="aiorg_body">
             AI is already being used across mining, banking, healthcare, and public institutions—often without supervision or clear rules.
             Employees at all levels, with or without technical backgrounds, use AI to summarize safety incidents, create or modify programming code,
             analyze production reports, and organize client data—often without realizing the risks involved.<br><br>
             We make AI practical for real teams through focused <b>workshops</b>. We help leaders and staff understand where AI truly fits,
-            how to use it safely in day-to-day work, and how to turn it into a tool that improves efficiency without putting the organization’s assets and value at risk.
+            how to use it safely in day-to-day work, and how to turn it into a tool that improves efficiency without putting the organization's assets and value at risk.
           </p>
         </div>
-
-        <a class="btn-primary" href="#contact">AI WORKSHOPS</a>
+        <a class="btn-primary" href="#contact" data-i18n="aiorg_btn">AI WORKSHOPS</a>
       </div>
     </section>
 
-    <!-- AI GOVERNANCE PROGRAM PANEL -->
+    <!-- AI GOVERNANCE -->
     <section class="section" id="ai-governance" data-page="ai-governance">
       <div class="panel panel-flex">
         <div class="panel-text">
-          <h2>AI GOVERNANCE PROGRAM</h2>
-          <p>
+          <h2 data-i18n="gov_title">AI GOVERNANCE PROGRAM</h2>
+          <p data-i18n="gov_body">
             We help organizations build an AI governance program that keeps you in control:
             policies, responsible-use guidelines, risk reviews, vendor oversight, and model
-            inventories — so you’re ready for regulated markets and what comes next.
+            inventories — so you're ready for regulated markets and what comes next.
           </p>
         </div>
-
-        <a class="btn-primary" href="#contact">AI GOVERNANCE IMPLEMENTATION</a>
+        <a class="btn-primary" href="#contact" data-i18n="gov_btn">AI GOVERNANCE IMPLEMENTATION</a>
       </div>
     </section>
 
-    <!-- TEAM PANEL -->
+    <!-- TEAM -->
     <section class="team-card" id="team" data-page="team">
       <div class="team-wrap">
         <div class="team-head">
-          <div><h2>Team</h2></div>
+          <div><h2 data-i18n="team_title">Team</h2></div>
         </div>
 
         <div class="team-grid">
@@ -732,10 +736,10 @@
             <div class="team-body">
               <div class="team-name">
                 <b>Lester W Lino</b>
-                <div class="team-position">CEO</div>
-                <div class="team-background"><b>Master in Computer Engineering</b></div>
+                <div class="team-position" data-i18n="lester_pos">CEO</div>
+                <div class="team-background"><b data-i18n="lester_bg">Master in Computer Engineering</b></div>
               </div>
-              <p class="team-bio">
+              <p class="team-bio" data-i18n="lester_bio">
                 Senior data, AI, and technology consultant with 20+ years modernizing and securing mission-critical systems
                 across public sector, healthcare, and mining. Co-developed an AI-driven safety device focused on preventing
                 accidents and improving human–technology interaction in high-risk environments.
@@ -749,10 +753,10 @@
             <div class="team-body">
               <div class="team-name">
                 <b>Faye Douangchit</b>
-                <div class="team-position">Director of Enterprise AI Delivery</div>
-                <div class="team-background"><b>Doctor of Business Administration (DBA)</b></div>
+                <div class="team-position" data-i18n="faye_pos">Director of Enterprise AI Delivery</div>
+                <div class="team-background"><b data-i18n="faye_bg">Doctor of Business Administration (DBA)</b></div>
               </div>
-              <p class="team-bio">
+              <p class="team-bio" data-i18n="faye_bio">
                 Leads strategic program and transformation initiatives, ensuring AI governance efforts are aligned with business strategy
                 and executed effectively at scale. With deep experience in enterprise PMO, portfolio leadership, and agile transformation,
                 she helps organizations turn AI governance into structured, measurable programs that drive adoption while managing risk.
@@ -766,10 +770,10 @@
             <div class="team-body">
               <div class="team-name">
                 <b>Luis Reinoso</b>
-                <div class="team-position">Director of AI Management</div>
-                <div class="team-background"><b>Master in Industrial Engineering</b></div>
+                <div class="team-position" data-i18n="luis_pos">Director of AI Management</div>
+                <div class="team-background"><b data-i18n="luis_bg">Master in Industrial Engineering</b></div>
               </div>
-              <p class="team-bio">
+              <p class="team-bio" data-i18n="luis_bio">
                 AI governance consultant with deep experience in innovation management, technology transfer, and responsible
                 use of advanced technologies. Led and advised digital transformation and technology intelligence initiatives
                 for universities, private organizations, and public institutions.
@@ -783,10 +787,10 @@
             <div class="team-body">
               <div class="team-name">
                 <b>Rodolfo O. Lino</b>
-                <div class="team-position">Director of Learning & AI Adoption</div>
-                <div class="team-background"><b>MSc in Educational Psychology</b></div>
+                <div class="team-position" data-i18n="rodo_pos">Director of Learning &amp; AI Adoption</div>
+                <div class="team-background"><b data-i18n="rodo_bg">MSc in Educational Psychology</b></div>
               </div>
-              <p class="team-bio">
+              <p class="team-bio" data-i18n="rodo_bio">
                 Resume Rodolfo — replace with your real team member later. Leads adoption enablement and practical learning
                 so teams use AI confidently without creating unnecessary risk.
               </p>
@@ -799,13 +803,12 @@
     <!-- CONTACT -->
     <section class="section grid-2" data-page="contact">
       <div class="panel">
-        <h2>Built in Portland. Focused on what’s next.</h2>
-        <p>
+        <h2 data-i18n="contact_left_title">Built in Portland. Focused on what's next.</h2>
+        <p data-i18n="contact_left_body">
           We are a group of professionals working at the cutting edge of technology, based in Portland, Oregon —
           a city that hosts global leaders like Intel, Nike, and Columbia Sportswear.
           We help organizations adopt AI with clarity, responsibility, and control.
         </p>
-
         <div class="contact-meta">
           851 SW 6th Ave<br>
           Portland, Oregon<br><br>
@@ -815,24 +818,24 @@
       </div>
 
       <div class="panel" id="contact">
-        <h2>Contact us</h2>
-        <p>Tell us what you’re trying to achieve. We’ll take it from there.</p>
+        <h2 data-i18n="contact_form_title">Contact us</h2>
+        <p data-i18n="contact_form_sub">Tell us what you're trying to achieve. We'll take it from there.</p>
 
         <form action="https://formspree.io/f/xjkybgkw" method="POST">
-          <label>Name</label>
-          <input type="text" name="name" placeholder="Your name" required>
+          <label data-i18n="form_name">Name</label>
+          <input type="text" name="name" data-i18n-placeholder="form_name_ph" placeholder="Your name" required>
 
-          <label>Email</label>
-          <input type="email" name="email" placeholder="name@company.com" required>
+          <label data-i18n="form_email">Email</label>
+          <input type="email" name="email" data-i18n-placeholder="form_email_ph" placeholder="name@company.com" required>
 
-          <label>Company</label>
-          <input type="text" name="company" placeholder="Company name">
+          <label data-i18n="form_company">Company</label>
+          <input type="text" name="company" data-i18n-placeholder="form_company_ph" placeholder="Company name">
 
-          <label>Message</label>
-          <textarea name="message" placeholder="How can we help?" required></textarea>
+          <label data-i18n="form_message">Message</label>
+          <textarea name="message" data-i18n-placeholder="form_message_ph" placeholder="How can we help?" required></textarea>
 
-          <button class="btn-primary" type="submit">Send message</button>
-          <small>Please don’t include sensitive personal data.</small>
+          <button class="btn-primary" type="submit" data-i18n="form_submit">Send message</button>
+          <small data-i18n="form_note">Please don't include sensitive personal data.</small>
         </form>
       </div>
     </section>
@@ -840,26 +843,215 @@
   </main>
 </div>
 
+<!-- ============================================================
+     TRANSLATIONS
+     To edit: update the "es" object below with your Spanish text.
+     The "en" object is the source of truth for English.
+============================================================ -->
+<script>
+const translations = {
+  en: {
+    nav_home:          "Home",
+    nav_ai_org:        "AI for your org",
+    nav_ai_control:    "AI control",
+    nav_team:          "Team",
+    nav_contact:       "Contact",
+
+    hero_title:        "AI is already inside your company",
+    hero_sub:          "If you don't control it, someone else will — or it will control you.",
+    risk1_bold:        "Private data",
+    risk1_text:        "is being shared through AI tools.",
+    risk2_bold:        "AI answers",
+    risk2_text:        "go unchecked risking real decisions.",
+    risk3_bold:        "Employees use AI",
+    risk3_text:        "without any rules or guidance.",
+    hero_cta_text:     "We help teams use AI safely, keep control, and stay competitive — without slowing the business.",
+
+    btn_consulting:    "AI GOVERNANCE: CONSULTING & TRAINING",
+    btn_privacy:       "PRIVACY AND DATA ASSESSMENT",
+    btn_trust:         "AI TRUST & QUALITY REVIEW",
+
+    industries_label:  "Industries we support",
+    ind_mining:        "> Mining",
+    ind_banking:       "> Banking",
+    ind_health:        "> Healthcare",
+    ind_gov:           "> Government",
+
+    card1_title:       "AI Workshops",
+    card1_desc:        "Train teams to use AI safely, avoid data leaks, and improve day-to-day work.",
+    card1_link:        "Learn more →",
+    card2_title:       "AI Control",
+    card2_desc:        "Put guardrails in place so AI supports decisions instead of creating new risk.",
+    card2_link:        "Learn more →",
+    card3_title:       "High-Risk Environments",
+    card3_desc:        "Support regulated and safety-critical teams where trust and accuracy matter.",
+    card3_link:        "Talk to us →",
+
+    aiorg_title:       "Turn the technological tsunami into a wave you can safely ride.",
+    aiorg_body:        "AI is already being used across mining, banking, healthcare, and public institutions—often without supervision or clear rules. Employees at all levels, with or without technical backgrounds, use AI to summarize safety incidents, create or modify programming code, analyze production reports, and organize client data—often without realizing the risks involved.<br><br>We make AI practical for real teams through focused <b>workshops</b>. We help leaders and staff understand where AI truly fits, how to use it safely in day-to-day work, and how to turn it into a tool that improves efficiency without putting the organization's assets and value at risk.",
+    aiorg_btn:         "AI WORKSHOPS",
+
+    gov_title:         "AI GOVERNANCE PROGRAM",
+    gov_body:          "We help organizations build an AI governance program that keeps you in control: policies, responsible-use guidelines, risk reviews, vendor oversight, and model inventories — so you're ready for regulated markets and what comes next.",
+    gov_btn:           "AI GOVERNANCE IMPLEMENTATION",
+
+    team_title:        "Team",
+    lester_pos:        "CEO",
+    lester_bg:         "Master in Computer Engineering",
+    lester_bio:        "Senior data, AI, and technology consultant with 20+ years modernizing and securing mission-critical systems across public sector, healthcare, and mining. Co-developed an AI-driven safety device focused on preventing accidents and improving human–technology interaction in high-risk environments.",
+    faye_pos:          "Director of Enterprise AI Delivery",
+    faye_bg:           "Doctor of Business Administration (DBA)",
+    faye_bio:          "Leads strategic program and transformation initiatives, ensuring AI governance efforts are aligned with business strategy and executed effectively at scale. With deep experience in enterprise PMO, portfolio leadership, and agile transformation, she helps organizations turn AI governance into structured, measurable programs that drive adoption while managing risk.",
+    luis_pos:          "Director of AI Management",
+    luis_bg:           "Master in Industrial Engineering",
+    luis_bio:          "AI governance consultant with deep experience in innovation management, technology transfer, and responsible use of advanced technologies. Led and advised digital transformation and technology intelligence initiatives for universities, private organizations, and public institutions.",
+    rodo_pos:          "Director of Learning & AI Adoption",
+    rodo_bg:           "MSc in Educational Psychology",
+    rodo_bio:          "Resume Rodolfo — replace with your real team member later. Leads adoption enablement and practical learning so teams use AI confidently without creating unnecessary risk.",
+
+    contact_left_title: "Built in Portland. Focused on what's next.",
+    contact_left_body:  "We are a group of professionals working at the cutting edge of technology, based in Portland, Oregon — a city that hosts global leaders like Intel, Nike, and Columbia Sportswear. We help organizations adopt AI with clarity, responsibility, and control.",
+    contact_form_title: "Contact us",
+    contact_form_sub:   "Tell us what you're trying to achieve. We'll take it from there.",
+    form_name:          "Name",
+    form_name_ph:       "Your name",
+    form_email:         "Email",
+    form_email_ph:      "name@company.com",
+    form_company:       "Company",
+    form_company_ph:    "Company name",
+    form_message:       "Message",
+    form_message_ph:    "How can we help?",
+    form_submit:        "Send message",
+    form_note:          "Please don't include sensitive personal data."
+  },
+
+  es: {
+    nav_home:          "Inicio",
+    nav_ai_org:        "IA para tu organización",
+    nav_ai_control:    "Control de IA",
+    nav_team:          "Equipo",
+    nav_contact:       "Contacto",
+
+    hero_title:        "La IA ya está dentro de tu empresa",
+    hero_sub:          "Si no la controlas tú, alguien más lo hará — o ella te controlará a ti.",
+    risk1_bold:        "Datos privados",
+    risk1_text:        "están siendo compartidos a través de herramientas de IA.",
+    risk2_bold:        "Las respuestas de la IA",
+    risk2_text:        "no se verifican, poniendo en riesgo decisiones reales.",
+    risk3_bold:        "Los empleados usan IA",
+    risk3_text:        "sin ninguna regla ni orientación.",
+    hero_cta_text:     "Ayudamos a los equipos a usar la IA de forma segura, mantener el control y seguir siendo competitivos — sin frenar el negocio.",
+
+    btn_consulting:    "GOBERNANZA DE IA: CONSULTORÍA Y CAPACITACIÓN",
+    btn_privacy:       "EVALUACIÓN DE PRIVACIDAD Y DATOS",
+    btn_trust:         "REVISIÓN DE CONFIANZA Y CALIDAD DE IA",
+
+    industries_label:  "Industrias que apoyamos",
+    ind_mining:        "> Minería",
+    ind_banking:       "> Banca",
+    ind_health:        "> Salud",
+    ind_gov:           "> Gobierno",
+
+    card1_title:       "Talleres de IA",
+    card1_desc:        "Capacita a los equipos para usar la IA de forma segura, evitar filtraciones de datos y mejorar el trabajo diario.",
+    card1_link:        "Más información →",
+    card2_title:       "Control de IA",
+    card2_desc:        "Establece límites para que la IA apoye las decisiones en lugar de generar nuevos riesgos.",
+    card2_link:        "Más información →",
+    card3_title:       "Entornos de Alto Riesgo",
+    card3_desc:        "Apoyo a equipos regulados y de seguridad crítica donde la confianza y la precisión son fundamentales.",
+    card3_link:        "Contáctanos →",
+
+    aiorg_title:       "Convierte el tsunami tecnológico en una ola que puedas surfear con seguridad.",
+    aiorg_body:        "La IA ya se utiliza en minería, banca, salud e instituciones públicas — muchas veces sin supervisión ni reglas claras. Empleados de todos los niveles, con o sin formación técnica, usan IA para resumir incidentes de seguridad, crear o modificar código, analizar informes de producción y organizar datos de clientes — frecuentemente sin ser conscientes de los riesgos.<br><br>Hacemos que la IA sea práctica para equipos reales a través de <b>talleres</b> focalizados. Ayudamos a líderes y colaboradores a entender dónde encaja verdaderamente la IA, cómo usarla de forma segura en el día a día y cómo convertirla en una herramienta que mejora la eficiencia sin poner en riesgo los activos y el valor de la organización.",
+    aiorg_btn:         "TALLERES DE IA",
+
+    gov_title:         "PROGRAMA DE GOBERNANZA DE IA",
+    gov_body:          "Ayudamos a las organizaciones a construir un programa de gobernanza de IA que te mantenga en control: políticas, directrices de uso responsable, revisiones de riesgo, supervisión de proveedores e inventarios de modelos — para que estés listo para mercados regulados y lo que venga después.",
+    gov_btn:           "IMPLEMENTACIÓN DE GOBERNANZA DE IA",
+
+    team_title:        "Equipo",
+    lester_pos:        "CEO",
+    lester_bg:         "Máster en Ingeniería Informática",
+    lester_bio:        "Consultor senior en datos, IA y tecnología con más de 20 años modernizando y asegurando sistemas críticos en el sector público, salud y minería. Co-desarrolló un dispositivo de seguridad basado en IA para prevenir accidentes y mejorar la interacción humano-tecnología en entornos de alto riesgo.",
+    faye_pos:          "Directora de Entrega Empresarial de IA",
+    faye_bg:           "Doctora en Administración de Empresas (DBA)",
+    faye_bio:          "Lidera iniciativas estratégicas de programa y transformación, asegurando que los esfuerzos de gobernanza de IA estén alineados con la estrategia de negocio y ejecutados eficazmente a escala. Con amplia experiencia en PMO empresarial, liderazgo de portafolios y transformación ágil, ayuda a las organizaciones a convertir la gobernanza de IA en programas estructurados y medibles.",
+    luis_pos:          "Director de Gestión de IA",
+    luis_bg:           "Máster en Ingeniería Industrial",
+    luis_bio:          "Consultor de gobernanza de IA con profunda experiencia en gestión de la innovación, transferencia tecnológica y uso responsable de tecnologías avanzadas. Lideró y asesoró iniciativas de transformación digital e inteligencia tecnológica para universidades, organizaciones privadas e instituciones públicas.",
+    rodo_pos:          "Director de Aprendizaje y Adopción de IA",
+    rodo_bg:           "Máster en Psicología Educativa",
+    rodo_bio:          "Bio de Rodolfo — reemplazar con el texto real del miembro del equipo. Lidera la habilitación de adopción y el aprendizaje práctico para que los equipos usen la IA con confianza sin generar riesgos innecesarios.",
+
+    contact_left_title: "Basados en Portland. Enfocados en el futuro.",
+    contact_left_body:  "Somos un grupo de profesionales que trabajan en la vanguardia de la tecnología, con sede en Portland, Oregón — una ciudad que alberga líderes globales como Intel, Nike y Columbia Sportswear. Ayudamos a las organizaciones a adoptar la IA con claridad, responsabilidad y control.",
+    contact_form_title: "Contáctanos",
+    contact_form_sub:   "Cuéntanos qué quieres lograr. Nosotros nos encargamos del resto.",
+    form_name:          "Nombre",
+    form_name_ph:       "Tu nombre",
+    form_email:         "Correo electrónico",
+    form_email_ph:      "nombre@empresa.com",
+    form_company:       "Empresa",
+    form_company_ph:    "Nombre de la empresa",
+    form_message:       "Mensaje",
+    form_message_ph:    "¿Cómo podemos ayudarte?",
+    form_submit:        "Enviar mensaje",
+    form_note:          "Por favor, no incluyas datos personales sensibles."
+  }
+};
+
+// ── Core i18n engine ──────────────────────────────────────────
+let currentLang = localStorage.getItem('bion_lang') || 'en';
+
+function applyLang(lang) {
+  const t = translations[lang];
+
+  // Text content
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const key = el.getAttribute('data-i18n');
+    if (t[key] !== undefined) el.innerHTML = t[key];
+  });
+
+  // Placeholders
+  document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+    const key = el.getAttribute('data-i18n-placeholder');
+    if (t[key] !== undefined) el.setAttribute('placeholder', t[key]);
+  });
+
+  // Toggle button label & html lang attribute
+  document.getElementById('langBtn').textContent = lang === 'en' ? 'ES' : 'EN';
+  document.documentElement.lang = lang;
+
+  localStorage.setItem('bion_lang', lang);
+  currentLang = lang;
+}
+
+function toggleLang() {
+  applyLang(currentLang === 'en' ? 'es' : 'en');
+}
+
+// Apply on load
+applyLang(currentLang);
+</script>
+
+<!-- ── Parallax bridge ───────────────────────────────────────── -->
 <script>
   (function () {
     const bridge = document.querySelector('.bridge-break');
     const reduceMotion =
       window.matchMedia &&
       window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-
     const strength = 160;
     let ticking = false;
 
     function update() {
       if (!bridge || reduceMotion) { ticking = false; return; }
-
       const rect = bridge.getBoundingClientRect();
       const vh = window.innerHeight || 1;
-
       const progress = (vh - rect.top) / (vh + rect.height);
       const clamped = Math.min(1, Math.max(0, progress));
       const y = Math.round((clamped - 0.5) * 2 * strength);
-
       bridge.style.backgroundPosition = `center calc(50% + ${y}px)`;
       ticking = false;
     }
@@ -876,20 +1068,17 @@
   })();
 </script>
 
+<!-- ── Page router ───────────────────────────────────────────── -->
 <script>
   (function(){
     function setActivePage() {
       const hash = (location.hash || '#home').replace('#','').trim();
       const page = hash === 'contact' ? 'contact' : hash;
-
-      const nodes = document.querySelectorAll('[data-page]');
-      nodes.forEach(n => {
+      document.querySelectorAll('[data-page]').forEach(n => {
         n.classList.toggle('active', n.getAttribute('data-page') === page);
       });
-
       window.scrollTo({ top: 0, behavior: 'auto' });
     }
-
     window.addEventListener('hashchange', setActivePage);
     setActivePage();
   })();
@@ -897,13 +1086,3 @@
 
 </body>
 </html>
-
-
-
-
-
-
-
-
-
-
