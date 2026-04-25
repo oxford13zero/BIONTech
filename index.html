@@ -1478,7 +1478,8 @@ applyLang(currentLang);
     document.getElementById(prefix+'Password').value = '';
     const btn = document.getElementById(prefix+'Submit');
     btn.disabled = false;
-    btn.textContent = currentLang === 'es' ? 'Iniciar sesión' : 'Sign in';
+    const lang = (typeof currentLang !== 'undefined') ? currentLang : 'en';
+    btn.textContent = lang === 'es' ? 'Iniciar sesión' : 'Sign in';
   }
 
   function showError(prefix, msg){
@@ -1522,11 +1523,15 @@ applyLang(currentLang);
   }
 
   async function handleAdminLogin(){
+    console.log('handleAdminLogin fired');
     const email    = document.getElementById('adminEmail').value.trim();
     const password = document.getElementById('adminPassword').value;
+    console.log('email:', email, 'pass length:', password.length);
     if(!email || !password){ showError('admin', currentLang === 'es' ? 'Por favor completa todos los campos.' : 'Please fill in all fields.'); return; }
     setLoading('adminSubmit', true);
+    console.log('calling supabase...');
     const { data, error } = await sb.auth.signInWithPassword({ email, password });
+    console.log('result:', data, error);
     setLoading('adminSubmit', false);
     if(error){
       showError('admin', error.message);
