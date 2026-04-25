@@ -1508,16 +1508,17 @@ applyLang(currentLang);
   }
 
   async function handleLogin(){
+    const lang = (typeof currentLang !== 'undefined') ? currentLang : 'en';
     const email    = document.getElementById('loginEmail').value.trim();
     const password = document.getElementById('loginPassword').value;
-    if(!email || !password){ showError('login', currentLang === 'es' ? 'Por favor completa todos los campos.' : 'Please fill in all fields.'); return; }
+    if(!email || !password){ showError('login', lang === 'es' ? 'Por favor completa todos los campos.' : 'Please fill in all fields.'); return; }
     setLoading('loginSubmit', true);
     const { data, error } = await sb.auth.signInWithPassword({ email, password });
     setLoading('loginSubmit', false);
     if(error){
       showError('login', error.message);
     } else {
-      showSuccess('login', currentLang === 'es' ? '¡Acceso correcto! Redirigiendo...' : 'Login successful! Redirecting...');
+      showSuccess('login', lang === 'es' ? '¡Acceso correcto! Redirigiendo...' : 'Login successful! Redirecting...');
       setTimeout(() => closeModal('loginModal'), 1500);
     }
   }
@@ -1527,7 +1528,8 @@ applyLang(currentLang);
     const email    = document.getElementById('adminEmail').value.trim();
     const password = document.getElementById('adminPassword').value;
     console.log('email:', email, 'pass length:', password.length);
-    if(!email || !password){ showError('admin', currentLang === 'es' ? 'Por favor completa todos los campos.' : 'Please fill in all fields.'); return; }
+    const lang = (typeof currentLang !== 'undefined') ? currentLang : 'en';
+    if(!email || !password){ showError('admin', lang === 'es' ? 'Por favor completa todos los campos.' : 'Please fill in all fields.'); return; }
     setLoading('adminSubmit', true);
     console.log('calling supabase...');
     const { data, error } = await sb.auth.signInWithPassword({ email, password });
@@ -1539,9 +1541,9 @@ applyLang(currentLang);
       const { data: profile } = await sb.from('profiles').select('role').eq('user_id', data.user.id).single();
       if(!profile || profile.role !== 'bion_admin'){
         await sb.auth.signOut();
-        showError('admin', currentLang === 'es' ? 'No tienes permisos de administrador.' : 'You do not have admin permissions.');
+        showError('admin', lang === 'es' ? 'No tienes permisos de administrador.' : 'You do not have admin permissions.');
       } else {
-        showSuccess('admin', currentLang === 'es' ? '¡Sesión iniciada!' : 'Signed in as admin!');
+        showSuccess('admin', lang === 'es' ? '¡Sesión iniciada!' : 'Signed in as admin!');
         setAdminLoggedIn(data.user.email);
         setTimeout(() => closeModal('adminModal'), 1000);
       }
