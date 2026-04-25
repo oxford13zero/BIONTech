@@ -1476,6 +1476,9 @@ applyLang(currentLang);
     document.getElementById(prefix+'Success').style.display = 'none';
     document.getElementById(prefix+'Email').value    = '';
     document.getElementById(prefix+'Password').value = '';
+    const btn = document.getElementById(prefix+'Submit');
+    btn.disabled = false;
+    btn.textContent = currentLang === 'es' ? 'Iniciar sesión' : 'Sign in';
   }
 
   function showError(prefix, msg){
@@ -1495,7 +1498,12 @@ applyLang(currentLang);
   function setLoading(btnId, loading){
     const btn = document.getElementById(btnId);
     btn.disabled = loading;
-    btn.textContent = loading ? '...' : (currentLang === 'es' ? 'Iniciar sesión' : 'Sign in');
+    if(loading){
+      btn.dataset.origText = btn.textContent;
+      btn.textContent = '...';
+    } else {
+      btn.textContent = btn.dataset.origText || (currentLang === 'es' ? 'Iniciar sesión' : 'Sign in');
+    }
   }
 
   async function handleLogin(){
