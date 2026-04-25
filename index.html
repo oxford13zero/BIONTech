@@ -842,13 +842,29 @@
     </div>
 
     <nav class="menu">
-      <button class="btn-login" onclick="openLoginModal()" data-i18n-login>
-        <svg width="14" height="14" viewBox="0 0 12 12" fill="none">
-          <rect x="2" y="5" width="8" height="6" rx="1.5" stroke="#F4C38B" stroke-width="1.3"/>
-          <path d="M4 5V3.5a2 2 0 014 0V5" stroke="#F4C38B" stroke-width="1.3" stroke-linecap="round"/>
-        </svg>
-        <span data-i18n="nav_login">Client login</span>
-      </button>
+      <div class="admin-wrap" id="clientWrap">
+        <button class="btn-login" id="clientBtn" onclick="handleClientBtnClick(event)">
+          <svg width="14" height="14" viewBox="0 0 12 12" fill="none">
+            <rect x="2" y="5" width="8" height="6" rx="1.5" stroke="#F4C38B" stroke-width="1.3"/>
+            <path d="M4 5V3.5a2 2 0 014 0V5" stroke="#F4C38B" stroke-width="1.3" stroke-linecap="round"/>
+          </svg>
+          <span data-i18n="nav_login">Client login</span>
+        </button>
+        <div class="admin-dropdown" id="clientDropdown">
+          <div class="admin-dropdown-header">
+            <p class="admin-dropdown-role" data-i18n="client_role">Client</p>
+            <p class="admin-dropdown-email" id="clientDropdownEmail">—</p>
+          </div>
+          <button class="admin-dropdown-logout" onclick="event.stopPropagation(); handleClientLogout()">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+              <path d="M6 14H3a1 1 0 01-1-1V3a1 1 0 011-1h3" stroke="#F09595" stroke-width="1.4" stroke-linecap="round"/>
+              <path d="M11 11l3-3-3-3" stroke="#F09595" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M14 8H6" stroke="#F09595" stroke-width="1.4" stroke-linecap="round"/>
+            </svg>
+            <span data-i18n="client_logout">Sign out</span>
+          </button>
+        </div>
+      </div>
       <a href="#home"          data-i18n="nav_home">Home</a>
       <a href="#ai-for-your-org" data-i18n="nav_ai_org">AI for your org</a>
       <a href="#ai-governance" data-i18n="nav_ai_control">AI control</a>
@@ -1130,6 +1146,8 @@ const translations = {
     nav_team:          "Team",
     nav_contact:       "Contact",
     nav_login:         "Client login",
+    client_role:       "Client",
+    client_logout:     "Sign out",
 
     login_title:       "Welcome back",
     login_sub:         "Sign in to your account",
@@ -1217,6 +1235,8 @@ const translations = {
     nav_team:          "Equipo",
     nav_contact:       "Contacto",
     nav_login:         "Acceso clientes",
+    client_role:       "Cliente",
+    client_logout:     "Cerrar sesión",
 
     login_title:       "Bienvenido de vuelta",
     login_sub:         "Inicia sesión en tu cuenta",
@@ -1405,6 +1425,43 @@ applyLang(currentLang);
   const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN0aWdkdWltbnlieXFyb3NmbmNuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzcwNzU1MDQsImV4cCI6MjA5MjY1MTUwNH0.h6sDfa14t6cS1iupeZyaEhWcgJirvgI5zqBGpn7FYbc';
   const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
 
+  let clientLoggedIn = false;
+
+  function handleClientBtnClick(e){
+    e.stopPropagation();
+    if(clientLoggedIn){
+      document.getElementById('clientDropdown').classList.toggle('open');
+    } else {
+      document.getElementById('clientDropdown').classList.remove('open');
+      clearModal('login');
+      document.getElementById('loginModal').classList.add('open');
+    }
+  }
+
+  function openLoginModal(){
+    handleClientBtnClick({ stopPropagation: function(){} });
+  }
+
+  function setClientLoggedIn(email){
+    clientLoggedIn = true;
+    document.getElementById('clientDropdownEmail').textContent = email;
+    document.getElementById('clientBtn').style.borderColor = 'rgba(244,195,139,.95)';
+    document.getElementById('clientBtn').style.background  = '#1A2C52';
+  }
+
+  function setClientLoggedOut(){
+    clientLoggedIn = false;
+    document.getElementById('clientDropdownEmail').textContent = '—';
+    document.getElementById('clientBtn').style.borderColor = '';
+    document.getElementById('clientBtn').style.background  = '';
+    document.getElementById('clientDropdown').classList.remove('open');
+  }
+
+  async function handleClientLogout(){
+    await sb.auth.signOut();
+    setClientLoggedOut();
+  }
+
   let adminLoggedIn = false;
 
   function openLoginModal(){ clearModal('login'); document.getElementById('loginModal').classList.add('open'); }
@@ -1439,8 +1496,10 @@ applyLang(currentLang);
   });
 
   document.addEventListener('click', function(e){
-    const wrap = document.getElementById('adminWrap');
-    if(!wrap.contains(e.target)) closeAdminDropdown();
+    const adminWrap  = document.getElementById('adminWrap');
+    const clientWrap = document.getElementById('clientWrap');
+    if(!adminWrap.contains(e.target))  document.getElementById('adminDropdown').classList.remove('open');
+    if(!clientWrap.contains(e.target)) document.getElementById('clientDropdown').classList.remove('open');
   });
 
   function toggleAdminDropdown(){
@@ -1518,8 +1577,9 @@ applyLang(currentLang);
     if(error){
       showError('login', error.message);
     } else {
-      showSuccess('login', lang === 'es' ? '¡Acceso correcto! Redirigiendo...' : 'Login successful! Redirecting...');
-      setTimeout(() => closeModal('loginModal'), 1500);
+      showSuccess('login', lang === 'es' ? '¡Acceso correcto!' : 'Login successful!');
+      setClientLoggedIn(data.user.email);
+      setTimeout(() => closeModal('loginModal'), 1000);
     }
   }
 
@@ -1560,6 +1620,8 @@ applyLang(currentLang);
       sb.from('profiles').select('role').eq('user_id', data.session.user.id).single().then(({ data: profile }) => {
         if(profile && profile.role === 'bion_admin'){
           setAdminLoggedIn(data.session.user.email);
+        } else if(profile){
+          setClientLoggedIn(data.session.user.email);
         }
       });
     }
