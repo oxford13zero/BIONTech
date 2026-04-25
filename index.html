@@ -1132,6 +1132,198 @@
   </main>
 </div>
 
+<!-- ── CLIENT DASHBOARD ─────────────────────────────────────── -->
+<div id="clientDashboard" style="display:none;">
+<style>
+  #clientDashboard{
+    max-width:1100px;
+    margin:18px auto;
+    padding:0 16px 72px;
+  }
+  .db-wrap{
+    background:#111A2C;
+    border:1px solid #2C3F6A;
+    border-radius:18px;
+    padding:20px;
+    box-shadow:0 18px 60px rgba(0,0,0,.35);
+  }
+  .db-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px;}
+  .db-title{font-size:18px;font-weight:800;color:#EAF0FF;margin:0 0 4px;}
+  .db-sub{font-size:13px;color:#C2CDED;margin:0;}
+  .db-company{color:#F4C38B;font-weight:700;}
+  .db-date{font-size:11px;color:#5A7299;margin-top:4px;}
+
+  .alert-strip{background:#0F1B33;border:1px solid #2C3F6A;border-radius:12px;padding:12px 16px;margin-bottom:16px;}
+  .alert-strip-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;}
+  .alert-strip-title{font-size:11px;font-weight:700;color:#C2CDED;text-transform:uppercase;letter-spacing:.07em;margin:0;display:flex;align-items:center;gap:6px;}
+  .country-pill{font-size:11px;padding:2px 8px;border-radius:999px;background:#1F3D68;color:#85B7EB;font-weight:500;}
+  .alert-count{font-size:10px;color:#5A7299;}
+  .alert-row{display:flex;align-items:baseline;gap:8px;padding:5px 0;border-bottom:0.5px solid rgba(44,63,106,.5);}
+  .alert-row:last-child{border-bottom:none;}
+  .alert-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0;margin-top:5px;}
+  .alert-dot.urgent{background:#F09595;}
+  .alert-dot.info{background:#85B7EB;}
+  .alert-dot.warning{background:#F4C38B;}
+  .alert-text{font-size:12px;color:#C2CDED;flex:1;line-height:1.4;}
+  .alert-text strong{color:#EAF0FF;}
+  .alert-meta{font-size:10px;color:#5A7299;white-space:nowrap;}
+  .alert-link{font-size:11px;color:#F4C38B;text-decoration:none;white-space:nowrap;border-bottom:1px solid rgba(244,195,139,.3);padding-bottom:1px;margin-left:4px;}
+  .alert-link:hover{border-bottom-color:rgba(244,195,139,.9);}
+
+  .db-tabs{display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap;}
+  .db-tab{padding:7px 12px;border-radius:9px;border:1px solid #2C3F6A;background:#132242;color:#C2CDED;font-size:12px;font-weight:600;cursor:pointer;font-family:"Source Sans 3",system-ui,sans-serif;transition:background .15s,border-color .15s,color .15s;}
+  .db-tab.active{background:#1F3D68;border-color:#F4C38B;color:#F4C38B;}
+  .db-tab:hover:not(.active){background:#1A2C52;color:#EAF0FF;}
+
+  .metrics-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px;}
+  .metric-card{background:#152A52;border:1px solid #2C3F6A;border-radius:10px;padding:14px;}
+  .metric-label{font-size:10px;color:#8899CC;text-transform:uppercase;letter-spacing:.06em;margin:0 0 6px;}
+  .metric-val{font-size:26px;font-weight:800;color:#EAF0FF;margin:0 0 2px;}
+  .metric-hint{font-size:11px;margin:0;}
+
+  .charts-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:12px;}
+  .charts-row2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;}
+  .chart-panel{background:#152A52;border:1px solid #2C3F6A;border-radius:10px;padding:14px;}
+  .chart-panel-label{font-size:10px;color:#8899CC;text-transform:uppercase;letter-spacing:.06em;margin:0 0 8px;}
+  .db-legend{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px;}
+  .db-leg-item{display:flex;align-items:center;gap:4px;font-size:11px;color:#8899CC;}
+  .db-leg-sq{width:10px;height:10px;border-radius:2px;flex-shrink:0;}
+
+  .inv-section-label{font-size:10px;color:#8899CC;text-transform:uppercase;letter-spacing:.06em;margin:0 0 10px;}
+  .inv-grid{display:grid;gap:10px;}
+  .inv-card{background:#0F1B33;border:1px solid #2C3F6A;border-radius:12px;padding:14px;}
+  .inv-card-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;}
+  .inv-card-id{font-size:10px;color:#5A7299;font-family:monospace;margin:0 0 2px;}
+  .inv-card-name{font-size:14px;font-weight:700;color:#EAF0FF;margin:0 0 2px;}
+  .inv-card-vendor{font-size:11px;color:#8899CC;margin:0;}
+  .risk-badge{font-size:10px;padding:3px 9px;border-radius:999px;font-weight:700;white-space:nowrap;}
+  .risk-critical{background:#4A1515;color:#F09595;}
+  .risk-high{background:#3D2500;color:#FAC775;}
+  .risk-medium{background:#0C2240;color:#85B7EB;}
+  .risk-low{background:#122010;color:#97C459;}
+  .inv-meta-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px;}
+  .inv-meta-label{font-size:10px;color:#5A7299;text-transform:uppercase;letter-spacing:.04em;margin:0 0 2px;}
+  .inv-meta-val{font-size:11px;color:#EAF0FF;margin:0;}
+  .inv-meta-val.warn{color:#FAC775;}
+  .inv-meta-val.danger{color:#F09595;}
+  .inv-card-bottom{display:flex;justify-content:space-between;align-items:center;}
+  .status-pill{font-size:10px;padding:3px 9px;border-radius:999px;font-weight:600;}
+  .sp-conforme{background:#122010;color:#97C459;}
+  .sp-proceso{background:#3D2500;color:#FAC775;}
+  .sp-sineval{background:#0C2240;color:#85B7EB;}
+  .sp-noconf{background:#4A1515;color:#F09595;}
+  .inv-actions{display:flex;gap:6px;}
+  .inv-btn{font-size:11px;padding:4px 10px;border-radius:6px;border:1px solid #2C3F6A;background:transparent;color:#C2CDED;cursor:pointer;font-family:"Source Sans 3",system-ui,sans-serif;}
+  .inv-btn:hover{background:#1A2C52;}
+  .inv-btn.del{color:#F09595;border-color:#4A1515;}
+  .inv-btn.del:hover{background:#4A1515;}
+  .add-system-btn{width:100%;padding:11px;border-radius:10px;border:1px dashed rgba(244,195,139,.4);background:transparent;color:#F4C38B;font-size:13px;font-weight:700;cursor:pointer;margin-top:10px;font-family:"Source Sans 3",system-ui,sans-serif;transition:border-color .15s,background .15s;}
+  .add-system-btn:hover{border-color:rgba(244,195,139,.9);background:rgba(244,195,139,.05);}
+  .db-loading{text-align:center;padding:40px;color:#8899CC;font-size:14px;}
+  .db-empty{text-align:center;padding:30px;color:#8899CC;font-size:13px;}
+
+  @media(max-width:900px){
+    .metrics-grid{grid-template-columns:1fr 1fr;}
+    .charts-row{grid-template-columns:1fr;}
+    .charts-row2{grid-template-columns:1fr;}
+    .inv-meta-grid{grid-template-columns:1fr 1fr;}
+  }
+</style>
+
+<div class="db-wrap">
+  <div class="db-header">
+    <div>
+      <p class="db-title">AI Governance Dashboard</p>
+      <p class="db-sub">Inventory management · <span class="db-company" id="dbCompanyName">—</span></p>
+    </div>
+    <p class="db-date" id="dbDate">—</p>
+  </div>
+
+  <div class="alert-strip" id="alertStrip" style="display:none;">
+    <div class="alert-strip-header">
+      <p class="alert-strip-title">
+        <svg width="12" height="12" viewBox="0 0 16 16" fill="none">
+          <circle cx="8" cy="8" r="7" stroke="#F4C38B" stroke-width="1.4"/>
+          <path d="M8 5v4" stroke="#F4C38B" stroke-width="1.4" stroke-linecap="round"/>
+          <circle cx="8" cy="11.5" r=".7" fill="#F4C38B"/>
+        </svg>
+        Regulatory alerts
+        <span class="country-pill" id="alertCountry">—</span>
+      </p>
+      <span class="alert-count" id="alertCount">—</span>
+    </div>
+    <div id="alertRows"></div>
+  </div>
+
+  <div class="db-tabs" id="dbTabs">
+    <button class="db-tab active" onclick="switchTab('all',this)">All groups</button>
+    <button class="db-tab" onclick="switchTab('1',this)">Group 1 — Operational</button>
+    <button class="db-tab" onclick="switchTab('2',this)">Group 2 — Analytical</button>
+    <button class="db-tab" onclick="switchTab('3',this)">Group 3 — Geoscience</button>
+    <button class="db-tab" onclick="switchTab('4',this)">Group 4 — General use</button>
+  </div>
+
+  <div class="metrics-grid">
+    <div class="metric-card">
+      <p class="metric-label">Total systems</p>
+      <p class="metric-val" id="mTotal">—</p>
+      <p class="metric-hint" style="color:#97C459;" id="mTotalHint"> </p>
+    </div>
+    <div class="metric-card">
+      <p class="metric-label">Critical risk</p>
+      <p class="metric-val" style="color:#F09595;" id="mCritical">—</p>
+      <p class="metric-hint" style="color:#F09595;">Require immediate review</p>
+    </div>
+    <div class="metric-card">
+      <p class="metric-label">Compliance</p>
+      <p class="metric-val" style="color:#FAC775;" id="mCompliance">—</p>
+      <p class="metric-hint" style="color:#FAC775;" id="mComplianceHint"> </p>
+    </div>
+    <div class="metric-card">
+      <p class="metric-label">Reviews due</p>
+      <p class="metric-val" style="color:#F09595;" id="mReviews">—</p>
+      <p class="metric-hint" style="color:#FAC775;" id="mReviewsHint"> </p>
+    </div>
+  </div>
+
+  <div class="charts-row">
+    <div class="chart-panel">
+      <p class="chart-panel-label">Compliance status</p>
+      <div class="db-legend" id="legendCompliance"></div>
+      <div style="position:relative;height:130px;"><canvas id="dbC1" role="img" aria-label="Donut chart of compliance status"></canvas></div>
+    </div>
+    <div class="chart-panel">
+      <p class="chart-panel-label">Risk level</p>
+      <div class="db-legend" id="legendRisk"></div>
+      <div style="position:relative;height:130px;"><canvas id="dbC2" role="img" aria-label="Donut chart of risk levels"></canvas></div>
+    </div>
+    <div class="chart-panel">
+      <p class="chart-panel-label">Systems by group</p>
+      <div class="db-legend" id="legendGroup"></div>
+      <div style="position:relative;height:130px;"><canvas id="dbC3" role="img" aria-label="Donut chart of systems by group"></canvas></div>
+    </div>
+  </div>
+
+  <div class="charts-row2">
+    <div class="chart-panel">
+      <p class="chart-panel-label">Incidents over time</p>
+      <div style="position:relative;height:150px;"><canvas id="dbC4" role="img" aria-label="Bar chart of incidents per quarter"></canvas></div>
+    </div>
+    <div class="chart-panel">
+      <p class="chart-panel-label">Bias evaluation coverage</p>
+      <div class="db-legend" id="legendBias"></div>
+      <div style="position:relative;height:120px;"><canvas id="dbC5" role="img" aria-label="Horizontal bar of bias evaluation coverage"></canvas></div>
+    </div>
+  </div>
+
+  <p class="inv-section-label" id="invSectionLabel">Inventory records</p>
+  <div class="inv-grid" id="invGrid">
+    <div class="db-loading">Loading inventory...</div>
+  </div>
+  <button class="add-system-btn" id="addSystemBtn" onclick="openAddWizard()">+ Add new system</button>
+</div>
+</div>
+
 <!-- ============================================================
      TRANSLATIONS
      To edit: update the "es" object below with your Spanish text.
@@ -1160,7 +1352,9 @@ const translations = {
 
     admin_title:       "Admin access",
     admin_sub:         "Restricted to BION administrators",
-    admin_logout:      "Sign out",        "AI is already inside your company",
+    admin_logout:      "Sign out",
+
+    hero_title:
     hero_sub:          "If you don't control it, someone else will — or it will control you.",
     risk1_bold:        "Private data",
     risk1_text:        "is being shared through AI tools.",
@@ -1442,11 +1636,20 @@ applyLang(currentLang);
     handleClientBtnClick({ stopPropagation: function(){} });
   }
 
-  function setClientLoggedIn(email){
+  async function setClientLoggedIn(email, userId){
     clientLoggedIn = true;
     document.getElementById('clientDropdownEmail').textContent = email;
     document.getElementById('clientBtn').style.borderColor = 'rgba(244,195,139,.95)';
     document.getElementById('clientBtn').style.background  = '#1A2C52';
+    const { data: profile } = await sb
+      .from('profiles')
+      .select('company_id, companies(name, country)')
+      .eq('user_id', userId)
+      .single();
+    const companyName = profile?.companies?.name || email;
+    const country     = profile?.companies?.country || null;
+    const companyId   = profile?.company_id || null;
+    showDashboard(companyName, country, userId, companyId);
   }
 
   function setClientLoggedOut(){
@@ -1455,6 +1658,7 @@ applyLang(currentLang);
     document.getElementById('clientBtn').style.borderColor = '';
     document.getElementById('clientBtn').style.background  = '';
     document.getElementById('clientDropdown').classList.remove('open');
+    hideDashboard();
   }
 
   async function handleClientLogout(){
@@ -1578,7 +1782,7 @@ applyLang(currentLang);
       showError('login', error.message);
     } else {
       showSuccess('login', lang === 'es' ? '¡Acceso correcto!' : 'Login successful!');
-      setClientLoggedIn(data.user.email);
+      setClientLoggedIn(data.user.email, data.user.id);
       setTimeout(() => closeModal('loginModal'), 1000);
     }
   }
@@ -1621,7 +1825,7 @@ applyLang(currentLang);
         if(profile && profile.role === 'bion_admin'){
           setAdminLoggedIn(data.session.user.email);
         } else if(profile){
-          setClientLoggedIn(data.session.user.email);
+          setClientLoggedIn(data.session.user.email, data.session.user.id);
         }
       });
     }
@@ -1676,6 +1880,455 @@ applyLang(currentLang);
     setActivePage();
   })();
 </script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+let dbCharts = {};
+let allSystems = [];
+let currentTab = 'all';
+
+const GROUP_NAMES = {
+  1: 'Group 1 — Operational',
+  2: 'Group 2 — Analytical',
+  3: 'Group 3 — Geoscience',
+  4: 'Group 4 — General use'
+};
+
+const RISK_COLORS = {
+  'Critical': '#E24B4A',
+  'High':     '#EF9F27',
+  'Medium':   '#378ADD',
+  'Low':      '#639922'
+};
+
+const COMPLIANCE_COLORS = {
+  'Conforme':    '#639922',
+  'En proceso':  '#BA7517',
+  'No conforme': '#A32D2D',
+  'Sin evaluar': '#185FA5'
+};
+
+const GROUP_COLORS = {1:'#D4537E', 2:'#5DCAA5', 3:'#7F77DD', 4:'#F4C38B'};
+
+function showDashboard(companyName, country, userId, companyId) {
+  document.getElementById('home').style.display = 'none';
+  document.getElementById('clientDashboard').style.display = 'block';
+  document.getElementById('dbCompanyName').textContent = companyName || '—';
+  document.getElementById('dbDate').textContent = new Date().toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'});
+  loadAlerts(country);
+  loadSystems(companyId);
+}
+
+function hideDashboard() {
+  document.getElementById('clientDashboard').style.display = 'none';
+  document.getElementById('home').style.display = 'block';
+}
+
+async function loadAlerts(country) {
+  if(!country) return;
+  const { data } = await sb
+    .from('legislation_alerts')
+    .select('*')
+    .eq('country', country)
+    .eq('active', true)
+    .order('published_at', { ascending: false })
+    .limit(3);
+  if(!data || data.length === 0) return;
+  document.getElementById('alertStrip').style.display = 'block';
+  document.getElementById('alertCountry').textContent = country;
+  document.getElementById('alertCount').textContent = data.length + ' active alert' + (data.length > 1 ? 's' : '');
+  const colors = ['urgent','warning','info'];
+  document.getElementById('alertRows').innerHTML = data.map((a,i) => `
+    <div class="alert-row">
+      <div class="alert-dot ${colors[i % 3]}"></div>
+      <span class="alert-text"><strong>${a.title}:</strong> ${a.description}</span>
+      <span class="alert-meta">${new Date(a.published_at).toLocaleDateString('en-US',{month:'short',year:'numeric'})}</span>
+      <a class="alert-link" href="${a.url}" target="_blank">View law →</a>
+    </div>`).join('');
+}
+
+async function loadSystems(companyId) {
+  document.getElementById('invGrid').innerHTML = '<div class="db-loading">Loading systems...</div>';
+  const { data, error } = await sb
+    .from('ai_systems')
+    .select(`
+      id, system_code, name, inventory_group, vendor, version,
+      deploy_date, responsible_person, operational_location,
+      country, risk_level, compliance_status, next_review_date,
+      status, updated_at,
+      branches(name),
+      sec_performance(incident_count, bias_evaluated),
+      sec_risk_operational(human_override_exists, override_response_time_sec)
+    `)
+    .eq('company_id', companyId)
+    .eq('status', 'active')
+    .order('inventory_group');
+
+  if(error){ document.getElementById('invGrid').innerHTML = '<div class="db-empty">Error loading data: ' + error.message + '</div>'; return; }
+  allSystems = data || [];
+  renderDashboard(allSystems);
+}
+
+function switchTab(tab, el) {
+  currentTab = tab;
+  document.querySelectorAll('.db-tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  const filtered = tab === 'all' ? allSystems : allSystems.filter(s => String(s.inventory_group) === tab);
+  const label = tab === 'all' ? 'All inventory records' : GROUP_NAMES[tab] + ' — records';
+  document.getElementById('invSectionLabel').textContent = label;
+  renderInventoryCards(filtered);
+}
+
+function renderDashboard(systems) {
+  updateMetrics(systems);
+  renderCharts(systems);
+  renderInventoryCards(systems);
+}
+
+function updateMetrics(systems) {
+  const now = new Date();
+  const in60 = new Date(now.getTime() + 60*24*60*60*1000);
+  const critical = systems.filter(s => s.risk_level === 'Critical').length;
+  const conforme = systems.filter(s => s.compliance_status === 'Conforme').length;
+  const overdue  = systems.filter(s => s.next_review_date && new Date(s.next_review_date) < now).length;
+  const soon     = systems.filter(s => s.next_review_date && new Date(s.next_review_date) > now && new Date(s.next_review_date) < in60).length;
+  const pct = systems.length > 0 ? Math.round((conforme / systems.length) * 100) : 0;
+  const branches = new Set(systems.map(s => s.branches?.name).filter(Boolean)).size;
+
+  document.getElementById('mTotal').textContent      = systems.length;
+  document.getElementById('mTotalHint').textContent  = 'Across ' + branches + ' branch' + (branches !== 1 ? 'es' : '');
+  document.getElementById('mCritical').textContent   = critical;
+  document.getElementById('mCompliance').textContent = pct + '%';
+  document.getElementById('mComplianceHint').textContent = conforme + ' of ' + systems.length + ' conforme';
+  document.getElementById('mReviews').textContent    = overdue;
+  document.getElementById('mReviewsHint').textContent = soon + ' due within 60 days';
+  if(overdue > 0) document.getElementById('mReviews').style.color = '#F09595';
+}
+
+function buildLegend(id, labels, colors) {
+  document.getElementById(id).innerHTML = labels.map((l,i) =>
+    `<span class="db-leg-item"><span class="db-leg-sq" style="background:${colors[i]};"></span>${l}</span>`
+  ).join('');
+}
+
+function countBy(arr, key) {
+  return arr.reduce((acc, item) => {
+    const v = item[key] || 'Unknown';
+    acc[v] = (acc[v] || 0) + 1;
+    return acc;
+  }, {});
+}
+
+function renderCharts(systems) {
+  ['dbC1','dbC2','dbC3','dbC4','dbC5'].forEach(id => {
+    if(dbCharts[id]) { dbCharts[id].destroy(); delete dbCharts[id]; }
+  });
+
+  const donutOpts = {
+    responsive:true, maintainAspectRatio:false,
+    plugins:{ legend:{display:false}, tooltip:{callbacks:{label:ctx=>` ${ctx.label}: ${ctx.parsed}`}} },
+    cutout:'68%'
+  };
+
+  const complianceCounts = countBy(systems, 'compliance_status');
+  const complianceLabels = Object.keys(complianceCounts);
+  const complianceVals   = Object.values(complianceCounts);
+  const complianceColors = complianceLabels.map(l => COMPLIANCE_COLORS[l] || '#888780');
+  buildLegend('legendCompliance', complianceLabels.map((l,i) => `${l} (${complianceVals[i]})`), complianceColors);
+  dbCharts.dbC1 = new Chart(document.getElementById('dbC1'),{
+    type:'doughnut',
+    data:{labels:complianceLabels, datasets:[{data:complianceVals, backgroundColor:complianceColors, borderWidth:0}]},
+    options:donutOpts
+  });
+
+  const riskCounts = countBy(systems, 'risk_level');
+  const riskOrder  = ['Critical','High','Medium','Low'];
+  const riskLabels = riskOrder.filter(r => riskCounts[r]);
+  const riskVals   = riskLabels.map(r => riskCounts[r]);
+  const riskColors = riskLabels.map(r => RISK_COLORS[r]);
+  buildLegend('legendRisk', riskLabels.map((l,i) => `${l} (${riskVals[i]})`), riskColors);
+  dbCharts.dbC2 = new Chart(document.getElementById('dbC2'),{
+    type:'doughnut',
+    data:{labels:riskLabels, datasets:[{data:riskVals, backgroundColor:riskColors, borderWidth:0}]},
+    options:donutOpts
+  });
+
+  const groupCounts = countBy(systems, 'inventory_group');
+  const groupLabels = Object.keys(groupCounts).sort().map(g => GROUP_NAMES[g] || 'Group '+g);
+  const groupKeys   = Object.keys(groupCounts).sort();
+  const groupVals   = groupKeys.map(g => groupCounts[g]);
+  const groupColors = groupKeys.map(g => GROUP_COLORS[g] || '#888780');
+  buildLegend('legendGroup', groupLabels.map((l,i) => `${l} (${groupVals[i]})`), groupColors);
+  dbCharts.dbC3 = new Chart(document.getElementById('dbC3'),{
+    type:'doughnut',
+    data:{labels:groupLabels, datasets:[{data:groupVals, backgroundColor:groupColors, borderWidth:0}]},
+    options:donutOpts
+  });
+
+  const totalIncidents = systems.reduce((sum, s) => {
+    const inc = s.sec_performance?.[0]?.incident_count || 0;
+    return sum + inc;
+  }, 0);
+  const incidentData = [0,0,0,0,0,totalIncidents];
+  const months = [];
+  for(let m=5;m>=0;m--){
+    const d = new Date(); d.setMonth(d.getMonth()-m);
+    months.push(d.toLocaleDateString('en-US',{month:'short',year:'2-digit'}));
+  }
+  dbCharts.dbC4 = new Chart(document.getElementById('dbC4'),{
+    type:'bar',
+    data:{labels:months, datasets:[{label:'Incidents',data:incidentData,backgroundColor:'#378ADD',borderRadius:4}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+      scales:{x:{ticks:{color:'#8899CC',font:{size:10}},grid:{color:'rgba(44,63,106,.4)'}},
+              y:{ticks:{color:'#8899CC',font:{size:10},stepSize:1},grid:{color:'rgba(44,63,106,.4)'},beginAtZero:true}}}
+  });
+
+  const biasEvaluated  = systems.filter(s => (s.sec_performance?.[0]?.bias_evaluated || '').toLowerCase() === 'si' || (s.sec_performance?.[0]?.bias_evaluated || '').toLowerCase() === 'en proceso').length;
+  const biasNotEval    = systems.length - biasEvaluated;
+  buildLegend('legendBias',['Evaluated/in progress','Not evaluated'],['#97C459','#F09595']);
+  dbCharts.dbC5 = new Chart(document.getElementById('dbC5'),{
+    type:'bar',
+    data:{labels:['Evaluated','Not evaluated'], datasets:[{data:[biasEvaluated, biasNotEval],backgroundColor:['#639922','#A32D2D'],borderRadius:4,barThickness:18}]},
+    options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+      scales:{x:{max:systems.length,ticks:{color:'#8899CC',font:{size:10},stepSize:1},grid:{color:'rgba(44,63,106,.4)'}},
+              y:{ticks:{color:'#8899CC',font:{size:10}},grid:{display:false}}}}
+  });
+}
+
+function renderInventoryCards(systems) {
+  const grid = document.getElementById('invGrid');
+  if(!systems || systems.length === 0){
+    grid.innerHTML = '<div class="db-empty">No records found for this group.</div>';
+    return;
+  }
+  const now = new Date();
+  grid.innerHTML = systems.map(s => {
+    const riskClass  = {'Critical':'risk-critical','High':'risk-high','Medium':'risk-medium','Low':'risk-low'}[s.risk_level] || 'risk-medium';
+    const statusClass= {'Conforme':'sp-conforme','En proceso':'sp-proceso','No conforme':'sp-noconf','Sin evaluar':'sp-sineval'}[s.compliance_status] || 'sp-sineval';
+    const reviewDate = s.next_review_date ? new Date(s.next_review_date) : null;
+    const reviewStr  = reviewDate ? reviewDate.toLocaleDateString('en-US',{month:'short',year:'numeric'}) : '—';
+    const reviewClass= reviewDate && reviewDate < now ? 'danger' : (reviewDate && reviewDate < new Date(now.getTime()+60*24*60*60*1000) ? 'warn' : '');
+    const incidents  = s.sec_performance?.[0]?.incident_count ?? '—';
+    const bias       = s.sec_performance?.[0]?.bias_evaluated || '—';
+    const override   = s.sec_risk_operational?.[0]?.human_override_exists || '—';
+    const overrideSec= s.sec_risk_operational?.[0]?.override_response_time_sec;
+    const overrideStr= override === 'Si' && overrideSec ? `Yes — ${overrideSec}s` : override === 'No' ? 'No' : override === '—' ? '—' : override;
+    const deployYear = s.deploy_date ? new Date(s.deploy_date).getFullYear() : '—';
+    return `
+    <div class="inv-card">
+      <div class="inv-card-top">
+        <div>
+          <p class="inv-card-id">${s.system_code} · ${GROUP_NAMES[s.inventory_group] || 'Group '+s.inventory_group}</p>
+          <p class="inv-card-name">${s.name}</p>
+          <p class="inv-card-vendor">${s.vendor || '—'} · ${s.version || '—'} · Deployed ${deployYear}</p>
+        </div>
+        <span class="risk-badge ${riskClass}">${s.risk_level || '—'}</span>
+      </div>
+      <div class="inv-meta-grid">
+        <div><p class="inv-meta-label">Responsible</p><p class="inv-meta-val">${s.responsible_person || '—'}</p></div>
+        <div><p class="inv-meta-label">Country</p><p class="inv-meta-val">${s.country || '—'}</p></div>
+        <div><p class="inv-meta-label">Next review</p><p class="inv-meta-val ${reviewClass}">${reviewStr}${reviewClass === 'danger' ? ' ⚠' : ''}</p></div>
+        <div><p class="inv-meta-label">Human override</p><p class="inv-meta-val">${overrideStr}</p></div>
+        <div><p class="inv-meta-label">Incidents</p><p class="inv-meta-val ${incidents > 0 ? 'warn' : ''}">${incidents}</p></div>
+        <div><p class="inv-meta-label">Bias eval</p><p class="inv-meta-val ${bias === 'No disponible' || bias === '—' ? 'warn' : ''}">${bias}</p></div>
+      </div>
+      <div class="inv-card-bottom">
+        <span class="status-pill ${statusClass}">${s.compliance_status || 'Sin evaluar'}</span>
+        <div class="inv-actions">
+          <button class="inv-btn">View</button>
+          <button class="inv-btn">Edit</button>
+          <button class="inv-btn del" onclick="deleteSystem('${s.id}')">Delete</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function deleteSystem(id) {
+  if(!confirm('Delete this AI system and all its section data?')) return;
+  const { error } = await sb.from('ai_systems').delete().eq('id', id);
+  if(error){ alert('Error: ' + error.message); return; }
+  allSystems = allSystems.filter(s => s.id !== id);
+  renderDashboard(allSystems);
+}
+
+function openAddWizard() {
+  alert('Add wizard coming next — step-by-step form across all 7 sections.');
+}
+</script>
+</body>
+
+function showDashboard(companyName, country, userId, companyId) {
+  document.getElementById('home').style.display = 'none';
+  document.getElementById('clientDashboard').style.display = 'block';
+  document.getElementById('dbCompanyName').textContent = companyName || '—';
+  document.getElementById('dbDate').textContent = new Date().toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'});
+  loadAlerts(country);
+  loadInventory(companyId);
+}
+
+function hideDashboard() {
+  document.getElementById('clientDashboard').style.display = 'none';
+  document.getElementById('home').style.display = 'block';
+}
+
+async function loadAlerts(country) {
+  if(!country) return;
+  const { data, error } = await sb
+    .from('legislation_alerts')
+    .select('*')
+    .eq('country', country)
+    .eq('active', true)
+    .order('published_at', { ascending: false })
+    .limit(3);
+  if(error || !data || data.length === 0) return;
+  document.getElementById('alertStrip').style.display = 'block';
+  document.getElementById('alertCountry').textContent = country;
+  document.getElementById('alertCount').textContent = data.length + ' active alert' + (data.length > 1 ? 's' : '');
+  const colors = ['urgent','warning','info'];
+  document.getElementById('alertRows').innerHTML = data.map((a,i) => `
+    <div class="alert-row">
+      <div class="alert-dot ${colors[i % 3]}"></div>
+      <span class="alert-text"><strong>${a.title}:</strong> ${a.description}</span>
+      <span class="alert-meta">${new Date(a.published_at).toLocaleDateString('en-US',{month:'short',year:'numeric'})}</span>
+      <a class="alert-link" href="${a.url}" target="_blank">View law →</a>
+    </div>`).join('');
+}
+
+async function loadInventory(companyId) {
+  const { data, error } = await sb
+    .from('inventory_items')
+    .select(`
+      id, quantity, unit_price, notes, created_at, updated_at,
+      products(id, name, sku, category, description, status),
+      branches(id, name, address),
+      inventory_types(id, name)
+    `)
+    .in('branch_id',
+      (await sb.from('branches').select('id').eq('company_id', companyId)).data?.map(b=>b.id) || []
+    );
+
+  allInventory = data || [];
+  renderDashboard(allInventory);
+}
+
+function switchTab(tab, el) {
+  currentTab = tab;
+  document.querySelectorAll('.db-tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  const filtered = tab === 'all' ? allInventory : allInventory.filter(i => {
+    const name = i.inventory_types?.name || '';
+    if(tab==='1') return name.toLowerCase().includes('raw');
+    if(tab==='2') return name.toLowerCase().includes('work');
+    if(tab==='3') return name.toLowerCase().includes('finished');
+    if(tab==='4') return name.toLowerCase().includes('suppli');
+    return true;
+  });
+  renderInventoryCards(filtered);
+}
+
+function renderDashboard(items) {
+  updateMetrics(items);
+  renderCharts(items);
+  renderInventoryCards(items);
+}
+
+function updateMetrics(items) {
+  document.getElementById('mTotal').textContent = items.length;
+  const now = new Date();
+  const in60 = new Date(now.getTime() + 60*24*60*60*1000);
+  document.getElementById('mReviews').textContent = '—';
+  document.getElementById('mReviewsHint').textContent = 'No date data yet';
+  document.getElementById('mCompliance').textContent = items.length > 0 ? items.length + ' items' : '0';
+  document.getElementById('mComplianceHint').textContent = 'Across all branches';
+  document.getElementById('mCritical').textContent = '—';
+  document.getElementById('mTotalHint').textContent = 'Across ' + new Set(items.map(i=>i.branches?.name)).size + ' branches';
+}
+
+function buildLegend(containerId, labels, colors) {
+  document.getElementById(containerId).innerHTML = labels.map((l,i) =>
+    `<span class="db-leg-item"><span class="db-leg-sq" style="background:${colors[i]};"></span>${l}</span>`
+  ).join('');
+}
+
+function renderCharts(items) {
+  const donutOpts = {
+    responsive:true, maintainAspectRatio:false,
+    plugins:{ legend:{display:false}, tooltip:{callbacks:{label:ctx=>` ${ctx.label}: ${ctx.parsed}`}} },
+    cutout:'68%'
+  };
+
+  const invTypes = items.reduce((acc,i) => {
+    const n = i.inventory_types?.name || 'Unknown';
+    acc[n] = (acc[n]||0) + 1; return acc;
+  }, {});
+
+  const typeLabels = Object.keys(invTypes);
+  const typeVals = Object.values(invTypes);
+  const typeColors = ['#D4537E','#5DCAA5','#7F77DD','#F4C38B','#378ADD'];
+
+  ['dbC1','dbC2','dbC3','dbC4','dbC5'].forEach(id => {
+    if(dbCharts[id]) { dbCharts[id].destroy(); delete dbCharts[id]; }
+  });
+
+  buildLegend('legendCompliance',
+    typeLabels.length ? typeLabels.map((l,i)=>`${l} (${typeVals[i]})`) : ['No data'],
+    typeColors
+  );
+  dbCharts.dbC1 = new Chart(document.getElementById('dbC1'),{
+    type:'doughnut',
+    data:{labels:typeLabels.length ? typeLabels : ['No data'], datasets:[{data:typeVals.length ? typeVals:[1], backgroundColor:typeLabels.length ? typeColors.slice(0,typeLabels.length):['#2C3F6A'], borderWidth:0}]},
+    options:donutOpts
+  });
+
+  const branches = items.reduce((acc,i) => {
+    const n = i.branches?.name || 'Unknown';
+    acc[n] = (acc[n]||0)+1; return acc;
+  },{});
+  const bLabels = Object.keys(branches);
+  const bVals = Object.values(branches);
+  const bColors = ['#378ADD','#EF9F27','#E24B4A','#639922','#7F77DD'];
+
+  buildLegend('legendRisk', bLabels.length ? bLabels.map((l,i)=>`${l} (${bVals[i]})`) : ['No data'], bColors);
+  dbCharts.dbC2 = new Chart(document.getElementById('dbC2'),{
+    type:'doughnut',
+    data:{labels:bLabels.length ? bLabels:['No data'], datasets:[{data:bVals.length ? bVals:[1], backgroundColor:bLabels.length ? bColors.slice(0,bLabels.length):['#2C3F6A'], borderWidth:0}]},
+    options:donutOpts
+  });
+
+  buildLegend('legendGroup', typeLabels.length ? typeLabels.map((l,i)=>`${l} (${typeVals[i]})`) : ['No data'], typeColors);
+  dbCharts.dbC3 = new Chart(document.getElementById('dbC3'),{
+    type:'doughnut',
+    data:{labels:typeLabels.length ? typeLabels:['No data'], datasets:[{data:typeVals.length ? typeVals:[1], backgroundColor:typeLabels.length ? typeColors.slice(0,typeLabels.length):['#2C3F6A'], borderWidth:0}]},
+    options:donutOpts
+  });
+
+  const months = [];
+  const monthCounts = [];
+  for(let m=5;m>=0;m--){
+    const d = new Date(); d.setMonth(d.getMonth()-m);
+    months.push(d.toLocaleDateString('en-US',{month:'short',year:'2-digit'}));
+    monthCounts.push(0);
+  }
+  dbCharts.dbC4 = new Chart(document.getElementById('dbC4'),{
+    type:'bar',
+    data:{labels:months, datasets:[{label:'Items added',data:monthCounts,backgroundColor:'#378ADD',borderRadius:4}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+      scales:{x:{ticks:{color:'#8899CC',font:{size:10}},grid:{color:'rgba(44,63,106,.4)'}},
+              y:{ticks:{color:'#8899CC',font:{size:10},stepSize:1},grid:{color:'rgba(44,63,106,.4)'},beginAtZero:true}}}
+  });
+
+  buildLegend('legendBias',['With price','Without price'],['#97C459','#F09595']);
+  const withPrice = items.filter(i=>i.unit_price).length;
+  const noPrice = items.length - withPrice;
+  dbCharts.dbC5 = new Chart(document.getElementById('dbC5'),{
+    type:'bar',
+    data:{labels:['With price','Without price'], datasets:[{data:[withPrice,noPrice],backgroundColor:['#639922','#A32D2D'],borderRadius:4,barThickness:18}]},
+    options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+      scales:{x:{ticks:{color:'#8899CC',font:{size:10},stepSize:1},grid:{color:'rgba(44,63,106,.4)'}},
+              y:{ticks:{color:'#8899CC',font:{size:10}},grid:{display:false}}}}
+  });
+}
 
 </body>
 </html>
