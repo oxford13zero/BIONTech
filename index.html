@@ -11,12 +11,12 @@
 
   <style>
     :root{
-      --bg:#111A2C;
-      --panel:#152A52;
-      --panel2:#132242;
+      --bg:#192F52;
+      --panel:#1F3D68;
+      --panel2:#1B3560;
       --text:#EAF0FF;
       --muted:#C2CDED;
-      --border:#2C3F6A;
+      --border:#2E4E7A;
       --secondary:#F4C38B;
       --shadow:0 12px 30px rgba(0,0,0,.35);
       --panelGap:22px;
@@ -52,9 +52,9 @@
       z-index:5;
       display:flex;
       justify-content:space-between;
-      align-items:flex-end;
-      gap:24px;
-      padding:10px 24px;
+      align-items:center;
+      gap:12px;
+      padding:8px 16px;
       background:var(--panel);
       border:1px solid var(--border);
       border-radius:16px;
@@ -75,19 +75,21 @@
 
     .menu{
       display:flex;
-      gap:10px;
-      flex-wrap:wrap;
+      gap:6px;
+      flex-wrap:nowrap;
       align-items:center;
     }
 
     .menu a{
-      padding:10px 14px;
-      border-radius:12px;
+      padding:8px 10px;
+      border-radius:10px;
       border:1px solid var(--border);
       background:var(--panel2);
       color:var(--text);
       text-decoration:none;
       font-weight:600;
+      font-size:13px;
+      white-space:nowrap;
       transition:background .15s ease, color .15s ease, transform .12s ease, border-color .15s ease;
     }
 
@@ -100,15 +102,16 @@
 
     /* Language toggle button */
     .lang-toggle{
-      padding:10px 16px;
-      border-radius:12px;
+      padding:8px 12px;
+      border-radius:10px;
       border:1px solid rgba(244,195,139,.6);
       background:var(--panel2);
       color:var(--secondary);
       font-weight:800;
-      font-size:14px;
+      font-size:13px;
       cursor:pointer;
       letter-spacing:.04em;
+      white-space:nowrap;
       transition:background .15s ease, transform .12s ease, border-color .15s ease;
       font-family:"Source Sans 3", system-ui, sans-serif;
     }
@@ -592,14 +595,15 @@
     .btn-login{
       display:inline-flex;
       align-items:center;
-      gap:8px;
-      padding:10px 14px;
-      border-radius:12px;
+      gap:6px;
+      padding:8px 10px;
+      border-radius:10px;
       border:1px solid rgba(244,195,139,.7);
       background:#1A2C52;
       color:var(--secondary);
       font-weight:800;
-      font-size:14px;
+      font-size:13px;
+      white-space:nowrap;
       cursor:pointer;
       font-family:"Source Sans 3", system-ui, sans-serif;
       transition:background .15s ease, transform .12s ease, border-color .15s ease;
@@ -613,9 +617,9 @@
 
     /* Admin key icon button */
     .btn-admin{
-      width:40px;
-      height:40px;
-      border-radius:12px;
+      width:34px;
+      height:34px;
+      border-radius:10px;
       border:1px solid rgba(244,195,139,.5);
       background:var(--panel2);
       display:inline-flex;
