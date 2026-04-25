@@ -1222,6 +1222,23 @@
   .db-loading{text-align:center;padding:40px;color:#8899CC;font-size:14px;}
   .db-empty{text-align:center;padding:30px;color:#8899CC;font-size:13px;}
 
+  .branch-select{
+    padding:7px 12px;
+    border-radius:9px;
+    border:1px solid rgba(244,195,139,.5);
+    background:#0F1B33;
+    color:#F4C38B;
+    font-size:13px;
+    font-weight:600;
+    font-family:"Source Sans 3",system-ui,sans-serif;
+    cursor:pointer;
+    outline:none;
+    transition:border-color .15s;
+    min-width:200px;
+  }
+  .branch-select:hover{ border-color:rgba(244,195,139,.9); }
+  .branch-select option{ background:#0F1B33; color:#EAF0FF; }
+
   @media(max-width:900px){
     .metrics-grid{grid-template-columns:1fr 1fr;}
     .charts-row{grid-template-columns:1fr;}
@@ -1236,7 +1253,18 @@
       <p class="db-title">AI Governance Dashboard</p>
       <p class="db-sub">Inventory management · <span class="db-company" id="dbCompanyName">—</span></p>
     </div>
-    <p class="db-date" id="dbDate">—</p>
+    <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+      <div style="display:flex;align-items:center;gap:8px;">
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" style="flex-shrink:0;">
+          <path d="M8 2C5.79 2 4 3.79 4 6c0 3.5 4 8 4 8s4-4.5 4-8c0-2.21-1.79-4-4-4z" stroke="#F4C38B" stroke-width="1.3" fill="none"/>
+          <circle cx="8" cy="6" r="1.5" stroke="#F4C38B" stroke-width="1.3"/>
+        </svg>
+        <select class="branch-select" id="branchSelect" onchange="onBranchChange(this.value)">
+          <option value="all">All branches</option>
+        </select>
+      </div>
+      <p class="db-date" id="dbDate">—</p>
+    </div>
   </div>
 
   <div class="alert-strip" id="alertStrip" style="display:none;">
@@ -1886,6 +1914,8 @@ applyLang(currentLang);
 let dbCharts = {};
 let allSystems = [];
 let currentTab = 'all';
+let currentBranch = 'all';
+let currentCompanyId = null;
 
 const GROUP_NAMES = {
   1: 'Group 1 — Operational',
@@ -1911,17 +1941,51 @@ const COMPLIANCE_COLORS = {
 const GROUP_COLORS = {1:'#D4537E', 2:'#5DCAA5', 3:'#7F77DD', 4:'#F4C38B'};
 
 function showDashboard(companyName, country, userId, companyId) {
+  currentCompanyId = companyId;
+  currentBranch = 'all';
   document.getElementById('home').style.display = 'none';
   document.getElementById('clientDashboard').style.display = 'block';
   document.getElementById('dbCompanyName').textContent = companyName || '—';
   document.getElementById('dbDate').textContent = new Date().toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'});
   loadAlerts(country);
-  loadSystems(companyId);
+  loadBranches(companyId);
+  loadSystems(companyId, 'all');
 }
 
 function hideDashboard() {
   document.getElementById('clientDashboard').style.display = 'none';
   document.getElementById('home').style.display = 'block';
+  const sel = document.getElementById('branchSelect');
+  sel.innerHTML = '<option value="all">All branches</option>';
+}
+
+async function loadBranches(companyId) {
+  const { data } = await sb
+    .from('branches')
+    .select('id, name')
+    .eq('company_id', companyId)
+    .eq('status', 'active')
+    .order('name');
+  if(!data || data.length === 0) return;
+  const sel = document.getElementById('branchSelect');
+  sel.innerHTML = '<option value="all">All branches</option>' +
+    data.map(b => `<option value="${b.id}">${b.name}</option>`).join('');
+}
+
+function onBranchChange(branchId) {
+  currentBranch = branchId;
+  currentTab = 'all';
+  document.querySelectorAll('.db-tab').forEach(t => t.classList.remove('active'));
+  document.querySelector('.db-tab').classList.add('active');
+  document.getElementById('invSectionLabel').textContent = 'Inventory records';
+  loadSystems(currentCompanyId, branchId);
+}
+
+function hideDashboard() {
+  document.getElementById('clientDashboard').style.display = 'none';
+  document.getElementById('home').style.display = 'block';
+  const sel = document.getElementById('branchSelect');
+  sel.innerHTML = '<option value="all">All branches</option>';
 }
 
 async function loadAlerts(country) {
@@ -1947,9 +2011,9 @@ async function loadAlerts(country) {
     </div>`).join('');
 }
 
-async function loadSystems(companyId) {
+async function loadSystems(companyId, branchId) {
   document.getElementById('invGrid').innerHTML = '<div class="db-loading">Loading systems...</div>';
-  const { data, error } = await sb
+  let query = sb
     .from('ai_systems')
     .select(`
       id, system_code, name, inventory_group, vendor, version,
@@ -1964,7 +2028,12 @@ async function loadSystems(companyId) {
     .eq('status', 'active')
     .order('inventory_group');
 
-  if(error){ document.getElementById('invGrid').innerHTML = '<div class="db-empty">Error loading data: ' + error.message + '</div>'; return; }
+  if(branchId && branchId !== 'all') {
+    query = query.eq('branch_id', branchId);
+  }
+
+  const { data, error } = await query;
+  if(error){ document.getElementById('invGrid').innerHTML = '<div class="db-empty">Error: ' + error.message + '</div>'; return; }
   allSystems = data || [];
   renderDashboard(allSystems);
 }
@@ -1973,7 +2042,10 @@ function switchTab(tab, el) {
   currentTab = tab;
   document.querySelectorAll('.db-tab').forEach(t => t.classList.remove('active'));
   el.classList.add('active');
-  const filtered = tab === 'all' ? allSystems : allSystems.filter(s => String(s.inventory_group) === tab);
+  const base = currentBranch !== 'all'
+    ? allSystems.filter(s => s.branch_id === currentBranch || (s.branches && s.branches.id === currentBranch))
+    : allSystems;
+  const filtered = tab === 'all' ? base : base.filter(s => String(s.inventory_group) === tab);
   const label = tab === 'all' ? 'All inventory records' : GROUP_NAMES[tab] + ' — records';
   document.getElementById('invSectionLabel').textContent = label;
   renderInventoryCards(filtered);
