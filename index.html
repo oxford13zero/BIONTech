@@ -1410,9 +1410,13 @@ applyLang(currentLang);
   function openLoginModal(){ clearModal('login'); document.getElementById('loginModal').classList.add('open'); }
 
   function openAdminModal(){
-    if(adminLoggedIn){ toggleAdminDropdown(); return; }
-    clearModal('admin');
-    document.getElementById('adminModal').classList.add('open');
+    if(adminLoggedIn){
+      toggleAdminDropdown();
+    } else {
+      closeAdminDropdown();
+      clearModal('admin');
+      document.getElementById('adminModal').classList.add('open');
+    }
   }
 
   function closeModal(id){ document.getElementById(id).classList.remove('open'); }
@@ -1454,7 +1458,7 @@ applyLang(currentLang);
     document.getElementById('adminDropdownEmail').textContent = '—';
     document.getElementById('adminBtn').style.borderColor = '';
     document.getElementById('adminBtn').style.background  = '';
-    closeAdminDropdown();
+    document.getElementById('adminDropdown').classList.remove('open');
   }
 
   async function handleAdminLogout(){
