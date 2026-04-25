@@ -11,12 +11,12 @@
 
   <style>
     :root{
-      --bg:#192F52;
-      --panel:#1F3D68; 
-      --panel2:#1B3560;
+      --bg:#111A2C;
+      --panel:#152A52;
+      --panel2:#132242;
       --text:#EAF0FF;
       --muted:#C2CDED;
-      --border:#2E4E7A;
+      --border:#2C3F6A;
       --secondary:#F4C38B;
       --shadow:0 12px 30px rgba(0,0,0,.35);
       --panelGap:22px;
@@ -587,6 +587,187 @@
       color:#FFFFFF;
       font-weight:700;
     }
+
+    /* Client login button */
+    .btn-login{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      padding:10px 14px;
+      border-radius:12px;
+      border:1px solid rgba(244,195,139,.7);
+      background:#1A2C52;
+      color:var(--secondary);
+      font-weight:800;
+      font-size:14px;
+      cursor:pointer;
+      font-family:"Source Sans 3", system-ui, sans-serif;
+      transition:background .15s ease, transform .12s ease, border-color .15s ease;
+    }
+    .btn-login:hover{
+      background:#203765;
+      border-color:rgba(244,195,139,.95);
+      transform:translateY(-1px);
+    }
+    .btn-login svg{ flex-shrink:0; }
+
+    /* Admin key icon button */
+    .btn-admin{
+      width:40px;
+      height:40px;
+      border-radius:12px;
+      border:1px solid rgba(244,195,139,.5);
+      background:var(--panel2);
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      cursor:pointer;
+      font-family:"Source Sans 3", system-ui, sans-serif;
+      transition:background .15s ease, transform .12s ease, border-color .15s ease;
+      flex-shrink:0;
+    }
+    .btn-admin:hover{
+      background:#1A2C52;
+      border-color:rgba(244,195,139,.95);
+      transform:translateY(-1px);
+    }
+
+    /* Modal overlay */
+    .modal-overlay{
+      display:none;
+      position:fixed;
+      inset:0;
+      background:rgba(0,0,0,.6);
+      z-index:100;
+      align-items:center;
+      justify-content:center;
+    }
+    .modal-overlay.open{ display:flex; }
+
+    .modal-box{
+      background:var(--panel);
+      border:1px solid var(--border);
+      border-radius:18px;
+      padding:28px;
+      width:100%;
+      max-width:360px;
+      position:relative;
+      box-shadow:0 24px 60px rgba(0,0,0,.5);
+    }
+
+    .modal-close-btn{
+      position:absolute;
+      top:16px;
+      right:16px;
+      width:28px;
+      height:28px;
+      border-radius:8px;
+      border:1px solid var(--border);
+      background:var(--panel2);
+      color:var(--muted);
+      font-size:14px;
+      cursor:pointer;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      font-family:"Source Sans 3", system-ui, sans-serif;
+      transition:background .15s ease;
+    }
+    .modal-close-btn:hover{ background:#1A2C52; color:#fff; }
+
+    .modal-header{
+      display:flex;
+      align-items:center;
+      gap:12px;
+      margin-bottom:18px;
+    }
+
+    .modal-icon{
+      width:44px;
+      height:44px;
+      border-radius:12px;
+      background:rgba(244,195,139,.1);
+      border:1px solid rgba(244,195,139,.3);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      flex-shrink:0;
+    }
+
+    .modal-title{
+      font-size:18px;
+      font-weight:800;
+      color:var(--text);
+      margin:0 0 2px;
+    }
+
+    .modal-sub{
+      font-size:13px;
+      color:var(--muted);
+      margin:0;
+    }
+
+    .modal-divider{
+      border:none;
+      border-top:1px solid var(--border);
+      margin:0 0 16px;
+    }
+
+    .modal-field{ margin-bottom:12px; }
+
+    .modal-label{
+      display:block;
+      font-size:12px;
+      font-weight:700;
+      color:var(--muted);
+      margin-bottom:6px;
+      text-transform:uppercase;
+      letter-spacing:.04em;
+    }
+
+    .modal-input{
+      width:100%;
+      padding:11px 14px;
+      border-radius:10px;
+      border:1px solid var(--border);
+      background:var(--panel2);
+      color:#fff;
+      font-size:14px;
+      font-family:"Source Sans 3", system-ui, sans-serif;
+      box-sizing:border-box;
+      transition:border-color .15s ease;
+    }
+    .modal-input:focus{
+      outline:none;
+      border-color:rgba(244,195,139,.6);
+    }
+
+    .modal-submit{
+      width:100%;
+      padding:12px;
+      border-radius:12px;
+      border:1px solid rgba(244,195,139,.6);
+      background:#1A2C52;
+      color:#fff;
+      font-size:15px;
+      font-weight:800;
+      cursor:pointer;
+      font-family:"Source Sans 3", system-ui, sans-serif;
+      margin-top:6px;
+      transition:background .15s ease, border-color .15s ease;
+    }
+    .modal-submit:hover{ background:#203765; border-color:rgba(244,195,139,.95); }
+
+    .modal-forgot{
+      display:block;
+      text-align:center;
+      margin-top:12px;
+      font-size:13px;
+      color:var(--secondary);
+      text-decoration:none;
+      cursor:pointer;
+    }
+    .modal-forgot:hover{ text-decoration:underline; }
   </style>
 </head>
 
@@ -599,12 +780,26 @@
     </div>
 
     <nav class="menu">
+      <button class="btn-login" onclick="openLoginModal()" data-i18n-login>
+        <svg width="14" height="14" viewBox="0 0 12 12" fill="none">
+          <rect x="2" y="5" width="8" height="6" rx="1.5" stroke="#F4C38B" stroke-width="1.3"/>
+          <path d="M4 5V3.5a2 2 0 014 0V5" stroke="#F4C38B" stroke-width="1.3" stroke-linecap="round"/>
+        </svg>
+        <span data-i18n="nav_login">Client login</span>
+      </button>
       <a href="#home"          data-i18n="nav_home">Home</a>
       <a href="#ai-for-your-org" data-i18n="nav_ai_org">AI for your org</a>
       <a href="#ai-governance" data-i18n="nav_ai_control">AI control</a>
       <a href="#team"          data-i18n="nav_team">Team</a>
       <a href="#contact"       data-i18n="nav_contact">Contact</a>
       <button class="lang-toggle" id="langBtn" onclick="toggleLang()">ES</button>
+      <button class="btn-admin" onclick="openAdminModal()" title="Admin access">
+        <svg width="18" height="18" viewBox="0 0 16 16" fill="none">
+          <circle cx="6" cy="6.5" r="3.5" stroke="#F4C38B" stroke-width="1.4"/>
+          <path d="M8.5 9L13 13.5" stroke="#F4C38B" stroke-width="1.4" stroke-linecap="round"/>
+          <path d="M11 11.5L12.5 10" stroke="#F4C38B" stroke-width="1.4" stroke-linecap="round"/>
+        </svg>
+      </button>
     </nav>
   </header>
 
@@ -856,6 +1051,19 @@ const translations = {
     nav_ai_control:    "AI control",
     nav_team:          "Team",
     nav_contact:       "Contact",
+    nav_login:         "Client login",
+
+    login_title:       "Welcome back",
+    login_sub:         "Sign in to your account",
+    login_email:       "Email address",
+    login_email_ph:    "name@company.com",
+    login_password:    "Password",
+    login_pass_ph:     "••••••••",
+    login_submit:      "Sign in",
+    login_forgot:      "Forgot your password?",
+
+    admin_title:       "Admin access",
+    admin_sub:         "Restricted to BION administrators",
 
     hero_title:        "AI is already inside your company",
     hero_sub:          "If you don't control it, someone else will — or it will control you.",
@@ -931,6 +1139,19 @@ const translations = {
     nav_ai_control:    "Control de IA",
     nav_team:          "Equipo",
     nav_contact:       "Contacto",
+    nav_login:         "Acceso clientes",
+
+    login_title:       "Bienvenido de vuelta",
+    login_sub:         "Inicia sesión en tu cuenta",
+    login_email:       "Correo electrónico",
+    login_email_ph:    "nombre@empresa.com",
+    login_password:    "Contraseña",
+    login_pass_ph:     "••••••••",
+    login_submit:      "Iniciar sesión",
+    login_forgot:      "¿Olvidaste tu contraseña?",
+
+    admin_title:       "Acceso administrador",
+    admin_sub:         "Restringido a administradores de BION",
 
     hero_title:        "La IA ya está dentro de tu empresa",
     hero_sub:          "Si no la controlas tú, alguien más lo hará — o ella te controlará a ti.",
@@ -1033,6 +1254,82 @@ function toggleLang() {
 
 // Apply on load
 applyLang(currentLang);
+</script>
+
+<!-- ── Client login modal ────────────────────────────────────── -->
+<div class="modal-overlay" id="loginModal" onclick="handleOverlayClick(event,'loginModal')">
+  <div class="modal-box">
+    <button class="modal-close-btn" onclick="closeModal('loginModal')">✕</button>
+    <div class="modal-header">
+      <div class="modal-icon">
+        <svg width="22" height="22" viewBox="0 0 12 12" fill="none">
+          <rect x="2" y="5" width="8" height="6" rx="1.5" stroke="#F4C38B" stroke-width="1.3"/>
+          <path d="M4 5V3.5a2 2 0 014 0V5" stroke="#F4C38B" stroke-width="1.3" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <div>
+        <p class="modal-title" data-i18n="login_title">Welcome back</p>
+        <p class="modal-sub"   data-i18n="login_sub">Sign in to your account</p>
+      </div>
+    </div>
+    <hr class="modal-divider">
+    <div class="modal-field">
+      <label class="modal-label" data-i18n="login_email">Email address</label>
+      <input class="modal-input" type="email" data-i18n-placeholder="login_email_ph" placeholder="name@company.com">
+    </div>
+    <div class="modal-field">
+      <label class="modal-label" data-i18n="login_password">Password</label>
+      <input class="modal-input" type="password" data-i18n-placeholder="login_pass_ph" placeholder="••••••••">
+    </div>
+    <button class="modal-submit" data-i18n="login_submit">Sign in</button>
+    <a class="modal-forgot" data-i18n="login_forgot">Forgot your password?</a>
+  </div>
+</div>
+
+<!-- ── Admin login modal ─────────────────────────────────────── -->
+<div class="modal-overlay" id="adminModal" onclick="handleOverlayClick(event,'adminModal')">
+  <div class="modal-box">
+    <button class="modal-close-btn" onclick="closeModal('adminModal')">✕</button>
+    <div class="modal-header">
+      <div class="modal-icon">
+        <svg width="22" height="22" viewBox="0 0 16 16" fill="none">
+          <circle cx="6" cy="6.5" r="3.5" stroke="#F4C38B" stroke-width="1.4"/>
+          <path d="M8.5 9L13 13.5" stroke="#F4C38B" stroke-width="1.4" stroke-linecap="round"/>
+          <path d="M11 11.5L12.5 10" stroke="#F4C38B" stroke-width="1.4" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <div>
+        <p class="modal-title" data-i18n="admin_title">Admin access</p>
+        <p class="modal-sub"   data-i18n="admin_sub">Restricted to BION administrators</p>
+      </div>
+    </div>
+    <hr class="modal-divider">
+    <div class="modal-field">
+      <label class="modal-label" data-i18n="login_email">Email address</label>
+      <input class="modal-input" type="email" data-i18n-placeholder="login_email_ph" placeholder="name@company.com">
+    </div>
+    <div class="modal-field">
+      <label class="modal-label" data-i18n="login_password">Password</label>
+      <input class="modal-input" type="password" data-i18n-placeholder="login_pass_ph" placeholder="••••••••">
+    </div>
+    <button class="modal-submit" data-i18n="login_submit">Sign in</button>
+    <a class="modal-forgot" data-i18n="login_forgot">Forgot your password?</a>
+  </div>
+</div>
+
+<script>
+  function openLoginModal(){ document.getElementById('loginModal').classList.add('open'); }
+  function openAdminModal(){ document.getElementById('adminModal').classList.add('open'); }
+  function closeModal(id)  { document.getElementById(id).classList.remove('open'); }
+  function handleOverlayClick(e, id){
+    if(e.target === document.getElementById(id)) closeModal(id);
+  }
+  document.addEventListener('keydown', function(e){
+    if(e.key === 'Escape'){
+      closeModal('loginModal');
+      closeModal('adminModal');
+    }
+  });
 </script>
 
 <!-- ── Parallax bridge ───────────────────────────────────────── -->
