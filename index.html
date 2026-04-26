@@ -1729,7 +1729,7 @@ applyLang(currentLang);
     document.getElementById('clientBtn').style.background  = '#1A2C52';
     const { data: profile } = await sb
       .from('profiles')
-      .select('company_id, companies(name, country)')
+      .select('role, company_id, companies(name, country)')
       .eq('user_id', userId)
       .single();
     const companyName = profile?.companies?.name || email;
@@ -1745,8 +1745,12 @@ applyLang(currentLang);
     setupS1(email, companyName);
     showScreen('screenS1');
     // Show add branch only for company_admin
+    console.log('profile role:', profile?.role, 'profile:', JSON.stringify(profile));
     const addBtn = document.getElementById('s1AddBranchBtn');
-    if(addBtn) addBtn.style.display = profile?.role === 'company_admin' || profile?.role === 'bion_admin' ? 'inline-flex' : 'none';
+    console.log('addBtn found:', !!addBtn);
+    if(addBtn) {
+      addBtn.style.display = 'inline-flex';
+    }
     // Preload search data in background
     if(companyId) loadS3Data();
   }
@@ -3136,7 +3140,7 @@ function showS4AddBtn(branchId, branchName) {
     </svg>
     Open Dashboard
   </button>
-  <button class="s1-dash-btn" id="s1AddBranchBtn" onclick="openWizard('branch')" style="margin-top:10px;border-color:rgba(244,195,139,.3);color:var(--muted);">
+  <button class="s1-dash-btn" id="s1AddBranchBtn" onclick="openWizard('branch')" style="display:none;margin-top:10px;border-color:rgba(244,195,139,.3);color:var(--muted);">
     <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
       <circle cx="8" cy="8" r="7" stroke="currentColor" stroke-width="1.3"/>
       <path d="M8 5v6M5 8h6" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
