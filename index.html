@@ -1677,7 +1677,15 @@ applyLang(currentLang);
     const companyName = profile?.companies?.name || email;
     const country     = profile?.companies?.country || null;
     const companyId   = profile?.company_id || null;
-    showDashboard(companyName, country, userId, companyId);
+    // Store globally for S1/S3 screens
+    s_companyName = companyName;
+    s_companyId   = companyId;
+    s_country     = country;
+    s_userId      = userId;
+    s_userEmail   = email;
+    // Show S1 landing screen
+    setupS1(email, companyName);
+    showScreen('screenS1');
   }
 
   function setClientLoggedOut(){
@@ -1686,7 +1694,13 @@ applyLang(currentLang);
     document.getElementById('clientBtn').style.borderColor = '';
     document.getElementById('clientBtn').style.background  = '';
     document.getElementById('clientDropdown').classList.remove('open');
+    s_companyName = ''; s_companyId = null; s_country = null; s_userId = null;
+    s3_allData = { branches: [], systems: [] };
     hideDashboard();
+    ['screenS1','screenS3'].forEach(id => {
+      const el = document.getElementById(id);
+      if(el) el.style.display = 'none';
+    });
   }
 
   async function handleClientLogout(){
@@ -2228,179 +2242,473 @@ function openAddWizard() {
   alert('Add wizard coming next — step-by-step form across all 7 sections.');
 }
 </script>
-</body>
 
-function showDashboard(companyName, country, userId, companyId) {
-  document.getElementById('home').style.display = 'none';
-  document.getElementById('clientDashboard').style.display = 'block';
-  document.getElementById('dbCompanyName').textContent = companyName || '—';
-  document.getElementById('dbDate').textContent = new Date().toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'});
-  loadAlerts(country);
-  loadInventory(companyId);
-}
 
-function hideDashboard() {
-  document.getElementById('clientDashboard').style.display = 'none';
-  document.getElementById('home').style.display = 'block';
-}
-
-async function loadAlerts(country) {
-  if(!country) return;
-  const { data, error } = await sb
-    .from('legislation_alerts')
-    .select('*')
-    .eq('country', country)
-    .eq('active', true)
-    .order('published_at', { ascending: false })
-    .limit(3);
-  if(error || !data || data.length === 0) return;
-  document.getElementById('alertStrip').style.display = 'block';
-  document.getElementById('alertCountry').textContent = country;
-  document.getElementById('alertCount').textContent = data.length + ' active alert' + (data.length > 1 ? 's' : '');
-  const colors = ['urgent','warning','info'];
-  document.getElementById('alertRows').innerHTML = data.map((a,i) => `
-    <div class="alert-row">
-      <div class="alert-dot ${colors[i % 3]}"></div>
-      <span class="alert-text"><strong>${a.title}:</strong> ${a.description}</span>
-      <span class="alert-meta">${new Date(a.published_at).toLocaleDateString('en-US',{month:'short',year:'numeric'})}</span>
-      <a class="alert-link" href="${a.url}" target="_blank">View law →</a>
-    </div>`).join('');
-}
-
-async function loadInventory(companyId) {
-  const { data, error } = await sb
-    .from('inventory_items')
-    .select(`
-      id, quantity, unit_price, notes, created_at, updated_at,
-      products(id, name, sku, category, description, status),
-      branches(id, name, address),
-      inventory_types(id, name)
-    `)
-    .in('branch_id',
-      (await sb.from('branches').select('id').eq('company_id', companyId)).data?.map(b=>b.id) || []
-    );
-
-  allInventory = data || [];
-  renderDashboard(allInventory);
-}
-
-function switchTab(tab, el) {
-  currentTab = tab;
-  document.querySelectorAll('.db-tab').forEach(t => t.classList.remove('active'));
-  el.classList.add('active');
-  const filtered = tab === 'all' ? allInventory : allInventory.filter(i => {
-    const name = i.inventory_types?.name || '';
-    if(tab==='1') return name.toLowerCase().includes('raw');
-    if(tab==='2') return name.toLowerCase().includes('work');
-    if(tab==='3') return name.toLowerCase().includes('finished');
-    if(tab==='4') return name.toLowerCase().includes('suppli');
-    return true;
-  });
-  renderInventoryCards(filtered);
-}
-
-function renderDashboard(items) {
-  updateMetrics(items);
-  renderCharts(items);
-  renderInventoryCards(items);
-}
-
-function updateMetrics(items) {
-  document.getElementById('mTotal').textContent = items.length;
-  const now = new Date();
-  const in60 = new Date(now.getTime() + 60*24*60*60*1000);
-  document.getElementById('mReviews').textContent = '—';
-  document.getElementById('mReviewsHint').textContent = 'No date data yet';
-  document.getElementById('mCompliance').textContent = items.length > 0 ? items.length + ' items' : '0';
-  document.getElementById('mComplianceHint').textContent = 'Across all branches';
-  document.getElementById('mCritical').textContent = '—';
-  document.getElementById('mTotalHint').textContent = 'Across ' + new Set(items.map(i=>i.branches?.name)).size + ' branches';
-}
-
-function buildLegend(containerId, labels, colors) {
-  document.getElementById(containerId).innerHTML = labels.map((l,i) =>
-    `<span class="db-leg-item"><span class="db-leg-sq" style="background:${colors[i]};"></span>${l}</span>`
-  ).join('');
-}
-
-function renderCharts(items) {
-  const donutOpts = {
-    responsive:true, maintainAspectRatio:false,
-    plugins:{ legend:{display:false}, tooltip:{callbacks:{label:ctx=>` ${ctx.label}: ${ctx.parsed}`}} },
-    cutout:'68%'
-  };
-
-  const invTypes = items.reduce((acc,i) => {
-    const n = i.inventory_types?.name || 'Unknown';
-    acc[n] = (acc[n]||0) + 1; return acc;
-  }, {});
-
-  const typeLabels = Object.keys(invTypes);
-  const typeVals = Object.values(invTypes);
-  const typeColors = ['#D4537E','#5DCAA5','#7F77DD','#F4C38B','#378ADD'];
-
-  ['dbC1','dbC2','dbC3','dbC4','dbC5'].forEach(id => {
-    if(dbCharts[id]) { dbCharts[id].destroy(); delete dbCharts[id]; }
-  });
-
-  buildLegend('legendCompliance',
-    typeLabels.length ? typeLabels.map((l,i)=>`${l} (${typeVals[i]})`) : ['No data'],
-    typeColors
-  );
-  dbCharts.dbC1 = new Chart(document.getElementById('dbC1'),{
-    type:'doughnut',
-    data:{labels:typeLabels.length ? typeLabels : ['No data'], datasets:[{data:typeVals.length ? typeVals:[1], backgroundColor:typeLabels.length ? typeColors.slice(0,typeLabels.length):['#2C3F6A'], borderWidth:0}]},
-    options:donutOpts
-  });
-
-  const branches = items.reduce((acc,i) => {
-    const n = i.branches?.name || 'Unknown';
-    acc[n] = (acc[n]||0)+1; return acc;
-  },{});
-  const bLabels = Object.keys(branches);
-  const bVals = Object.values(branches);
-  const bColors = ['#378ADD','#EF9F27','#E24B4A','#639922','#7F77DD'];
-
-  buildLegend('legendRisk', bLabels.length ? bLabels.map((l,i)=>`${l} (${bVals[i]})`) : ['No data'], bColors);
-  dbCharts.dbC2 = new Chart(document.getElementById('dbC2'),{
-    type:'doughnut',
-    data:{labels:bLabels.length ? bLabels:['No data'], datasets:[{data:bVals.length ? bVals:[1], backgroundColor:bLabels.length ? bColors.slice(0,bLabels.length):['#2C3F6A'], borderWidth:0}]},
-    options:donutOpts
-  });
-
-  buildLegend('legendGroup', typeLabels.length ? typeLabels.map((l,i)=>`${l} (${typeVals[i]})`) : ['No data'], typeColors);
-  dbCharts.dbC3 = new Chart(document.getElementById('dbC3'),{
-    type:'doughnut',
-    data:{labels:typeLabels.length ? typeLabels:['No data'], datasets:[{data:typeVals.length ? typeVals:[1], backgroundColor:typeLabels.length ? typeColors.slice(0,typeLabels.length):['#2C3F6A'], borderWidth:0}]},
-    options:donutOpts
-  });
-
-  const months = [];
-  const monthCounts = [];
-  for(let m=5;m>=0;m--){
-    const d = new Date(); d.setMonth(d.getMonth()-m);
-    months.push(d.toLocaleDateString('en-US',{month:'short',year:'2-digit'}));
-    monthCounts.push(0);
+<!-- ── S1: LANDING SCREEN ───────────────────────────────────── -->
+<div id="screenS1" style="display:none;">
+<style>
+  #screenS1{
+    min-height:100vh;
+    background:var(--bg);
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    padding:40px 20px;
   }
-  dbCharts.dbC4 = new Chart(document.getElementById('dbC4'),{
-    type:'bar',
-    data:{labels:months, datasets:[{label:'Items added',data:monthCounts,backgroundColor:'#378ADD',borderRadius:4}]},
-    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
-      scales:{x:{ticks:{color:'#8899CC',font:{size:10}},grid:{color:'rgba(44,63,106,.4)'}},
-              y:{ticks:{color:'#8899CC',font:{size:10},stepSize:1},grid:{color:'rgba(44,63,106,.4)'},beginAtZero:true}}}
-  });
+  .s1-wrap{
+    width:100%;
+    max-width:640px;
+    text-align:center;
+  }
+  .s1-greeting{
+    font-size:13px;
+    color:var(--secondary);
+    font-weight:700;
+    letter-spacing:.08em;
+    text-transform:uppercase;
+    margin:0 0 8px;
+  }
+  .s1-title{
+    font-size:clamp(26px,4vw,38px);
+    font-weight:800;
+    color:var(--text);
+    margin:0 0 8px;
+    line-height:1.15;
+  }
+  .s1-company{
+    font-size:15px;
+    color:var(--muted);
+    margin:0 0 48px;
+  }
+  .s1-cards{
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:14px;
+    margin-bottom:32px;
+  }
+  @media(max-width:600px){ .s1-cards{ grid-template-columns:1fr; } }
+  .s1-card{
+    background:var(--panel2);
+    border:1px solid var(--border);
+    border-radius:16px;
+    padding:24px 16px 20px;
+    cursor:pointer;
+    transition:transform .15s ease, border-color .15s ease, background .15s ease;
+    text-align:center;
+  }
+  .s1-card:hover{
+    transform:translateY(-3px);
+    background:var(--panel);
+  }
+  .s1-card.gold{ border-color:rgba(244,195,139,.5); }
+  .s1-card.gold:hover{ border-color:rgba(244,195,139,.9); }
+  .s1-card-icon{
+    font-size:32px;
+    margin-bottom:12px;
+    display:block;
+  }
+  .s1-card-title{
+    font-size:15px;
+    font-weight:800;
+    color:var(--text);
+    margin:0 0 6px;
+  }
+  .s1-card-desc{
+    font-size:12px;
+    color:var(--muted);
+    margin:0;
+    line-height:1.5;
+  }
+  .s1-logout{
+    font-size:12px;
+    color:var(--muted);
+    cursor:pointer;
+    background:none;
+    border:none;
+    font-family:"Source Sans 3",system-ui,sans-serif;
+    padding:0;
+    text-decoration:underline;
+    opacity:.7;
+    transition:opacity .15s;
+  }
+  .s1-logout:hover{ opacity:1; color:#F09595; }
+</style>
+<div class="s1-wrap">
+  <p class="s1-greeting">AI Governance Platform</p>
+  <h1 class="s1-title" id="s1Title">Welcome back</h1>
+  <p class="s1-company" id="s1Company">—</p>
+  <div class="s1-cards">
+    <div class="s1-card" onclick="goToDashboard()">
+      <span class="s1-card-icon">📊</span>
+      <p class="s1-card-title">Dashboard</p>
+      <p class="s1-card-desc">Charts, metrics and compliance overview for your organization</p>
+    </div>
+    <div class="s1-card gold" onclick="goToSearch('branch')">
+      <span class="s1-card-icon">🏢</span>
+      <p class="s1-card-title">Browse by Branch</p>
+      <p class="s1-card-desc">Pick a division or location, then explore its AI systems</p>
+    </div>
+    <div class="s1-card gold" onclick="goToSearch('system')">
+      <span class="s1-card-icon">🤖</span>
+      <p class="s1-card-title">Browse by System</p>
+      <p class="s1-card-desc">Search all AI systems directly across your organization</p>
+    </div>
+  </div>
+  <button class="s1-logout" onclick="handleClientLogout()">Sign out</button>
+</div>
+</div>
 
-  buildLegend('legendBias',['With price','Without price'],['#97C459','#F09595']);
-  const withPrice = items.filter(i=>i.unit_price).length;
-  const noPrice = items.length - withPrice;
-  dbCharts.dbC5 = new Chart(document.getElementById('dbC5'),{
-    type:'bar',
-    data:{labels:['With price','Without price'], datasets:[{data:[withPrice,noPrice],backgroundColor:['#639922','#A32D2D'],borderRadius:4,barThickness:18}]},
-    options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
-      scales:{x:{ticks:{color:'#8899CC',font:{size:10},stepSize:1},grid:{color:'rgba(44,63,106,.4)'}},
-              y:{ticks:{color:'#8899CC',font:{size:10}},grid:{display:false}}}}
+<!-- ── S3: UNIFIED SEARCH SCREEN ────────────────────────────── -->
+<div id="screenS3" style="display:none;">
+<style>
+  #screenS3{
+    min-height:100vh;
+    background:var(--bg);
+    padding:40px 20px 80px;
+  }
+  .s3-wrap{
+    max-width:720px;
+    margin:0 auto;
+  }
+  .s3-back{
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    font-size:13px;
+    color:var(--muted);
+    cursor:pointer;
+    background:none;
+    border:none;
+    font-family:"Source Sans 3",system-ui,sans-serif;
+    padding:0;
+    margin-bottom:28px;
+    transition:color .15s;
+  }
+  .s3-back:hover{ color:var(--text); }
+  .s3-title{
+    font-size:24px;
+    font-weight:800;
+    color:var(--text);
+    margin:0 0 4px;
+  }
+  .s3-sub{
+    font-size:13px;
+    color:var(--muted);
+    margin:0 0 24px;
+  }
+  .s3-search-wrap{
+    position:relative;
+    margin-bottom:16px;
+  }
+  .s3-search-icon{
+    position:absolute;
+    left:14px;
+    top:50%;
+    transform:translateY(-50%);
+    color:var(--muted);
+    pointer-events:none;
+  }
+  .s3-search{
+    width:100%;
+    padding:14px 14px 14px 44px;
+    border-radius:14px;
+    border:1px solid var(--border);
+    background:var(--panel2);
+    color:var(--text);
+    font-size:15px;
+    font-family:"Source Sans 3",system-ui,sans-serif;
+    box-sizing:border-box;
+    transition:border-color .15s;
+    outline:none;
+  }
+  .s3-search:focus{ border-color:rgba(244,195,139,.6); }
+  .s3-search::placeholder{ color:var(--muted); }
+  .s3-tabs{
+    display:flex;
+    gap:8px;
+    margin-bottom:20px;
+  }
+  .s3-tab{
+    padding:6px 14px;
+    border-radius:8px;
+    border:1px solid var(--border);
+    background:var(--panel2);
+    color:var(--muted);
+    font-size:12px;
+    font-weight:600;
+    cursor:pointer;
+    font-family:"Source Sans 3",system-ui,sans-serif;
+    transition:background .15s, border-color .15s, color .15s;
+  }
+  .s3-tab.active{
+    background:var(--panel);
+    border-color:rgba(244,195,139,.6);
+    color:var(--secondary);
+  }
+  .s3-results{ display:grid; gap:8px; }
+  .s3-result{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+    background:var(--panel2);
+    border:1px solid var(--border);
+    border-radius:12px;
+    padding:14px 16px;
+    cursor:pointer;
+    transition:background .15s, border-color .15s, transform .12s;
+  }
+  .s3-result:hover{
+    background:var(--panel);
+    border-color:rgba(244,195,139,.4);
+    transform:translateX(3px);
+  }
+  .s3-result-left{ flex:1; min-width:0; }
+  .s3-result-type{
+    font-size:10px;
+    font-weight:700;
+    text-transform:uppercase;
+    letter-spacing:.07em;
+    color:var(--muted);
+    margin:0 0 2px;
+  }
+  .s3-result-name{
+    font-size:14px;
+    font-weight:700;
+    color:var(--text);
+    margin:0 0 2px;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+  .s3-result-meta{
+    font-size:11px;
+    color:var(--muted);
+    margin:0;
+  }
+  .s3-result-right{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    flex-shrink:0;
+  }
+  .s3-badge{
+    font-size:10px;
+    padding:3px 8px;
+    border-radius:999px;
+    font-weight:600;
+    white-space:nowrap;
+  }
+  .s3-badge-branch{ background:var(--panel); border:1px solid var(--border); color:var(--muted); }
+  .s3-badge-critical{ background:#4A1515; color:#F09595; }
+  .s3-badge-high{ background:#3D2500; color:#FAC775; }
+  .s3-badge-medium{ background:#0C2240; color:#85B7EB; }
+  .s3-badge-low{ background:#122010; color:#97C459; }
+  .s3-arrow{ color:var(--muted); font-size:16px; }
+  .s3-empty{
+    text-align:center;
+    padding:40px;
+    color:var(--muted);
+    font-size:14px;
+  }
+  .s3-loading{ text-align:center; padding:40px; color:var(--muted); font-size:13px; }
+  .s3-section-label{
+    font-size:10px;
+    font-weight:700;
+    text-transform:uppercase;
+    letter-spacing:.07em;
+    color:var(--muted);
+    margin:16px 0 8px;
+    padding:0 2px;
+  }
+</style>
+<div class="s3-wrap">
+  <button class="s3-back" onclick="showS1()">
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+      <path d="M10 12L6 8l4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+    Back
+  </button>
+  <h2 class="s3-title">Find what you need</h2>
+  <p class="s3-sub" id="s3Sub">Search branches and AI systems across your organization</p>
+  <div class="s3-search-wrap">
+    <svg class="s3-search-icon" width="18" height="18" viewBox="0 0 20 20" fill="none">
+      <circle cx="9" cy="9" r="6" stroke="currentColor" stroke-width="1.5"/>
+      <path d="M13.5 13.5L17 17" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+    </svg>
+    <input class="s3-search" id="s3SearchInput" placeholder="Type a branch name or system name…" oninput="onS3Search(this.value)" autocomplete="off">
+  </div>
+  <div class="s3-tabs">
+    <button class="s3-tab active" onclick="setS3Tab('all',this)">All</button>
+    <button class="s3-tab" onclick="setS3Tab('branch',this)">Branches</button>
+    <button class="s3-tab" onclick="setS3Tab('system',this)">Systems</button>
+  </div>
+  <div id="s3Results" class="s3-results">
+    <div class="s3-empty">Start typing to search branches and systems</div>
+  </div>
+</div>
+</div>
+
+<script>
+// ── S1 / S3 state ────────────────────────────────────────────
+let s_companyName = '';
+let s_companyId   = null;
+let s_country     = null;
+let s_userId      = null;
+let s_userEmail   = '';
+let s3_tab        = 'all';
+let s3_allData    = { branches: [], systems: [] };
+
+// ── Screen routing ───────────────────────────────────────────
+function showScreen(id) {
+  ['screenS1','screenS3','clientDashboard','home'].forEach(sid => {
+    const el = document.getElementById(sid);
+    if(el) el.style.display = 'none';
   });
+  const target = document.getElementById(id);
+  if(target) target.style.display = id === 'screenS1' || id === 'screenS3' ? 'block' : 'block';
+  window.scrollTo({ top: 0, behavior: 'auto' });
 }
 
+function showS1() {
+  showScreen('screenS1');
+}
+
+function goToDashboard() {
+  showScreen('clientDashboard');
+  showDashboard(s_companyName, s_country, s_userId, s_companyId);
+}
+
+function goToSearch(defaultTab) {
+  s3_tab = defaultTab || 'all';
+  document.getElementById('s3SearchInput').value = '';
+  document.querySelectorAll('.s3-tab').forEach(t => t.classList.remove('active'));
+  const tabMap = { all: 0, branch: 1, system: 2 };
+  const tabs = document.querySelectorAll('.s3-tab');
+  if(tabs[tabMap[s3_tab]]) tabs[tabMap[s3_tab]].classList.add('active');
+  const sub = s3_tab === 'branch'
+    ? 'Pick a branch to explore its AI systems'
+    : s3_tab === 'system'
+    ? 'Search all AI systems directly'
+    : 'Search branches and AI systems across your organization';
+  document.getElementById('s3Sub').textContent = sub;
+  showScreen('screenS3');
+  loadS3Data();
+  renderS3Results('', s3_tab);
+}
+
+// ── S1 setup ─────────────────────────────────────────────────
+function setupS1(email, companyName) {
+  const firstName = email.split('@')[0].split('.')[0];
+  const display = firstName.charAt(0).toUpperCase() + firstName.slice(1);
+  document.getElementById('s1Title').textContent = 'Welcome back, ' + display;
+  document.getElementById('s1Company').textContent = companyName || email;
+}
+
+// ── S3 data loading ──────────────────────────────────────────
+async function loadS3Data() {
+  if(!s_companyId) return;
+  if(s3_allData.branches.length > 0) return; // already loaded
+
+  const [branchRes, systemRes] = await Promise.all([
+    sb.from('branches').select('id, name, country').eq('company_id', s_companyId).eq('status','active').order('name'),
+    sb.from('ai_systems').select('id, system_code, name, inventory_group, risk_level, compliance_status, branches(name)').eq('company_id', s_companyId).eq('status','active').order('name')
+  ]);
+
+  s3_allData.branches = branchRes.data || [];
+  s3_allData.systems  = systemRes.data  || [];
+}
+
+function setS3Tab(tab, el) {
+  s3_tab = tab;
+  document.querySelectorAll('.s3-tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  renderS3Results(document.getElementById('s3SearchInput').value, tab);
+}
+
+function onS3Search(query) {
+  renderS3Results(query, s3_tab);
+}
+
+function renderS3Results(query, tab) {
+  const q = query.toLowerCase().trim();
+  const container = document.getElementById('s3Results');
+
+  const branches = s3_allData.branches.filter(b =>
+    !q || b.name.toLowerCase().includes(q)
+  );
+  const systems = s3_allData.systems.filter(s =>
+    !q || s.name.toLowerCase().includes(q) || (s.system_code || '').toLowerCase().includes(q)
+  );
+
+  let html = '';
+
+  const showBranches = tab === 'all' || tab === 'branch';
+  const showSystems  = tab === 'all' || tab === 'system';
+
+  if(showBranches && branches.length > 0) {
+    if(tab === 'all') html += `<p class="s3-section-label">Branches</p>`;
+    branches.forEach(b => {
+      const systemCount = s3_allData.systems.filter(s => s.branches?.name === b.name).length;
+      html += `
+        <div class="s3-result" onclick="onSelectBranch('${b.id}','${b.name.replace(/'/g,"\'")}')">
+          <div class="s3-result-left">
+            <p class="s3-result-type">Branch</p>
+            <p class="s3-result-name">${b.name}</p>
+            <p class="s3-result-meta">${b.country || 'Chile'} · ${systemCount} system${systemCount !== 1 ? 's' : ''}</p>
+          </div>
+          <div class="s3-result-right">
+            <span class="s3-badge s3-badge-branch">View systems</span>
+            <span class="s3-arrow">›</span>
+          </div>
+        </div>`;
+    });
+  }
+
+  if(showSystems && systems.length > 0) {
+    if(tab === 'all') html += `<p class="s3-section-label">AI Systems</p>`;
+    systems.forEach(s => {
+      const riskClass = {Critical:'critical',High:'high',Medium:'medium',Low:'low'}[s.risk_level] || 'medium';
+      const groupName = ['','Operational','Analytical','Geoscience','General use'][s.inventory_group] || '';
+      html += `
+        <div class="s3-result" onclick="onSelectSystem('${s.id}')">
+          <div class="s3-result-left">
+            <p class="s3-result-type">Group ${s.inventory_group} — ${groupName}</p>
+            <p class="s3-result-name">${s.name}</p>
+            <p class="s3-result-meta">${s.system_code || '—'} · ${s.branches?.name || '—'}</p>
+          </div>
+          <div class="s3-result-right">
+            <span class="s3-badge s3-badge-${riskClass}">${s.risk_level || '—'}</span>
+            <span class="s3-arrow">›</span>
+          </div>
+        </div>`;
+    });
+  }
+
+  if(!html) {
+    html = q
+      ? `<div class="s3-empty">No results for "<strong>${query}</strong>"</div>`
+      : `<div class="s3-empty">Start typing to search${tab === 'branch' ? ' branches' : tab === 'system' ? ' systems' : ''}</div>`;
+  }
+
+  container.innerHTML = html;
+}
+
+function onSelectBranch(branchId, branchName) {
+  showScreen('clientDashboard');
+  showDashboard(s_companyName, s_country, s_userId, s_companyId);
+  setTimeout(() => {
+    const sel = document.getElementById('branchSelect');
+    if(sel) {
+      sel.value = branchId;
+      onBranchChange(branchId);
+    }
+  }, 600);
+}
+
+function onSelectSystem(systemId) {
+  alert('Full record view coming next — system ID: ' + systemId);
+}
+</script>
 </body>
-</html>
