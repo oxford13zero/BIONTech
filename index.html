@@ -3574,7 +3574,94 @@ function onSelectSystem(systemId) {
   showS4System(systemId);
 }
 
-// ── S4A: devices in a branch ─────────────────────────────────
+// ── S5 Edit mode ─────────────────────────────────────────────
+let s5CurrentSystemId = null;
+
+function enterEditMode(sectionId, tableKey, recordId, label) {
+  const grid = document.getElementById(sectionId + '-grid');
+  if(!grid) return;
+
+  const fields = grid.querySelectorAll('.s5-field');
+  let editHtml = '<div class="s5-fields-grid">';
+
+  fields.forEach(f => {
+    const col = f.getAttribute('data-col');
+    const val = f.getAttribute('data-val') || '';
+    const lbl = f.querySelector('.s5-field-label')?.textContent || '';
+    if(!col) return;
+    editHtml += `<div class="s5-field">
+      <p class="s5-field-label">${lbl}</p>
+      <input class="s5-edit-input" data-col="${col}" value="${val.replace(/"/g,'&quot;')}"
+        style="width:100%;padding:7px 10px;border-radius:7px;border:1px solid #2C3F6A;
+               background:#152A52;color:#EAF0FF;font-size:13px;
+               font-family:'Source Sans 3',system-ui,sans-serif;
+               box-sizing:border-box;outline:none;transition:border-color .15s;"
+        onfocus="this.style.borderColor='rgba(244,195,139,.6)'"
+        onblur="this.style.borderColor='#2C3F6A'">
+    </div>`;
+  });
+
+  editHtml += '</div>';
+  editHtml += `<div class="s5-section-edit-row" style="gap:8px;">
+    <button class="s5-sec-edit-btn" style="color:#F09595;border-color:rgba(240,149,149,.4);"
+      onclick="cancelEditMode('${sectionId}')">Cancel</button>
+    <button class="s5-sec-edit-btn" style="background:#1A2C52;border-color:rgba(244,195,139,.6);color:#F4C38B;"
+      id="${sectionId}-save-btn" onclick="saveSection('${sectionId}','${tableKey}','${recordId}')">Save changes</button>
+  </div>`;
+
+  const body = grid.parentElement;
+  body.innerHTML = editHtml;
+}
+
+async function saveSection(sectionId, tableKey, recordId) {
+  const btn = document.getElementById(sectionId + '-save-btn');
+  if(btn) { btn.textContent = 'Saving…'; btn.disabled = true; }
+
+  const inputs = document.querySelectorAll(`#${sectionId}-grid .s5-edit-input, #${sectionId.replace('-grid','')} .s5-edit-input`);
+  const payload = {};
+  document.querySelectorAll(`[id^="${sectionId}"] .s5-edit-input`).forEach(inp => {
+    const col = inp.getAttribute('data-col');
+    const v   = inp.value.trim();
+    if(col && v) payload[col] = v;
+  });
+
+  // Also grab from direct parent search
+  const allInputs = document.querySelectorAll('.s5-edit-input');
+  allInputs.forEach(inp => {
+    const col = inp.getAttribute('data-col');
+    const v   = inp.value.trim();
+    if(col && v) payload[col] = v;
+  });
+
+  if(Object.keys(payload).length === 0) {
+    if(btn) { btn.textContent = 'Save changes'; btn.disabled = false; }
+    return;
+  }
+
+  let error;
+  if(tableKey === 'ai_systems') {
+    ({ error } = await sb.from('ai_systems').update(payload).eq('id', recordId || s5CurrentSystemId));
+  } else if(recordId && recordId !== 'undefined') {
+    ({ error } = await sb.from(tableKey).update(payload).eq('id', recordId));
+  } else {
+    payload.system_id = s5CurrentSystemId;
+    ({ error } = await sb.from(tableKey).upsert(payload, { onConflict: 'system_id' }));
+  }
+
+  if(error) {
+    alert('Error saving: ' + error.message);
+    if(btn) { btn.textContent = 'Save changes'; btn.disabled = false; }
+    return;
+  }
+
+  // Reload S5 to show updated values
+  await showS5(s5CurrentSystemId);
+}
+
+function cancelEditMode(sectionId) {
+  if(s5CurrentSystemId) showS5(s5CurrentSystemId);
+}
+</script>
 async function showS4Branch(branchId, branchName) {
   document.getElementById('s4Title').textContent = branchName;
   document.getElementById('s4Sub').textContent = 'AI systems registered in this branch';
@@ -3678,6 +3765,7 @@ function renderS4Systems(systems, mode) {
 
 // ── S5: Full record ───────────────────────────────────────────
 async function showS5(systemId) {
+  s5CurrentSystemId = systemId;
   document.getElementById('s5Content').innerHTML = '<div style="text-align:center;padding:60px;color:#8899CC;font-size:14px;">Loading full record…</div>';
   showScreen('screenS5');
 
@@ -3725,19 +3813,19 @@ async function showS5(systemId) {
     sys.country ? `<span class="s5-pill s5-pill-group">${sys.country}</span>` : '',
   ].filter(Boolean).join('');
 
-  function field(label, value) {
+  function field(label, value, colName) {
     if(!value || value === 'null') return '';
     const warn   = ['No','No disponible','No conforme','Pendiente','No - pendiente','No - pendiente urgente'];
     const ok     = ['Si','Completo','Conforme','Complete'];
     const valClass = warn.some(w => value.startsWith(w)) ? 's5-field-warn'
                    : ok.some(o => value.startsWith(o)) ? 's5-field-ok' : 's5-field-val';
-    return `<div class="s5-field">
+    return `<div class="s5-field" data-col="${colName||''}" data-val="${value.replace(/"/g,'&quot;')}">
       <p class="s5-field-label">${label}</p>
       <p class="${valClass}">${value}</p>
     </div>`;
   }
 
-  function section(label, color, fields, defaultOpen) {
+  function section(label, color, fields, defaultOpen, tableKey, recordId) {
     const rows = fields.filter(Boolean);
     if(!rows.length) return '';
     const count = rows.length;
@@ -3745,7 +3833,8 @@ async function showS5(systemId) {
     const headClass = isOpen ? 's5-section-head open' : 's5-section-head';
     const bodyClass = isOpen ? 's5-section-body open' : 's5-section-body';
     const arrowClass = isOpen ? 's5-section-arrow open' : 's5-section-arrow';
-    return `<div class="s5-section">
+    const editId = 'sec-' + (tableKey||'').replace(/_/g,'-') + '-' + (recordId||'').slice(0,8);
+    return `<div class="s5-section" id="${editId}">
       <div class="${headClass}" onclick="toggleS5Section(this)" style="border-left:4px solid ${color};border-radius:10px;">
         <div class="s5-section-color-dot" style="background:${color};"></div>
         <span class="s5-section-title">${label}</span>
@@ -3753,9 +3842,9 @@ async function showS5(systemId) {
         <span class="${arrowClass}">›</span>
       </div>
       <div class="${bodyClass}" style="border-left:4px solid ${color}40;">
-        <div class="s5-fields-grid">${rows.join('')}</div>
+        <div class="s5-fields-grid" id="${editId}-grid">${rows.join('')}</div>
         <div class="s5-section-edit-row">
-          <button class="s5-sec-edit-btn" onclick="alert('Edit mode for: ${label} — coming soon')">Edit section</button>
+          <button class="s5-sec-edit-btn" onclick="enterEditMode('${editId}','${tableKey||''}','${recordId||''}','${label}')">Edit section</button>
         </div>
       </div>
     </div>`;
@@ -3768,19 +3857,19 @@ async function showS5(systemId) {
     field('Incidents recorded', riskOp.incidents_recorded),
     field('Review frequency', riskOp.review_frequency),
     field('Last review date', riskOp.last_review_date),
-  ]) : riskDec ? section('Section F — Decision risk', '#EF9F27', [
+  ], false, 'sec_risk_operational', riskOp?.id) : riskDec ? section('Section F — Decision risk', '#EF9F27', [
     field('Human validation exists', riskDec.human_validation_exists),
     field('Validation process', riskDec.validation_process_desc),
     field('Decision log exists', riskDec.decision_log_exists),
     field('Incidents attributed', riskDec.incidents_attributed),
     field('Review frequency', riskDec.review_frequency),
-  ]) : riskStr ? section('Section F — Strategic risk', '#7F77DD', [
+  ], false, 'sec_risk_decision', riskDec?.id) : riskStr ? section('Section F — Strategic risk', '#7F77DD', [
     field('Geological validation', riskStr.geological_validation),
     field('Used in reserve reports', riskStr.used_in_reserve_reports),
     field('Influences public investment', riskStr.influences_public_investment),
     field('Community communication', riskStr.community_communication),
     field('Committed investment (USD)', riskStr.committed_investment_usd ? '$' + Number(riskStr.committed_investment_usd).toLocaleString() : null),
-  ]) : riskHu ? section('Section F+H — Human use & IP', '#5DCAA5', [
+  ], false, 'sec_risk_strategic', riskStr?.id) : riskHu ? section('Section F+H — Human use & IP', '#5DCAA5', [
     field('Use policy exists', riskHu.use_policy_exists),
     field('Employees signed policy', riskHu.employees_signed_policy_pct ? riskHu.employees_signed_policy_pct + '%' : null),
     field('Mandatory training', riskHu.mandatory_training),
@@ -3801,23 +3890,23 @@ async function showS5(systemId) {
       field('Operational location', sys.operational_location),
       field('Country', sys.country),
       field('Next review date', sys.next_review_date),
-    ], true)}
+    ], true, 'ai_systems', sys.id)}
     ${func ? section('Section B — Functional description', '#5DCAA5', [
-      field('Main function', func.main_function),
-      field('Autonomous decision', func.autonomous_decision),
-      field('Decision speed', func.decision_speed),
-      field('Output type', func.output_type),
-      field('Output format', func.output_format),
-      field('Execution frequency', func.execution_frequency),
-      field('Recommends or decides', func.recommends_or_decides),
-      field('Who acts on output', func.who_acts_on_output),
-      field('Impact if fails', func.impact_if_fails),
-      field('Affected processes', func.affected_processes),
-      field('Affected equipment', func.affected_equipment),
-      field('People in impact area', func.people_in_impact_area),
-      field('Can cause physical harm', func.can_cause_physical_harm),
-      field('Feeds public reports', func.feeds_public_reports),
-    ]) : ''}
+      field('Main function', func.main_function, 'main_function'),
+      field('Autonomous decision', func.autonomous_decision, 'autonomous_decision'),
+      field('Decision speed', func.decision_speed, 'decision_speed'),
+      field('Output type', func.output_type, 'output_type'),
+      field('Output format', func.output_format, 'output_format'),
+      field('Execution frequency', func.execution_frequency, 'execution_frequency'),
+      field('Recommends or decides', func.recommends_or_decides, 'recommends_or_decides'),
+      field('Who acts on output', func.who_acts_on_output, 'who_acts_on_output'),
+      field('Impact if fails', func.impact_if_fails, 'impact_if_fails'),
+      field('Affected processes', func.affected_processes, 'affected_processes'),
+      field('Affected equipment', func.affected_equipment, 'affected_equipment'),
+      field('People in impact area', func.people_in_impact_area, 'people_in_impact_area'),
+      field('Can cause physical harm', func.can_cause_physical_harm, 'can_cause_physical_harm'),
+      field('Feeds public reports', func.feeds_public_reports, 'feeds_public_reports'),
+    ], false, 'sec_functional', func?.id) : ''}
     ${reg ? section('Section C — Regulatory classification', '#EF9F27', [
       field('Risk level (Chile)', reg.risk_level_chile),
       field('Articles Chile', reg.articles_chile),
@@ -3833,7 +3922,7 @@ async function showS5(systemId) {
       field('ISO 42001 alignment', reg.iso42001_alignment),
       field('ISO 42001 principles', reg.iso42001_principles),
       field('Other frameworks', reg.other_frameworks),
-    ]) : ''}
+    ], false, 'sec_regulatory', reg?.id) : ''}
     ${dat ? section('Section D — Data & engineering', '#D4537E', [
       field('Model type', dat.model_type),
       field('Training data sources', dat.training_data_sources),
@@ -3851,7 +3940,7 @@ async function showS5(systemId) {
       field('Data stored on provider', dat.data_stored_on_provider),
       field('Data processing region', dat.data_processing_region),
       field('Data processing agreement', dat.data_processing_agreement),
-    ]) : ''}
+    ], false, 'sec_data_engineering', dat?.id) : ''}
     ${perf ? section('Section E — Performance & bias', '#97C459', [
       field('Performance metrics', perf.performance_metrics),
       field('Baseline comparison', perf.baseline_comparison),
@@ -3864,7 +3953,7 @@ async function showS5(systemId) {
       field('Adoption metrics', perf.adoption_metrics),
       field('Incident count', perf.incident_count !== null ? String(perf.incident_count) : null),
       field('Incident reporting process', perf.incident_reporting_process),
-    ]) : ''}
+    ], false, 'sec_performance', perf?.id) : ''}
     ${riskSection}
     ${comp ? section('Section G — Compliance documentation', '#F4C38B', [
       field('Algorithmic impact assessment', comp.algorithmic_impact_assessment),
