@@ -1744,6 +1744,9 @@ applyLang(currentLang);
     // Show S1 landing screen
     setupS1(email, companyName);
     showScreen('screenS1');
+    // Show add branch only for company_admin
+    const addBtn = document.getElementById('s1AddBranchBtn');
+    if(addBtn) addBtn.style.display = profile?.role === 'company_admin' || profile?.role === 'bion_admin' ? 'inline-flex' : 'none';
     // Preload search data in background
     if(companyId) loadS3Data();
   }
@@ -2347,9 +2350,575 @@ async function deleteSystem(id) {
   renderDashboard(allSystems);
 }
 
-function openAddWizard() {
-  alert('Add wizard coming next — step-by-step form across all 7 sections.');
+function openAddWizard() { openWizard('system'); }
+</script>
+
+<!-- ── WIZARD MODAL ──────────────────────────────────────────── -->
+<div id="wizardOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:200;display:none;align-items:center;justify-content:center;padding:20px;box-sizing:border-box;">
+<style>
+  #wizardOverlay.open{ display:flex !important; }
+  .wz-modal{
+    background:#111A2C;border:1px solid #2C3F6A;border-radius:16px;
+    width:100%;max-width:640px;max-height:90vh;display:flex;flex-direction:column;
+    overflow:hidden;
+  }
+  .wz-topbar{
+    background:#0F1B33;border-bottom:1px solid #1B3560;
+    padding:14px 20px;display:flex;align-items:center;justify-content:space-between;
+    flex-shrink:0;
+  }
+  .wz-title{font-size:14px;font-weight:700;color:#EAF0FF;margin:0;}
+  .wz-close{background:none;border:none;color:#5A7299;font-size:18px;cursor:pointer;padding:0;line-height:1;font-family:"Source Sans 3",system-ui,sans-serif;}
+  .wz-close:hover{color:#EAF0FF;}
+  .wz-progress{
+    display:flex;background:#0A1525;border-bottom:1px solid #1B3560;
+    padding:10px 20px;gap:0;flex-shrink:0;overflow-x:auto;
+  }
+  .wz-step{
+    display:flex;flex-direction:column;align-items:center;
+    font-size:10px;color:#5A7299;min-width:60px;flex:1;
+    cursor:pointer;transition:color .15s;
+  }
+  .wz-step-dot{
+    width:10px;height:10px;border-radius:50%;background:#2C3F6A;
+    margin-bottom:5px;transition:background .15s;flex-shrink:0;
+  }
+  .wz-step.active{ color:#F4C38B; }
+  .wz-step.active .wz-step-dot{ background:#F4C38B; }
+  .wz-step.done{ color:#97C459; }
+  .wz-step.done .wz-step-dot{ background:#97C459; }
+  .wz-body{flex:1;overflow-y:auto;padding:20px;}
+  .wz-section-title{font-size:15px;font-weight:700;color:#EAF0FF;margin:0 0 4px;}
+  .wz-section-sub{font-size:12px;color:#8899CC;margin:0 0 18px;}
+  .wz-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px 16px;}
+  .wz-field{display:flex;flex-direction:column;gap:5px;}
+  .wz-field.full{grid-column:1/-1;}
+  .wz-label{font-size:11px;font-weight:600;color:#8899CC;text-transform:uppercase;letter-spacing:.05em;}
+  .wz-req{color:#F09595;}
+  .wz-input{
+    padding:9px 12px;border-radius:9px;border:1px solid #2C3F6A;
+    background:#152A52;color:#EAF0FF;font-size:13px;
+    font-family:"Source Sans 3",system-ui,sans-serif;
+    transition:border-color .15s;outline:none;box-sizing:border-box;width:100%;
+  }
+  .wz-input:focus{border-color:rgba(244,195,139,.6);}
+  .wz-select{
+    padding:9px 12px;border-radius:9px;border:1px solid #2C3F6A;
+    background:#152A52;color:#EAF0FF;font-size:13px;
+    font-family:"Source Sans 3",system-ui,sans-serif;
+    cursor:pointer;outline:none;width:100%;
+  }
+  .wz-textarea{
+    padding:9px 12px;border-radius:9px;border:1px solid #2C3F6A;
+    background:#152A52;color:#EAF0FF;font-size:13px;
+    font-family:"Source Sans 3",system-ui,sans-serif;
+    resize:vertical;min-height:80px;outline:none;width:100%;box-sizing:border-box;
+    transition:border-color .15s;
+  }
+  .wz-textarea:focus{border-color:rgba(244,195,139,.6);}
+  .wz-footer{
+    background:#0A1525;border-top:1px solid #1B3560;
+    padding:12px 20px;display:flex;align-items:center;justify-content:space-between;
+    flex-shrink:0;gap:10px;
+  }
+  .wz-save-status{font-size:11px;color:#5A7299;display:flex;align-items:center;gap:5px;}
+  .wz-save-status.saved{color:#97C459;}
+  .wz-save-status.saving{color:#FAC775;}
+  .wz-save-status.error{color:#F09595;}
+  .wz-btn{
+    padding:8px 16px;border-radius:9px;font-size:13px;font-weight:700;
+    cursor:pointer;font-family:"Source Sans 3",system-ui,sans-serif;
+    transition:background .15s,border-color .15s;
+  }
+  .wz-btn-sec{border:1px solid #2C3F6A;background:transparent;color:#C2CDED;}
+  .wz-btn-sec:hover{background:#152A52;}
+  .wz-btn-pri{border:1px solid rgba(244,195,139,.6);background:#1A2C52;color:#F4C38B;}
+  .wz-btn-pri:hover{background:#203765;border-color:rgba(244,195,139,.9);}
+  .wz-btn-skip{border:none;background:transparent;color:#5A7299;font-size:12px;cursor:pointer;font-family:"Source Sans 3",system-ui,sans-serif;}
+  .wz-btn-skip:hover{color:#C2CDED;}
+  .wz-done-msg{text-align:center;padding:30px 20px;}
+  .wz-done-icon{width:48px;height:48px;border-radius:50%;background:#122010;border:2px solid #97C459;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;}
+  .wz-done-title{font-size:18px;font-weight:800;color:#EAF0FF;margin:0 0 8px;}
+  .wz-done-sub{font-size:13px;color:#8899CC;margin:0 0 24px;}
+  .wz-done-btns{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;}
+</style>
+<div class="wz-modal">
+  <div class="wz-topbar">
+    <p class="wz-title" id="wzTitle">Add new branch</p>
+    <button class="wz-close" onclick="closeWizard()">✕</button>
+  </div>
+  <div class="wz-progress" id="wzProgress"></div>
+  <div class="wz-body" id="wzBody"></div>
+  <div class="wz-footer">
+    <div>
+      <button class="wz-btn wz-btn-sec" id="wzBackBtn" onclick="wzBack()" style="display:none;">← Back</button>
+    </div>
+    <span class="wz-save-status" id="wzSaveStatus"></span>
+    <div style="display:flex;gap:8px;align-items:center;">
+      <button class="wz-btn-skip" id="wzSkipBtn" onclick="wzSkip()" style="display:none;">Skip section</button>
+      <button class="wz-btn wz-btn-pri" id="wzNextBtn" onclick="wzNext()">Next →</button>
+    </div>
+  </div>
+</div>
+</div>
+
+<script>
+// ── Wizard state ─────────────────────────────────────────────
+let wz = {
+  mode: 'branch',       // 'branch' or 'system'
+  currentStep: 0,
+  steps: [],
+  branchId: null,       // set after branch saved / pre-set from S4
+  branchName: '',
+  systemId: null,       // set after Section A saved
+  inventoryGroup: 1,
+  data: {}
+};
+
+const WZ_SECTIONS = [
+  { key:'branch',  label:'Branch',      optional:false },
+  { key:'secA',    label:'A · Identity',optional:false },
+  { key:'secB',    label:'B · Function',optional:true  },
+  { key:'secC',    label:'C · Regulatory',optional:true },
+  { key:'secD',    label:'D · Data',    optional:true  },
+  { key:'secE',    label:'E · Performance',optional:true },
+  { key:'secF',    label:'F · Risk',    optional:true  },
+  { key:'secG',    label:'G · Compliance',optional:true },
+  { key:'done',    label:'Done',        optional:false },
+];
+
+function openWizard(mode, presetBranchId, presetBranchName) {
+  wz.mode        = mode;
+  wz.currentStep = 0;
+  wz.branchId    = presetBranchId || null;
+  wz.branchName  = presetBranchName || '';
+  wz.systemId    = null;
+  wz.data        = {};
+
+  if(mode === 'system') {
+    wz.steps = WZ_SECTIONS.filter(s => s.key !== 'branch');
+  } else {
+    wz.steps = WZ_SECTIONS;
+  }
+
+  renderWzProgress();
+  renderWzStep();
+  document.getElementById('wizardOverlay').classList.add('open');
+  document.getElementById('wizardOverlay').style.display = 'flex';
 }
+
+function closeWizard() {
+  document.getElementById('wizardOverlay').classList.remove('open');
+  document.getElementById('wizardOverlay').style.display = 'none';
+  s3_allData = { branches: [], systems: [] };
+  if(s_companyId) loadS3Data();
+  const sel = document.getElementById('branchSelect');
+  if(sel && sel.options.length <= 1) loadBranches(s_companyId);
+}
+
+function renderWzProgress() {
+  const prog = document.getElementById('wzProgress');
+  prog.innerHTML = wz.steps.map((s,i) => {
+    const cls = i < wz.currentStep ? 'done' : i === wz.currentStep ? 'active' : '';
+    return `<div class="wz-step ${cls}"><div class="wz-step-dot"></div>${s.label}</div>`;
+  }).join('');
+}
+
+function setSaveStatus(status, msg) {
+  const el = document.getElementById('wzSaveStatus');
+  el.className = 'wz-save-status ' + status;
+  el.textContent = msg;
+}
+
+function renderWzStep() {
+  const step = wz.steps[wz.currentStep];
+  const backBtn = document.getElementById('wzBackBtn');
+  const skipBtn = document.getElementById('wzSkipBtn');
+  const nextBtn = document.getElementById('wzNextBtn');
+  const title   = document.getElementById('wzTitle');
+
+  backBtn.style.display = wz.currentStep > 0 ? 'inline-block' : 'none';
+  skipBtn.style.display = step.optional ? 'inline-block' : 'none';
+  nextBtn.textContent   = wz.currentStep === wz.steps.length - 2 ? 'Finish' : 'Save & Next →';
+
+  setSaveStatus('', '');
+  renderWzProgress();
+
+  const body = document.getElementById('wzBody');
+
+  if(step.key === 'branch') {
+    title.textContent = 'Add new branch';
+    nextBtn.textContent = 'Save branch & Next →';
+    body.innerHTML = `
+      <p class="wz-section-title">Branch details</p>
+      <p class="wz-section-sub">Create a new location for your organization.</p>
+      <div class="wz-grid">
+        <div class="wz-field full">
+          <label class="wz-label">Branch name <span class="wz-req">*</span></label>
+          <input class="wz-input" id="wzBranchName" placeholder="e.g. División El Salvador" value="${wz.data.branchName||''}">
+        </div>
+        <div class="wz-field">
+          <label class="wz-label">Address</label>
+          <input class="wz-input" id="wzBranchAddress" placeholder="Region or city" value="${wz.data.branchAddress||''}">
+        </div>
+        <div class="wz-field">
+          <label class="wz-label">Country</label>
+          <select class="wz-select" id="wzBranchCountry">
+            <option ${(wz.data.branchCountry||'Chile')==='Chile'?'selected':''}>Chile</option>
+            <option ${wz.data.branchCountry==='Peru'?'selected':''}>Peru</option>
+            <option ${wz.data.branchCountry==='Brazil'?'selected':''}>Brazil</option>
+            <option ${wz.data.branchCountry==='Colombia'?'selected':''}>Colombia</option>
+            <option ${wz.data.branchCountry==='Argentina'?'selected':''}>Argentina</option>
+            <option ${wz.data.branchCountry==='Mexico'?'selected':''}>Mexico</option>
+          </select>
+        </div>
+      </div>`;
+
+  } else if(step.key === 'secA') {
+    title.textContent = wz.branchName ? 'Add system — ' + wz.branchName : 'Add AI system';
+    body.innerHTML = `
+      <p class="wz-section-title">Section A — Identification</p>
+      <p class="wz-section-sub">Core identity fields. Required before saving.</p>
+      <div class="wz-grid">
+        <div class="wz-field">
+          <label class="wz-label">System name <span class="wz-req">*</span></label>
+          <input class="wz-input" id="wzSysName" placeholder="e.g. Komatsu FrontRunner AHS" value="${wz.data.name||''}">
+        </div>
+        <div class="wz-field">
+          <label class="wz-label">System code <span class="wz-req">*</span></label>
+          <input class="wz-input" id="wzSysCode" placeholder="e.g. SYS-006" value="${wz.data.system_code||''}">
+        </div>
+        <div class="wz-field">
+          <label class="wz-label">Inventory group <span class="wz-req">*</span></label>
+          <select class="wz-select" id="wzSysGroup" onchange="wz.inventoryGroup=parseInt(this.value)">
+            <option value="1" ${wz.inventoryGroup===1?'selected':''}>Group 1 — Operational AI</option>
+            <option value="2" ${wz.inventoryGroup===2?'selected':''}>Group 2 — Analytical AI</option>
+            <option value="3" ${wz.inventoryGroup===3?'selected':''}>Group 3 — Geoscience AI</option>
+            <option value="4" ${wz.inventoryGroup===4?'selected':''}>Group 4 — General use AI</option>
+          </select>
+        </div>
+        <div class="wz-field">
+          <label class="wz-label">Risk level <span class="wz-req">*</span></label>
+          <select class="wz-select" id="wzSysRisk">
+            <option ${(wz.data.risk_level||'')==='Critical'?'selected':''}>Critical</option>
+            <option ${wz.data.risk_level==='High'?'selected':''}>High</option>
+            <option ${(wz.data.risk_level||'Medium')==='Medium'?'selected':''}>Medium</option>
+            <option ${wz.data.risk_level==='Low'?'selected':''}>Low</option>
+          </select>
+        </div>
+        <div class="wz-field">
+          <label class="wz-label">Vendor</label>
+          <input class="wz-input" id="wzSysVendor" placeholder="e.g. Komatsu Ltd." value="${wz.data.vendor||''}">
+        </div>
+        <div class="wz-field">
+          <label class="wz-label">Version</label>
+          <input class="wz-input" id="wzSysVersion" placeholder="e.g. v4.2.1" value="${wz.data.version||''}">
+        </div>
+        <div class="wz-field">
+          <label class="wz-label">Deploy date</label>
+          <input class="wz-input" type="date" id="wzSysDeployDate" value="${wz.data.deploy_date||''}">
+        </div>
+        <div class="wz-field">
+          <label class="wz-label">Country</label>
+          <select class="wz-select" id="wzSysCountry">
+            <option ${(wz.data.country||'Chile')==='Chile'?'selected':''}>Chile</option>
+            <option ${wz.data.country==='Peru'?'selected':''}>Peru</option>
+            <option ${wz.data.country==='Brazil'?'selected':''}>Brazil</option>
+            <option ${wz.data.country==='Colombia'?'selected':''}>Colombia</option>
+            <option ${wz.data.country==='Argentina'?'selected':''}>Argentina</option>
+            <option ${wz.data.country==='Mexico'?'selected':''}>Mexico</option>
+          </select>
+        </div>
+        <div class="wz-field">
+          <label class="wz-label">Responsible person</label>
+          <input class="wz-input" id="wzSysResponsible" placeholder="e.g. Gerente de Operaciones" value="${wz.data.responsible_person||''}">
+        </div>
+        <div class="wz-field">
+          <label class="wz-label">Next review date</label>
+          <input class="wz-input" type="date" id="wzSysReviewDate" value="${wz.data.next_review_date||''}">
+        </div>
+        <div class="wz-field">
+          <label class="wz-label">Operational location</label>
+          <input class="wz-input" id="wzSysLocation" placeholder="e.g. Flota CAEX norte" value="${wz.data.operational_location||''}">
+        </div>
+        <div class="wz-field">
+          <label class="wz-label">Platform</label>
+          <input class="wz-input" id="wzSysPlatform" placeholder="e.g. AWS SageMaker" value="${wz.data.platform||''}">
+        </div>
+      </div>`;
+
+  } else if(step.key === 'secB') {
+    body.innerHTML = wzOptionalForm('Section B — Functional description', 'Describe what the system does and how decisions are made.', [
+      {id:'wzB_main_function', label:'Main function', type:'textarea'},
+      {id:'wzB_output_type', label:'Output type', type:'input', ph:'e.g. Alert, recommendation, map'},
+      {id:'wzB_output_format', label:'Output format', type:'input', ph:'e.g. Dashboard, email, API'},
+      {id:'wzB_execution_frequency', label:'Execution frequency', type:'input', ph:'e.g. Real-time, daily'},
+      {id:'wzB_recommends_or_decides', label:'Recommends or decides', type:'select', opts:['Recommends','Decides','Mixed']},
+      {id:'wzB_who_acts_on_output', label:'Who acts on output', type:'input', ph:'e.g. Shift supervisor'},
+      {id:'wzB_impact_if_fails', label:'Impact if fails', type:'textarea'},
+      {id:'wzB_can_cause_physical_harm', label:'Can cause physical harm', type:'select', opts:['Si','No','No disponible']},
+    ]);
+
+  } else if(step.key === 'secC') {
+    body.innerHTML = wzOptionalForm('Section C — Regulatory classification', 'Laws and frameworks applicable to this system.', [
+      {id:'wzC_risk_level_chile', label:'Risk level (Chile)', type:'input', ph:'e.g. Crítico'},
+      {id:'wzC_articles_chile', label:'Applicable articles (Chile)', type:'input', ph:'e.g. Art. 8, 12'},
+      {id:'wzC_articles_peru', label:'Applicable articles (Peru)', type:'input'},
+      {id:'wzC_articles_brazil', label:'Applicable articles (Brazil)', type:'input'},
+      {id:'wzC_applies_sernageomin', label:'Applies SERNAGEOMIN', type:'select', opts:['Si','No','No aplica']},
+      {id:'wzC_requires_human_supervision', label:'Requires human supervision', type:'input', ph:'e.g. Si - supervisor de turno'},
+      {id:'wzC_nist_alignment', label:'NIST alignment', type:'select', opts:['None','Partial','Complete']},
+      {id:'wzC_oecd_alignment', label:'OECD alignment', type:'select', opts:['None','Partial','Complete']},
+      {id:'wzC_iso42001_alignment', label:'ISO 42001 alignment', type:'select', opts:['None','Partial','Complete']},
+    ]);
+
+  } else if(step.key === 'secD') {
+    body.innerHTML = wzOptionalForm('Section D — Data & engineering', 'Model type, data sources, and privacy considerations.', [
+      {id:'wzD_model_type', label:'Model type', type:'input', ph:'e.g. Series de tiempo, CNN'},
+      {id:'wzD_training_data_sources', label:'Training data sources', type:'textarea'},
+      {id:'wzD_production_input_data', label:'Production input data', type:'input', ph:'e.g. Sensores GPS + telemetría'},
+      {id:'wzD_includes_personal_data', label:'Includes personal data', type:'select', opts:['Si','No','No disponible']},
+      {id:'wzD_includes_sensitive_data', label:'Includes sensitive data', type:'select', opts:['Si','No','No disponible']},
+      {id:'wzD_retrain_frequency', label:'Retrain frequency', type:'input', ph:'e.g. Semestral'},
+      {id:'wzD_data_quality_control', label:'Data quality control', type:'select', opts:['Si','Parcial','No']},
+      {id:'wzD_vendor_provides_tech_access', label:'Vendor provides tech access', type:'select', opts:['Si','No','Parcial']},
+    ]);
+
+  } else if(step.key === 'secE') {
+    body.innerHTML = wzOptionalForm('Section E — Performance & bias', 'KPI metrics, drift monitoring, and bias evaluation.', [
+      {id:'wzE_performance_metrics', label:'Performance metrics', type:'textarea'},
+      {id:'wzE_baseline_comparison', label:'Baseline comparison', type:'input', ph:'e.g. Operación manual previa'},
+      {id:'wzE_drift_monitoring', label:'Drift monitoring', type:'select', opts:['Si','No','Parcial']},
+      {id:'wzE_bias_evaluated', label:'Bias evaluated', type:'select', opts:['Si','No','En proceso','No disponible']},
+      {id:'wzE_bias_result', label:'Bias result', type:'input', ph:'e.g. Sin sesgo significativo'},
+      {id:'wzE_incident_count', label:'Incident count', type:'input', ph:'0', full:false},
+      {id:'wzE_incident_reporting_process', label:'Incident reporting process', type:'input'},
+    ]);
+
+  } else if(step.key === 'secF') {
+    const group = wz.inventoryGroup;
+    if(group === 1) {
+      body.innerHTML = wzOptionalForm('Section F — Operational risk (Group 1)', 'Physical safety, override mechanisms, and incident history.', [
+        {id:'wzF_human_override_exists', label:'Human override exists', type:'select', opts:['Si','No']},
+        {id:'wzF_override_response_time_sec', label:'Override response time (seconds)', type:'input', ph:'e.g. 3'},
+        {id:'wzF_failure_mode', label:'Failure mode', type:'input', ph:'e.g. Detención automática'},
+        {id:'wzF_incidents_recorded', label:'Incidents recorded', type:'textarea'},
+        {id:'wzF_review_frequency', label:'Review frequency', type:'select', opts:['Mensual','Trimestral','Semestral','Anual']},
+        {id:'wzF_last_review_date', label:'Last review date', type:'date'},
+      ]);
+    } else if(group === 2) {
+      body.innerHTML = wzOptionalForm('Section F — Decision risk (Group 2)', 'Human validation and decision log for analytical systems.', [
+        {id:'wzF_human_validation_exists', label:'Human validation exists', type:'select', opts:['Si','No','Parcial']},
+        {id:'wzF_validation_process_desc', label:'Validation process', type:'textarea'},
+        {id:'wzF_decision_log_exists', label:'Decision log exists', type:'select', opts:['Si','No','Parcial']},
+        {id:'wzF_incidents_attributed', label:'Incidents attributed', type:'input'},
+        {id:'wzF_review_frequency', label:'Review frequency', type:'select', opts:['Mensual','Trimestral','Semestral','Anual']},
+      ]);
+    } else if(group === 3) {
+      body.innerHTML = wzOptionalForm('Section F — Strategic risk (Group 3)', 'Geological validation and investment impact.', [
+        {id:'wzF_geological_validation', label:'Geological validation', type:'input'},
+        {id:'wzF_used_in_reserve_reports', label:'Used in reserve reports', type:'select', opts:['Si','No','Parcial']},
+        {id:'wzF_influences_public_investment', label:'Influences public investment', type:'select', opts:['Si','No']},
+        {id:'wzF_community_communication', label:'Community communication', type:'input'},
+        {id:'wzF_committed_investment_usd', label:'Committed investment (USD)', type:'input', ph:'e.g. 12000000'},
+      ]);
+    } else {
+      body.innerHTML = wzOptionalForm('Section F+H — Human use & IP (Group 4)', 'Policy, training, misuse, and intellectual property.', [
+        {id:'wzF_use_policy_exists', label:'Use policy exists', type:'select', opts:['Si','No','En desarrollo']},
+        {id:'wzF_employees_signed_policy_pct', label:'Employees signed policy (%)', type:'input', ph:'e.g. 75'},
+        {id:'wzF_mandatory_training', label:'Mandatory training', type:'select', opts:['Si','No']},
+        {id:'wzF_trained_employees_pct', label:'Trained employees (%)', type:'input', ph:'e.g. 60'},
+        {id:'wzF_misuse_cases_detected', label:'Misuse cases detected', type:'input', ph:'0'},
+        {id:'wzF_ai_allowed_legal_docs', label:'AI allowed in legal docs', type:'input'},
+        {id:'wzF_ai_allowed_regulator_reports', label:'AI allowed in regulator reports', type:'input'},
+      ]);
+    }
+
+  } else if(step.key === 'secG') {
+    body.innerHTML = wzOptionalForm('Section G — Compliance documentation', 'Impact assessment, audit log, and regulatory review schedule.', [
+      {id:'wzG_algorithmic_impact_assessment', label:'Algorithmic impact assessment', type:'select', opts:['Completo','En proceso','No','No requerido']},
+      {id:'wzG_decision_log_exists', label:'Decision log exists', type:'select', opts:['Si','No','Parcial']},
+      {id:'wzG_log_externally_auditable', label:'Log externally auditable', type:'select', opts:['Si','No']},
+      {id:'wzG_compliance_status', label:'Compliance status', type:'select', opts:['Conforme','En proceso','No conforme','Sin evaluar']},
+      {id:'wzG_compliance_responsible', label:'Compliance responsible', type:'input', ph:'e.g. Legal + Gerencia Tecnología'},
+      {id:'wzG_technical_docs_exist', label:'Technical docs exist', type:'select', opts:['Si','No','Parcial']},
+      {id:'wzG_approved_use_policy', label:'Approved use policy', type:'select', opts:['Si','No']},
+      {id:'wzG_next_regulatory_review', label:'Next regulatory review', type:'date'},
+    ]);
+
+  } else if(step.key === 'done') {
+    nextBtn.style.display = 'none';
+    skipBtn.style.display = 'none';
+    body.innerHTML = `
+      <div class="wz-done-msg">
+        <div class="wz-done-icon">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+            <path d="M5 12l5 5L20 7" stroke="#97C459" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <p class="wz-done-title">System saved successfully</p>
+        <p class="wz-done-sub">All sections have been saved to Supabase. You can edit any section later from the full record view.</p>
+        <div class="wz-done-btns">
+          <button class="wz-btn wz-btn-pri" onclick="wzAddAnother()">+ Add another system</button>
+          <button class="wz-btn wz-btn-sec" onclick="closeWizard()">Done</button>
+        </div>
+      </div>`;
+    return;
+  }
+
+  nextBtn.style.display = 'inline-block';
+}
+
+function wzOptionalForm(title, sub, fields) {
+  return `
+    <p class="wz-section-title">${title}</p>
+    <p class="wz-section-sub">${sub}</p>
+    <div class="wz-grid">
+      ${fields.map(f => `
+        <div class="wz-field ${f.full===false?'':''}">
+          <label class="wz-label">${f.label}</label>
+          ${f.type==='textarea'
+            ? `<textarea class="wz-textarea" id="${f.id}" placeholder="${f.ph||''}"></textarea>`
+            : f.type==='select'
+            ? `<select class="wz-select" id="${f.id}">${(f.opts||[]).map(o=>`<option>${o}</option>`).join('')}</select>`
+            : f.type==='date'
+            ? `<input class="wz-input" type="date" id="${f.id}">`
+            : `<input class="wz-input" id="${f.id}" placeholder="${f.ph||''}">`
+          }
+        </div>`).join('')}
+    </div>`;
+}
+
+function val(id) {
+  const el = document.getElementById(id);
+  return el ? el.value.trim() || null : null;
+}
+
+async function wzNext() {
+  const step = wz.steps[wz.currentStep];
+
+  if(step.key === 'branch') {
+    const name = val('wzBranchName');
+    if(!name) { setSaveStatus('error','Branch name is required'); return; }
+    setSaveStatus('saving','Saving…');
+    wz.data.branchName    = name;
+    wz.data.branchAddress = val('wzBranchAddress');
+    wz.data.branchCountry = val('wzBranchCountry');
+    const { data, error } = await sb.from('branches').insert({
+      company_id: s_companyId,
+      name,
+      address: wz.data.branchAddress,
+      country: wz.data.branchCountry || 'Chile',
+      status: 'active'
+    }).select('id').single();
+    if(error){ setSaveStatus('error','Error: '+error.message); return; }
+    wz.branchId   = data.id;
+    wz.branchName = name;
+    setSaveStatus('saved','✓ Branch saved');
+    loadBranches(s_companyId);
+
+  } else if(step.key === 'secA') {
+    const name = val('wzSysName'), code = val('wzSysCode');
+    if(!name || !code) { setSaveStatus('error','Name and system code are required'); return; }
+    setSaveStatus('saving','Saving…');
+    wz.data = { ...wz.data,
+      name, system_code: code,
+      inventory_group: parseInt(document.getElementById('wzSysGroup').value),
+      risk_level: val('wzSysRisk') || 'Medium',
+      vendor: val('wzSysVendor'), version: val('wzSysVersion'),
+      deploy_date: val('wzSysDeployDate'), country: val('wzSysCountry'),
+      responsible_person: val('wzSysResponsible'),
+      next_review_date: val('wzSysReviewDate'),
+      operational_location: val('wzSysLocation'),
+      platform: val('wzSysPlatform'),
+    };
+    wz.inventoryGroup = wz.data.inventory_group;
+    const payload = {
+      company_id: s_companyId, branch_id: wz.branchId,
+      system_code: wz.data.system_code, name: wz.data.name,
+      inventory_group: wz.data.inventory_group, vendor: wz.data.vendor,
+      version: wz.data.version, deploy_date: wz.data.deploy_date,
+      responsible_person: wz.data.responsible_person,
+      operational_location: wz.data.operational_location,
+      country: wz.data.country || 'Chile',
+      risk_level: wz.data.risk_level,
+      compliance_status: 'Sin evaluar',
+      next_review_date: wz.data.next_review_date,
+      platform: wz.data.platform,
+      status: 'active'
+    };
+    let result;
+    if(wz.systemId) {
+      result = await sb.from('ai_systems').update(payload).eq('id', wz.systemId).select('id').single();
+    } else {
+      result = await sb.from('ai_systems').insert(payload).select('id').single();
+    }
+    if(result.error){ setSaveStatus('error','Error: '+result.error.message); return; }
+    wz.systemId = result.data.id;
+    setSaveStatus('saved','✓ System saved');
+
+  } else if(['secB','secC','secD','secE','secF','secG'].includes(step.key)) {
+    await wzSaveOptionalSection(step.key);
+  }
+
+  wz.currentStep++;
+  if(wz.currentStep >= wz.steps.length) wz.currentStep = wz.steps.length - 1;
+  renderWzStep();
+}
+
+async function wzSaveOptionalSection(key) {
+  if(!wz.systemId) return;
+  setSaveStatus('saving','Saving…');
+  const tableMap = { secB:'sec_functional', secC:'sec_regulatory', secD:'sec_data_engineering', secE:'sec_performance', secF:'sec_risk_operational', secG:'sec_compliance_docs' };
+  if(key === 'secF') {
+    const g = wz.inventoryGroup;
+    if(g===2) tableMap.secF = 'sec_risk_decision';
+    else if(g===3) tableMap.secF = 'sec_risk_strategic';
+    else if(g===4) tableMap.secF = 'sec_risk_human_use';
+  }
+  const table = tableMap[key];
+  const allInputs = document.querySelectorAll('#wzBody input, #wzBody select, #wzBody textarea');
+  const payload = { system_id: wz.systemId };
+  allInputs.forEach(el => {
+    if(el.id) {
+      const col = el.id.replace(/^wzB_|^wzC_|^wzD_|^wzE_|^wzF_|^wzG_/,'');
+      const v = el.value.trim();
+      if(v) payload[col] = v;
+    }
+  });
+  const { error } = await sb.from(table).upsert(payload, { onConflict:'system_id' });
+  if(error) { setSaveStatus('error','Error: '+error.message); }
+  else { setSaveStatus('saved','✓ Section saved'); }
+}
+
+function wzSkip() {
+  wz.currentStep++;
+  if(wz.currentStep >= wz.steps.length) wz.currentStep = wz.steps.length - 1;
+  renderWzStep();
+}
+
+function wzBack() {
+  if(wz.currentStep > 0) { wz.currentStep--; renderWzStep(); }
+}
+
+function wzAddAnother() {
+  wz.systemId    = null;
+  wz.data        = { branchName: wz.data.branchName, branchAddress: wz.data.branchAddress, branchCountry: wz.data.branchCountry };
+  wz.currentStep = wz.steps.findIndex(s => s.key === 'secA');
+  document.getElementById('wzNextBtn').style.display = 'inline-block';
+  renderWzStep();
+}
+
+// Show add system btn in S4 when branch is selected
+const _origRenderS4 = typeof renderS4Systems !== 'undefined' ? renderS4Systems : null;
+function showS4AddBtn(branchId, branchName) {
+  const btn = document.getElementById('s4AddSystemBtn');
+  if(btn) {
+    btn.style.display = 'block';
+    btn.onclick = () => openWizard('system', branchId, branchName);
+  }
+}
+</script>
 </script>
 
 
@@ -2566,6 +3135,13 @@ function openAddWizard() {
       <rect x="9" y="9" width="6" height="6" rx="1.5" stroke="currentColor" stroke-width="1.3"/>
     </svg>
     Open Dashboard
+  </button>
+  <button class="s1-dash-btn" id="s1AddBranchBtn" onclick="openWizard('branch')" style="margin-top:10px;border-color:rgba(244,195,139,.3);color:var(--muted);">
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+      <circle cx="8" cy="8" r="7" stroke="currentColor" stroke-width="1.3"/>
+      <path d="M8 5v6M5 8h6" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+    </svg>
+    Add new branch
   </button>
   <button class="s1-logout" onclick="handleClientLogout()">Sign out</button>
 </div>
@@ -3010,9 +3586,11 @@ async function showS4Branch(branchId, branchName) {
 
   if(error || !data || data.length === 0) {
     document.getElementById('s4List').innerHTML = '<div class="s4-empty">No AI systems found for this branch.</div>';
+    showS4AddBtn(branchId, branchName);
     return;
   }
   renderS4Systems(data, 'branch');
+  showS4AddBtn(branchId, branchName);
 }
 
 // ── S4B: branches using a specific system ────────────────────
@@ -3033,6 +3611,8 @@ async function showS4System(systemId) {
 
   document.getElementById('s4Title').textContent = sys.name;
   document.getElementById('s4Sub').textContent = sys.system_code + ' · ' + (sys.vendor || '—') + ' · All branches using this system';
+  const btn = document.getElementById('s4AddSystemBtn');
+  if(btn) btn.style.display = 'none';
 
   const { data, error } = await sb
     .from('ai_systems')
@@ -3342,6 +3922,7 @@ function toggleS5Section(head) {
   <h2 class="s4-title" id="s4Title">—</h2>
   <p class="s4-sub" id="s4Sub">—</p>
   <div class="s4-list" id="s4List"></div>
+  <button id="s4AddSystemBtn" onclick="openWizard('system')" style="display:none;width:100%;margin-top:14px;padding:11px;border-radius:10px;border:1px dashed rgba(244,195,139,.4);background:transparent;color:#F4C38B;font-size:13px;font-weight:700;cursor:pointer;font-family:'Source Sans 3',system-ui,sans-serif;transition:border-color .15s,background .15s;" onmouseover="this.style.borderColor='rgba(244,195,139,.9)';this.style.background='rgba(244,195,139,.05)'" onmouseout="this.style.borderColor='rgba(244,195,139,.4)';this.style.background='transparent'">+ Add system to this branch</button>
 </div>
 </div>
 
