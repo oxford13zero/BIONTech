@@ -1686,6 +1686,8 @@ applyLang(currentLang);
     // Show S1 landing screen
     setupS1(email, companyName);
     showScreen('screenS1');
+    // Preload search data in background
+    if(companyId) loadS3Data();
   }
 
   function setClientLoggedOut(){
@@ -2258,67 +2260,150 @@ function openAddWizard() {
   }
   .s1-wrap{
     width:100%;
-    max-width:640px;
+    max-width:480px;
     text-align:center;
   }
-  .s1-greeting{
-    font-size:13px;
+  .s1-user-bar{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:10px;
+    margin-bottom:32px;
+    flex-wrap:wrap;
+  }
+  .s1-user-dot{
+    width:8px;
+    height:8px;
+    border-radius:50%;
+    background:#97C459;
+    flex-shrink:0;
+  }
+  .s1-user-email{
+    font-size:12px;
+    color:var(--muted);
+  }
+  .s1-user-sep{
+    font-size:12px;
+    color:var(--border);
+  }
+  .s1-user-status{
+    font-size:12px;
+    color:#97C459;
+    font-weight:600;
+  }
+  .s1-company-badge{
+    font-size:11px;
+    padding:3px 10px;
+    border-radius:999px;
+    background:rgba(244,195,139,.1);
+    border:1px solid rgba(244,195,139,.3);
     color:var(--secondary);
     font-weight:700;
-    letter-spacing:.08em;
-    text-transform:uppercase;
-    margin:0 0 8px;
   }
   .s1-title{
-    font-size:clamp(26px,4vw,38px);
-    font-weight:800;
-    color:var(--text);
-    margin:0 0 8px;
-    line-height:1.15;
-  }
-  .s1-company{
-    font-size:15px;
-    color:var(--muted);
-    margin:0 0 48px;
-  }
-  .s1-cards{
-    display:grid;
-    grid-template-columns:repeat(3,1fr);
-    gap:14px;
-    margin-bottom:32px;
-  }
-  @media(max-width:600px){ .s1-cards{ grid-template-columns:1fr; } }
-  .s1-card{
-    background:var(--panel2);
-    border:1px solid var(--border);
-    border-radius:16px;
-    padding:24px 16px 20px;
-    cursor:pointer;
-    transition:transform .15s ease, border-color .15s ease, background .15s ease;
-    text-align:center;
-  }
-  .s1-card:hover{
-    transform:translateY(-3px);
-    background:var(--panel);
-  }
-  .s1-card.gold{ border-color:rgba(244,195,139,.5); }
-  .s1-card.gold:hover{ border-color:rgba(244,195,139,.9); }
-  .s1-card-icon{
-    font-size:32px;
-    margin-bottom:12px;
-    display:block;
-  }
-  .s1-card-title{
-    font-size:15px;
+    font-size:clamp(24px,4vw,36px);
     font-weight:800;
     color:var(--text);
     margin:0 0 6px;
+    line-height:1.15;
   }
-  .s1-card-desc{
-    font-size:12px;
+  .s1-sub{
+    font-size:14px;
     color:var(--muted);
-    margin:0;
-    line-height:1.5;
+    margin:0 0 32px;
+  }
+  .s1-search-wrap{
+    position:relative;
+    margin-bottom:12px;
+  }
+  .s1-search-icon{
+    position:absolute;
+    left:16px;
+    top:50%;
+    transform:translateY(-50%);
+    color:var(--muted);
+    pointer-events:none;
+  }
+  .s1-search{
+    width:100%;
+    padding:16px 16px 16px 48px;
+    border-radius:14px;
+    border:1px solid rgba(244,195,139,.5);
+    background:var(--panel2);
+    color:var(--text);
+    font-size:15px;
+    font-family:"Source Sans 3",system-ui,sans-serif;
+    box-sizing:border-box;
+    outline:none;
+    transition:border-color .15s, background .15s;
+  }
+  .s1-search:focus{
+    border-color:rgba(244,195,139,.9);
+    background:var(--panel);
+  }
+  .s1-search::placeholder{ color:#5A7299; }
+  .s1-hints{
+    display:flex;
+    gap:8px;
+    justify-content:center;
+    flex-wrap:wrap;
+    margin-bottom:28px;
+  }
+  .s1-hint{
+    font-size:11px;
+    padding:4px 12px;
+    border-radius:999px;
+    background:var(--panel2);
+    border:1px solid var(--border);
+    color:var(--muted);
+    cursor:pointer;
+    transition:border-color .15s, color .15s;
+    font-family:"Source Sans 3",system-ui,sans-serif;
+  }
+  .s1-hint:hover{
+    border-color:rgba(244,195,139,.5);
+    color:var(--text);
+  }
+  .s1-or-row{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    margin-bottom:20px;
+  }
+  .s1-or-line{
+    flex:1;
+    height:1px;
+    background:var(--border);
+    opacity:.4;
+  }
+  .s1-or-text{
+    font-size:11px;
+    color:var(--muted);
+    font-weight:700;
+    letter-spacing:.06em;
+    opacity:.6;
+  }
+  .s1-dash-btn{
+    width:100%;
+    padding:13px;
+    border-radius:12px;
+    border:1px solid var(--border);
+    background:transparent;
+    color:var(--secondary);
+    font-size:14px;
+    font-weight:700;
+    cursor:pointer;
+    font-family:"Source Sans 3",system-ui,sans-serif;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:10px;
+    transition:border-color .15s, background .15s;
+    margin-bottom:24px;
+  }
+  .s1-dash-btn:hover{
+    border-color:rgba(244,195,139,.6);
+    background:rgba(244,195,139,.05);
   }
   .s1-logout{
     font-size:12px;
@@ -2328,33 +2413,49 @@ function openAddWizard() {
     border:none;
     font-family:"Source Sans 3",system-ui,sans-serif;
     padding:0;
-    text-decoration:underline;
-    opacity:.7;
-    transition:opacity .15s;
+    opacity:.5;
+    transition:opacity .15s, color .15s;
   }
   .s1-logout:hover{ opacity:1; color:#F09595; }
 </style>
 <div class="s1-wrap">
-  <p class="s1-greeting">AI Governance Platform</p>
-  <h1 class="s1-title" id="s1Title">Welcome back</h1>
-  <p class="s1-company" id="s1Company">—</p>
-  <div class="s1-cards">
-    <div class="s1-card" onclick="goToDashboard()">
-      <span class="s1-card-icon">📊</span>
-      <p class="s1-card-title">Dashboard</p>
-      <p class="s1-card-desc">Charts, metrics and compliance overview for your organization</p>
-    </div>
-    <div class="s1-card gold" onclick="goToSearch('branch')">
-      <span class="s1-card-icon">🏢</span>
-      <p class="s1-card-title">Browse by Branch</p>
-      <p class="s1-card-desc">Pick a division or location, then explore its AI systems</p>
-    </div>
-    <div class="s1-card gold" onclick="goToSearch('system')">
-      <span class="s1-card-icon">🤖</span>
-      <p class="s1-card-title">Browse by System</p>
-      <p class="s1-card-desc">Search all AI systems directly across your organization</p>
-    </div>
+  <div class="s1-user-bar">
+    <div class="s1-user-dot"></div>
+    <span class="s1-user-email" id="s1Email">—</span>
+    <span class="s1-user-sep">·</span>
+    <span class="s1-user-status">logged in</span>
+    <span class="s1-user-sep">·</span>
+    <span class="s1-company-badge" id="s1CompanyBadge">—</span>
   </div>
+  <h1 class="s1-title" id="s1Title">Welcome back</h1>
+  <p class="s1-sub">Search a branch or AI system to get started</p>
+  <div class="s1-search-wrap">
+    <svg class="s1-search-icon" width="18" height="18" viewBox="0 0 20 20" fill="none">
+      <circle cx="9" cy="9" r="6" stroke="currentColor" stroke-width="1.5"/>
+      <path d="M13.5 13.5L17 17" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+    </svg>
+    <input class="s1-search" id="s1SearchInput" placeholder="Search branches or AI systems…" oninput="onS1Search(this.value)" autocomplete="off">
+  </div>
+  <div class="s1-hints" id="s1Hints">
+    <button class="s1-hint" onclick="onS1HintClick(this.textContent)">División Norte</button>
+    <button class="s1-hint" onclick="onS1HintClick(this.textContent)">Komatsu AHS</button>
+    <button class="s1-hint" onclick="onS1HintClick(this.textContent)">Microsoft Copilot</button>
+  </div>
+  <div id="s1SearchResults" style="margin-bottom:20px;display:none;"></div>
+  <div class="s1-or-row">
+    <div class="s1-or-line"></div>
+    <span class="s1-or-text">OR</span>
+    <div class="s1-or-line"></div>
+  </div>
+  <button class="s1-dash-btn" onclick="goToDashboard()">
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+      <rect x="1" y="1" width="6" height="6" rx="1.5" stroke="currentColor" stroke-width="1.3"/>
+      <rect x="9" y="1" width="6" height="6" rx="1.5" stroke="currentColor" stroke-width="1.3"/>
+      <rect x="1" y="9" width="6" height="6" rx="1.5" stroke="currentColor" stroke-width="1.3"/>
+      <rect x="9" y="9" width="6" height="6" rx="1.5" stroke="currentColor" stroke-width="1.3"/>
+    </svg>
+    Open Dashboard
+  </button>
   <button class="s1-logout" onclick="handleClientLogout()">Sign out</button>
 </div>
 </div>
@@ -2603,7 +2704,86 @@ function setupS1(email, companyName) {
   const firstName = email.split('@')[0].split('.')[0];
   const display = firstName.charAt(0).toUpperCase() + firstName.slice(1);
   document.getElementById('s1Title').textContent = 'Welcome back, ' + display;
-  document.getElementById('s1Company').textContent = companyName || email;
+  document.getElementById('s1Email').textContent = email;
+  document.getElementById('s1CompanyBadge').textContent = companyName || email;
+  document.getElementById('s1SearchInput').value = '';
+  document.getElementById('s1SearchResults').style.display = 'none';
+  document.getElementById('s1Hints').style.display = 'flex';
+}
+
+function onS1HintClick(text) {
+  const input = document.getElementById('s1SearchInput');
+  input.value = text;
+  onS1Search(text);
+  input.focus();
+}
+
+function onS1Search(query) {
+  const q = query.toLowerCase().trim();
+  const hints = document.getElementById('s1Hints');
+  const results = document.getElementById('s1SearchResults');
+
+  if(!q) {
+    results.style.display = 'none';
+    hints.style.display = 'flex';
+    return;
+  }
+  hints.style.display = 'none';
+  results.style.display = 'block';
+
+  if(s3_allData.branches.length === 0 && s3_allData.systems.length === 0) {
+    results.innerHTML = '<p style="font-size:13px;color:#5A7299;text-align:center;padding:12px 0;">Loading…</p>';
+    loadS3Data().then(() => onS1Search(query));
+    return;
+  }
+
+  const branches = s3_allData.branches.filter(b => b.name.toLowerCase().includes(q));
+  const systems  = s3_allData.systems.filter(s =>
+    s.name.toLowerCase().includes(q) || (s.system_code||'').toLowerCase().includes(q)
+  );
+
+  const RISK_MAP = {Critical:'#F09595',High:'#FAC775',Medium:'#85B7EB',Low:'#97C459'};
+  const RISK_BG  = {Critical:'#4A1515',High:'#3D2500',Medium:'#0C2240',Low:'#122010'};
+
+  let html = '<div style="display:grid;gap:6px;">';
+
+  branches.slice(0,3).forEach(b => {
+    const cnt = s3_allData.systems.filter(s => s.branches?.name === b.name).length;
+    html += `<div onclick="onSelectBranch('${b.id}','${b.name.replace(/'/g,"\'")}',event)"
+      style="display:flex;align-items:center;justify-content:space-between;gap:10px;
+             background:var(--panel2);border:1px solid var(--border);border-radius:10px;
+             padding:11px 14px;cursor:pointer;transition:border-color .15s;">
+      <div>
+        <p style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#5A7299;margin:0 0 2px;">Branch</p>
+        <p style="font-size:13px;font-weight:700;color:#EAF0FF;margin:0;">${b.name}</p>
+        <p style="font-size:11px;color:#8899CC;margin:0;">${cnt} system${cnt!==1?'s':''}</p>
+      </div>
+      <span style="color:#8899CC;font-size:18px;">›</span>
+    </div>`;
+  });
+
+  systems.slice(0,4).forEach(s => {
+    const rc = RISK_MAP[s.risk_level]||'#85B7EB';
+    const rb = RISK_BG[s.risk_level]||'#0C2240';
+    html += `<div onclick="onSelectSystem('${s.id}')"
+      style="display:flex;align-items:center;justify-content:space-between;gap:10px;
+             background:var(--panel2);border:1px solid var(--border);border-radius:10px;
+             padding:11px 14px;cursor:pointer;transition:border-color .15s;">
+      <div>
+        <p style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#5A7299;margin:0 0 2px;">AI System · ${s.system_code||'—'}</p>
+        <p style="font-size:13px;font-weight:700;color:#EAF0FF;margin:0;">${s.name}</p>
+        <p style="font-size:11px;color:#8899CC;margin:0;">${s.branches?.name||'—'}</p>
+      </div>
+      <span style="font-size:10px;padding:3px 8px;border-radius:999px;font-weight:600;background:${rb};color:${rc};">${s.risk_level||'—'}</span>
+    </div>`;
+  });
+
+  if(!branches.length && !systems.length) {
+    html += `<p style="font-size:13px;color:#5A7299;text-align:center;padding:16px 0;">No results for "<strong style="color:#EAF0FF;">${query}</strong>"</p>`;
+  }
+
+  html += '</div>';
+  results.innerHTML = html;
 }
 
 // ── S3 data loading ──────────────────────────────────────────
