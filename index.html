@@ -2667,7 +2667,7 @@ let s3_allData    = { branches: [], systems: [] };
 
 // ── Screen routing ───────────────────────────────────────────
 function showScreen(id) {
-  ['screenS1','screenS3','clientDashboard','home'].forEach(sid => {
+  ['screenS1','screenS3','screenS4','screenS5','clientDashboard','home'].forEach(sid => {
     const el = document.getElementById(sid);
     if(el) el.style.display = 'none';
   });
@@ -2880,19 +2880,394 @@ function renderS3Results(query, tab) {
 }
 
 function onSelectBranch(branchId, branchName) {
-  showScreen('clientDashboard');
-  showDashboard(s_companyName, s_country, s_userId, s_companyId);
-  setTimeout(() => {
-    const sel = document.getElementById('branchSelect');
-    if(sel) {
-      sel.value = branchId;
-      onBranchChange(branchId);
-    }
-  }, 600);
+  showS4Branch(branchId, branchName);
 }
 
 function onSelectSystem(systemId) {
-  alert('Full record view coming next — system ID: ' + systemId);
+  showS4System(systemId);
+}
+
+// ── S4A: devices in a branch ─────────────────────────────────
+async function showS4Branch(branchId, branchName) {
+  document.getElementById('s4Title').textContent = branchName;
+  document.getElementById('s4Sub').textContent = 'AI systems registered in this branch';
+  document.getElementById('s4List').innerHTML = '<div class="s4-loading">Loading systems…</div>';
+  showScreen('screenS4');
+
+  const { data, error } = await sb
+    .from('ai_systems')
+    .select('id, system_code, name, inventory_group, vendor, version, deploy_date, risk_level, compliance_status, next_review_date, sec_performance(incident_count, bias_evaluated), sec_risk_operational(human_override_exists)')
+    .eq('branch_id', branchId)
+    .eq('status', 'active')
+    .order('inventory_group');
+
+  if(error || !data || data.length === 0) {
+    document.getElementById('s4List').innerHTML = '<div class="s4-empty">No AI systems found for this branch.</div>';
+    return;
+  }
+  renderS4Systems(data, 'branch');
+}
+
+// ── S4B: branches using a specific system ────────────────────
+async function showS4System(systemId) {
+  document.getElementById('s4List').innerHTML = '<div class="s4-loading">Loading…</div>';
+  showScreen('screenS4');
+
+  const { data: sys } = await sb
+    .from('ai_systems')
+    .select('id, system_code, name, inventory_group, vendor, version, risk_level, compliance_status')
+    .eq('id', systemId)
+    .single();
+
+  if(!sys) {
+    document.getElementById('s4List').innerHTML = '<div class="s4-empty">System not found.</div>';
+    return;
+  }
+
+  document.getElementById('s4Title').textContent = sys.name;
+  document.getElementById('s4Sub').textContent = sys.system_code + ' · ' + (sys.vendor || '—') + ' · All branches using this system';
+
+  const { data, error } = await sb
+    .from('ai_systems')
+    .select('id, system_code, name, inventory_group, vendor, version, deploy_date, risk_level, compliance_status, next_review_date, branches(id, name), sec_performance(incident_count, bias_evaluated), sec_risk_operational(human_override_exists)')
+    .eq('company_id', s_companyId)
+    .eq('name', sys.name)
+    .eq('status', 'active');
+
+  if(error || !data || data.length === 0) {
+    document.getElementById('s4List').innerHTML = '<div class="s4-empty">No records found for this system.</div>';
+    return;
+  }
+  renderS4Systems(data, 'system');
+}
+
+function renderS4Systems(systems, mode) {
+  const RISK_COLOR = {Critical:'#F09595',High:'#FAC775',Medium:'#85B7EB',Low:'#97C459'};
+  const RISK_BG    = {Critical:'#4A1515',High:'#3D2500',Medium:'#0C2240',Low:'#122010'};
+  const STATUS_COLOR = {'Conforme':'#97C459','En proceso':'#FAC775','No conforme':'#F09595','Sin evaluar':'#85B7EB'};
+  const STATUS_BG    = {'Conforme':'#122010','En proceso':'#3D2500','No conforme':'#4A1515','Sin evaluar':'#0C2240'};
+  const GROUP = ['','Operational','Analytical','Geoscience','General use'];
+  const now = new Date();
+
+  document.getElementById('s4List').innerHTML = systems.map(s => {
+    const rc = RISK_COLOR[s.risk_level]||'#85B7EB';
+    const rb = RISK_BG[s.risk_level]||'#0C2240';
+    const sc = STATUS_COLOR[s.compliance_status]||'#85B7EB';
+    const sb2 = STATUS_BG[s.compliance_status]||'#0C2240';
+    const deploy = s.deploy_date ? new Date(s.deploy_date).getFullYear() : '—';
+    const review = s.next_review_date ? new Date(s.next_review_date) : null;
+    const reviewStr = review ? review.toLocaleDateString('en-US',{month:'short',year:'numeric'}) : '—';
+    const reviewColor = review && review < now ? '#F09595' : review && review < new Date(now.getTime()+60*24*60*60*1000) ? '#FAC775' : '#8899CC';
+    const incidents = s.sec_performance?.[0]?.incident_count ?? '—';
+    const override = s.sec_risk_operational?.[0]?.human_override_exists || '—';
+    const branchLine = mode === 'system' && s.branches ? `<p style="font-size:11px;color:#8899CC;margin:4px 0 0;">Branch: <strong style="color:#EAF0FF;">${s.branches.name}</strong></p>` : '';
+    return `
+    <div style="background:#0F1B33;border:1px solid #2C3F6A;border-radius:12px;padding:16px;cursor:pointer;transition:border-color .15s,background .15s;" onclick="showS5('${s.id}')" onmouseover="this.style.borderColor='rgba(244,195,139,.4)';this.style.background='#111F3D'" onmouseout="this.style.borderColor='#2C3F6A';this.style.background='#0F1B33'">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:10px;">
+        <div>
+          <p style="font-size:10px;color:#5A7299;font-family:monospace;margin:0 0 2px;">${s.system_code||'—'} · Group ${s.inventory_group} — ${GROUP[s.inventory_group]||''}</p>
+          <p style="font-size:15px;font-weight:700;color:#EAF0FF;margin:0 0 2px;">${s.name}</p>
+          <p style="font-size:11px;color:#8899CC;margin:0;">${s.vendor||'—'} · ${s.version||'—'} · Deployed ${deploy}</p>
+          ${branchLine}
+        </div>
+        <span style="font-size:10px;padding:3px 9px;border-radius:999px;font-weight:700;background:${rb};color:${rc};white-space:nowrap;">${s.risk_level||'—'}</span>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px;">
+        <div><p style="font-size:10px;color:#5A7299;text-transform:uppercase;letter-spacing:.04em;margin:0 0 2px;">Next review</p><p style="font-size:11px;color:${reviewColor};margin:0;">${reviewStr}</p></div>
+        <div><p style="font-size:10px;color:#5A7299;text-transform:uppercase;letter-spacing:.04em;margin:0 0 2px;">Incidents</p><p style="font-size:11px;color:${incidents>0?'#FAC775':'#EAF0FF'};margin:0;">${incidents}</p></div>
+        <div><p style="font-size:10px;color:#5A7299;text-transform:uppercase;letter-spacing:.04em;margin:0 0 2px;">Override</p><p style="font-size:11px;color:#EAF0FF;margin:0;">${override}</p></div>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <span style="font-size:10px;padding:3px 9px;border-radius:999px;font-weight:600;background:${sb2};color:${sc};">${s.compliance_status||'Sin evaluar'}</span>
+        <span style="font-size:12px;color:#F4C38B;font-weight:700;">View full record →</span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── S5: Full record ───────────────────────────────────────────
+async function showS5(systemId) {
+  document.getElementById('s5Content').innerHTML = '<div style="text-align:center;padding:60px;color:#8899CC;font-size:14px;">Loading full record…</div>';
+  showScreen('screenS5');
+
+  const [sysRes, funcRes, regRes, dataRes, perfRes, riskOpRes, riskDecRes, riskStrRes, riskHuRes, compRes] = await Promise.all([
+    sb.from('ai_systems').select('*').eq('id', systemId).single(),
+    sb.from('sec_functional').select('*').eq('system_id', systemId).single(),
+    sb.from('sec_regulatory').select('*').eq('system_id', systemId).single(),
+    sb.from('sec_data_engineering').select('*').eq('system_id', systemId).single(),
+    sb.from('sec_performance').select('*').eq('system_id', systemId).single(),
+    sb.from('sec_risk_operational').select('*').eq('system_id', systemId).maybeSingle(),
+    sb.from('sec_risk_decision').select('*').eq('system_id', systemId).maybeSingle(),
+    sb.from('sec_risk_strategic').select('*').eq('system_id', systemId).maybeSingle(),
+    sb.from('sec_risk_human_use').select('*').eq('system_id', systemId).maybeSingle(),
+    sb.from('sec_compliance_docs').select('*').eq('system_id', systemId).single(),
+  ]);
+
+  const sys   = sysRes.data;
+  const func  = funcRes.data;
+  const reg   = regRes.data;
+  const dat   = dataRes.data;
+  const perf  = perfRes.data;
+  const riskOp  = riskOpRes.data;
+  const riskDec = riskDecRes.data;
+  const riskStr = riskStrRes.data;
+  const riskHu  = riskHuRes.data;
+  const comp  = compRes.data;
+
+  if(!sys) { document.getElementById('s5Content').innerHTML = '<div style="text-align:center;padding:60px;color:#F09595;">System not found.</div>'; return; }
+
+  document.getElementById('s5SystemName').textContent = sys.name;
+  document.getElementById('s5SystemCode').textContent = sys.system_code + ' · Group ' + sys.inventory_group;
+
+  const GROUP = ['','Operational','Analytical','Geoscience','General use'];
+  const RISK_COLOR = {Critical:'#F09595',High:'#FAC775',Medium:'#85B7EB',Low:'#97C459'};
+  const RISK_BG    = {Critical:'#4A1515',High:'#3D2500',Medium:'#0C2240',Low:'#122010'};
+  const SC = {'Conforme':'#97C459','En proceso':'#FAC775','No conforme':'#F09595','Sin evaluar':'#85B7EB'};
+  const SB = {'Conforme':'#122010','En proceso':'#3D2500','No conforme':'#4A1515','Sin evaluar':'#0C2240'};
+
+  function field(label, value) {
+    if(!value || value === 'null') return '';
+    return `<div style="padding:8px 0;border-bottom:0.5px solid #1B3560;">
+      <p style="font-size:10px;color:#5A7299;text-transform:uppercase;letter-spacing:.05em;margin:0 0 2px;">${label}</p>
+      <p style="font-size:13px;color:#EAF0FF;margin:0;line-height:1.5;">${value}</p>
+    </div>`;
+  }
+
+  function section(label, color, fields) {
+    const body = fields.filter(Boolean).join('');
+    if(!body) return '';
+    return `<div class="s5-section">
+      <div class="s5-section-head" onclick="toggleS5Section(this)">
+        <span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:${color};margin-right:8px;flex-shrink:0;"></span>
+        <span class="s5-section-title">${label}</span>
+        <span class="s5-section-arrow">▾</span>
+      </div>
+      <div class="s5-section-body">${body}</div>
+    </div>`;
+  }
+
+  const riskSection = riskOp ? section('Section F — Operational risk', '#E24B4A', [
+    field('Human override', riskOp.human_override_exists),
+    field('Override response time', riskOp.override_response_time_sec ? riskOp.override_response_time_sec + ' seconds' : null),
+    field('Failure mode', riskOp.failure_mode),
+    field('Incidents recorded', riskOp.incidents_recorded),
+    field('Review frequency', riskOp.review_frequency),
+    field('Last review date', riskOp.last_review_date),
+  ]) : riskDec ? section('Section F — Decision risk', '#EF9F27', [
+    field('Human validation exists', riskDec.human_validation_exists),
+    field('Validation process', riskDec.validation_process_desc),
+    field('Decision log exists', riskDec.decision_log_exists),
+    field('Incidents attributed', riskDec.incidents_attributed),
+    field('Review frequency', riskDec.review_frequency),
+  ]) : riskStr ? section('Section F — Strategic risk', '#7F77DD', [
+    field('Geological validation', riskStr.geological_validation),
+    field('Used in reserve reports', riskStr.used_in_reserve_reports),
+    field('Influences public investment', riskStr.influences_public_investment),
+    field('Community communication', riskStr.community_communication),
+    field('Committed investment (USD)', riskStr.committed_investment_usd ? '$' + Number(riskStr.committed_investment_usd).toLocaleString() : null),
+  ]) : riskHu ? section('Section F+H — Human use & IP', '#5DCAA5', [
+    field('Use policy exists', riskHu.use_policy_exists),
+    field('Employees signed policy', riskHu.employees_signed_policy_pct ? riskHu.employees_signed_policy_pct + '%' : null),
+    field('Mandatory training', riskHu.mandatory_training),
+    field('Trained employees', riskHu.trained_employees_pct ? riskHu.trained_employees_pct + '%' : null),
+    field('Misuse cases detected', riskHu.misuse_cases_detected),
+    field('AI allowed in legal docs', riskHu.ai_allowed_legal_docs),
+    field('AI allowed in regulator reports', riskHu.ai_allowed_regulator_reports),
+  ]) : '';
+
+  const rc = RISK_COLOR[sys.risk_level]||'#85B7EB';
+  const rb = RISK_BG[sys.risk_level]||'#0C2240';
+  const sc2 = SC[sys.compliance_status]||'#85B7EB';
+  const sb3 = SB[sys.compliance_status]||'#0C2240';
+
+  document.getElementById('s5Content').innerHTML = `
+    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:20px;">
+      <span style="font-size:11px;padding:4px 10px;border-radius:999px;background:${rb};color:${rc};font-weight:700;">${sys.risk_level||'—'}</span>
+      <span style="font-size:11px;padding:4px 10px;border-radius:999px;background:${sb3};color:${sc2};font-weight:700;">${sys.compliance_status||'—'}</span>
+      <span style="font-size:11px;color:#8899CC;">Group ${sys.inventory_group} — ${GROUP[sys.inventory_group]||''}</span>
+    </div>
+    ${section('Section A — Identification', '#378ADD', [
+      field('System code', sys.system_code),
+      field('Vendor', sys.vendor),
+      field('Version', sys.version),
+      field('Deploy date', sys.deploy_date),
+      field('Responsible person', sys.responsible_person),
+      field('Responsible area', sys.responsible_area),
+      field('Operational location', sys.operational_location),
+      field('Country', sys.country),
+      field('Next review date', sys.next_review_date),
+    ])}
+    ${func ? section('Section B — Functional description', '#5DCAA5', [
+      field('Main function', func.main_function),
+      field('Autonomous decision', func.autonomous_decision),
+      field('Decision speed', func.decision_speed),
+      field('Output type', func.output_type),
+      field('Output format', func.output_format),
+      field('Execution frequency', func.execution_frequency),
+      field('Recommends or decides', func.recommends_or_decides),
+      field('Who acts on output', func.who_acts_on_output),
+      field('Impact if fails', func.impact_if_fails),
+      field('Affected processes', func.affected_processes),
+      field('Affected equipment', func.affected_equipment),
+      field('People in impact area', func.people_in_impact_area),
+      field('Can cause physical harm', func.can_cause_physical_harm),
+      field('Feeds public reports', func.feeds_public_reports),
+    ]) : ''}
+    ${reg ? section('Section C — Regulatory classification', '#EF9F27', [
+      field('Risk level (Chile)', reg.risk_level_chile),
+      field('Articles Chile', reg.articles_chile),
+      field('Articles Peru', reg.articles_peru),
+      field('Articles Brazil', reg.articles_brazil),
+      field('Applies SERNAGEOMIN', reg.applies_sernageomin),
+      field('Requires human supervision', reg.requires_human_supervision),
+      field('Additional regulations', reg.additional_regulations),
+      field('NIST alignment', reg.nist_alignment),
+      field('NIST functions', reg.nist_functions),
+      field('OECD alignment', reg.oecd_alignment),
+      field('OECD principles', reg.oecd_principles),
+      field('ISO 42001 alignment', reg.iso42001_alignment),
+      field('ISO 42001 principles', reg.iso42001_principles),
+      field('Other frameworks', reg.other_frameworks),
+    ]) : ''}
+    ${dat ? section('Section D — Data & engineering', '#D4537E', [
+      field('Model type', dat.model_type),
+      field('Training data sources', dat.training_data_sources),
+      field('Training data volume', dat.training_data_volume),
+      field('Production input data', dat.production_input_data),
+      field('Includes personal data', dat.includes_personal_data),
+      field('Includes sensitive data', dat.includes_sensitive_data),
+      field('Includes community data', dat.includes_community_data),
+      field('Includes confidential data', dat.includes_confidential_data),
+      field('Last retrain date', dat.last_retrain_date),
+      field('Retrain frequency', dat.retrain_frequency),
+      field('Data quality control', dat.data_quality_control),
+      field('Data owner', dat.data_owner),
+      field('Vendor provides tech access', dat.vendor_provides_tech_access),
+      field('Data stored on provider', dat.data_stored_on_provider),
+      field('Data processing region', dat.data_processing_region),
+      field('Data processing agreement', dat.data_processing_agreement),
+    ]) : ''}
+    ${perf ? section('Section E — Performance & bias', '#97C459', [
+      field('Performance metrics', perf.performance_metrics),
+      field('Baseline comparison', perf.baseline_comparison),
+      field('Drift monitoring', perf.drift_monitoring),
+      field('Last performance report', perf.last_performance_report),
+      field('Bias evaluated', perf.bias_evaluated),
+      field('Bias type', perf.bias_type),
+      field('Bias result', perf.bias_result),
+      field('Independent validation', perf.independent_validation),
+      field('Adoption metrics', perf.adoption_metrics),
+      field('Incident count', perf.incident_count !== null ? String(perf.incident_count) : null),
+      field('Incident reporting process', perf.incident_reporting_process),
+    ]) : ''}
+    ${riskSection}
+    ${comp ? section('Section G — Compliance documentation', '#F4C38B', [
+      field('Algorithmic impact assessment', comp.algorithmic_impact_assessment),
+      field('Decision log exists', comp.decision_log_exists),
+      field('Log externally auditable', comp.log_externally_auditable),
+      field('Next regulatory review', comp.next_regulatory_review),
+      field('Compliance status', comp.compliance_status),
+      field('Compliance responsible', comp.compliance_responsible),
+      field('Technical docs exist', comp.technical_docs_exist),
+      field('Docs accessible for audit', comp.docs_accessible_for_audit),
+      field('Approved use policy', comp.approved_use_policy),
+      field('Board informed', comp.board_informed),
+      field('Market regulator disclosure', comp.market_regulator_disclosure),
+      field('Next contract renewal', comp.next_contract_renewal),
+    ]) : ''}`;
+}
+
+function toggleS5Section(head) {
+  const body = head.nextElementSibling;
+  const arrow = head.querySelector('.s5-section-arrow');
+  const isOpen = body.style.display !== 'none';
+  body.style.display = isOpen ? 'none' : 'block';
+  arrow.textContent = isOpen ? '▸' : '▾';
 }
 </script>
+
+<!-- ── S4: DEVICE/BRANCH LIST ───────────────────────────────── -->
+<div id="screenS4" style="display:none;">
+<style>
+  #screenS4{
+    min-height:100vh;
+    background:var(--bg);
+    padding:40px 20px 80px;
+    box-sizing:border-box;
+  }
+  .s4-wrap{ max-width:720px; margin:0 auto; }
+  .s4-back{
+    display:inline-flex;align-items:center;gap:6px;
+    font-size:13px;color:var(--muted);cursor:pointer;
+    background:none;border:none;
+    font-family:"Source Sans 3",system-ui,sans-serif;
+    padding:0;margin-bottom:24px;transition:color .15s;
+  }
+  .s4-back:hover{ color:var(--text); }
+  .s4-title{ font-size:22px;font-weight:800;color:var(--text);margin:0 0 4px; }
+  .s4-sub{ font-size:13px;color:var(--muted);margin:0 0 24px; }
+  .s4-list{ display:grid;gap:10px; }
+  .s4-loading{ text-align:center;padding:40px;color:#8899CC;font-size:14px; }
+  .s4-empty{ text-align:center;padding:40px;color:#8899CC;font-size:13px; }
+</style>
+<div class="s4-wrap">
+  <button class="s4-back" onclick="showS1()">
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+      <path d="M10 12L6 8l4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+    Back to search
+  </button>
+  <h2 class="s4-title" id="s4Title">—</h2>
+  <p class="s4-sub" id="s4Sub">—</p>
+  <div class="s4-list" id="s4List"></div>
+</div>
+</div>
+
+<!-- ── S5: FULL RECORD ───────────────────────────────────────── -->
+<div id="screenS5" style="display:none;">
+<style>
+  #screenS5{
+    min-height:100vh;
+    background:var(--bg);
+    padding:40px 20px 80px;
+    box-sizing:border-box;
+  }
+  .s5-wrap{ max-width:720px; margin:0 auto; }
+  .s5-back{
+    display:inline-flex;align-items:center;gap:6px;
+    font-size:13px;color:var(--muted);cursor:pointer;
+    background:none;border:none;
+    font-family:"Source Sans 3",system-ui,sans-serif;
+    padding:0;margin-bottom:24px;transition:color .15s;
+  }
+  .s5-back:hover{ color:var(--text); }
+  .s5-system-name{ font-size:22px;font-weight:800;color:var(--text);margin:0 0 4px; }
+  .s5-system-code{ font-size:12px;color:#5A7299;font-family:monospace;margin:0 0 20px; }
+  .s5-section{
+    background:#0F1B33;border:1px solid #2C3F6A;
+    border-radius:12px;overflow:hidden;margin-bottom:10px;
+  }
+  .s5-section-head{
+    display:flex;align-items:center;gap:4px;
+    padding:14px 16px;cursor:pointer;
+    transition:background .15s;
+    user-select:none;
+  }
+  .s5-section-head:hover{ background:#111F3D; }
+  .s5-section-title{ font-size:13px;font-weight:700;color:#EAF0FF;flex:1; }
+  .s5-section-arrow{ font-size:12px;color:#5A7299; }
+  .s5-section-body{ padding:4px 16px 12px;display:block; }
+</style>
+<div class="s5-wrap">
+  <button class="s5-back" onclick="showScreen('screenS4')">
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+      <path d="M10 12L6 8l4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+    Back
+  </button>
+  <h2 class="s5-system-name" id="s5SystemName">—</h2>
+  <p class="s5-system-code" id="s5SystemCode">—</p>
+  <div id="s5Content"></div>
+</div>
+</div>
 </body>
