@@ -3246,17 +3246,20 @@ function toggleS5Section(head) {
     background:var(--bg);
     padding:0 0 80px;
     box-sizing:border-box;
+    margin-top:0;
   }
   .s5-topbar{
     background:#0F1B33;
     border-bottom:1px solid #1B3560;
-    padding:12px 28px;
+    padding:12px 20px;
     display:flex;
     align-items:center;
     justify-content:space-between;
     position:sticky;
     top:0;
     z-index:5;
+    width:100%;
+    box-sizing:border-box;
   }
   .s5-back{
     display:inline-flex;align-items:center;gap:6px;
@@ -3279,7 +3282,16 @@ function toggleS5Section(head) {
   .s5-hero{
     background:#0A1525;
     border-bottom:1px solid #1B3560;
-    padding:24px 28px 20px;
+    padding:24px 0 20px;
+    width:100%;
+    box-sizing:border-box;
+  }
+  .s5-hero-inner{
+    max-width:760px;
+    margin:0 auto;
+    padding:0 20px;
+    box-sizing:border-box;
+    width:100%;
   }
   .s5-hero-name{ font-size:24px;font-weight:800;color:#EAF0FF;margin:0 0 4px;line-height:1.2; }
   .s5-hero-meta{ font-size:12px;color:#5A7299;margin:0 0 12px;font-family:monospace; }
@@ -3294,7 +3306,7 @@ function toggleS5Section(head) {
   .s5-pill-noconf{ background:#4A1515;color:#F09595; }
   .s5-pill-sineval{ background:#0C2240;color:#85B7EB; }
   .s5-pill-group{ background:#1B3560;color:#85B7EB; }
-  .s5-wrap{ max-width:760px; margin:0 auto; padding:28px 28px 0; }
+  .s5-wrap{ max-width:760px; margin:0 auto; padding:28px 20px 0; width:100%; box-sizing:border-box; }
   .s5-timeline{ display:flex; gap:0; }
   .s5-tl-stripe{ width:4px; border-radius:2px; flex-shrink:0; margin-top:2px; }
   .s5-tl-body{ flex:1; padding-bottom:6px; }
@@ -3368,9 +3380,11 @@ function toggleS5Section(head) {
   <button class="s5-edit-btn" id="s5EditBtn">Edit record</button>
 </div>
 <div class="s5-hero">
-  <h2 class="s5-hero-name" id="s5SystemName">—</h2>
-  <p class="s5-hero-meta" id="s5SystemCode">—</p>
-  <div class="s5-hero-pills" id="s5HeroPills"></div>
+  <div class="s5-hero-inner">
+    <h2 class="s5-hero-name" id="s5SystemName">—</h2>
+    <p class="s5-hero-meta" id="s5SystemCode">—</p>
+    <div class="s5-hero-pills" id="s5HeroPills"></div>
+  </div>
 </div>
 <div class="s5-wrap">
   <div id="s5Content"></div>
