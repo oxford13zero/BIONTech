@@ -1191,6 +1191,24 @@
 
   .inv-section-label{font-size:10px;color:#8899CC;text-transform:uppercase;letter-spacing:.06em;margin:0 0 10px;}
   .inv-grid{display:grid;gap:10px;}
+  .attn-panel-wrap{ margin-top:4px; }
+  .attn-header{ display:flex;align-items:center;justify-content:space-between;margin-bottom:10px; }
+  .attn-title{ font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:#8899CC;margin:0;display:flex;align-items:center;gap:8px; }
+  .attn-count{ font-size:11px;padding:2px 8px;border-radius:999px;background:#4A1515;color:#F09595;font-weight:600; }
+  .attn-count.ok{ background:#122010;color:#97C459; }
+  .attn-grid{ display:grid;gap:8px; }
+  .attn-item{ background:#0F1B33;border:1px solid #2C3F6A;border-radius:10px;padding:12px 14px;display:flex;align-items:center;gap:12px;cursor:pointer;transition:border-color .15s,background .15s; }
+  .attn-item:hover{ background:#111F3D;border-color:rgba(244,195,139,.3); }
+  .attn-item-left{ flex:1;min-width:0; }
+  .attn-item-code{ font-size:10px;color:#5A7299;font-family:monospace;margin:0 0 2px; }
+  .attn-item-name{ font-size:13px;font-weight:700;color:#EAF0FF;margin:0 0 2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
+  .attn-item-reason{ font-size:11px;margin:0;display:flex;align-items:center;gap:5px; }
+  .attn-item-right{ display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0; }
+  .attn-tag{ font-size:10px;padding:2px 8px;border-radius:999px;font-weight:600;white-space:nowrap; }
+  .attn-tag-red{ background:#4A1515;color:#F09595; }
+  .attn-tag-amber{ background:#3D2500;color:#FAC775; }
+  .attn-tag-blue{ background:#0C2240;color:#85B7EB; }
+  .attn-ok{ background:#0F1B33;border:1px solid #1B3560;border-radius:10px;padding:14px;text-align:center;color:#5A7299;font-size:13px; }
   .inv-card{background:#0F1B33;border:1px solid #2C3F6A;border-radius:12px;padding:14px;}
   .inv-card-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;}
   .inv-card-id{font-size:10px;color:#5A7299;font-family:monospace;margin:0 0 2px;}
@@ -1219,6 +1237,35 @@
   .inv-btn.del:hover{background:#4A1515;}
   .add-system-btn{width:100%;padding:11px;border-radius:10px;border:1px dashed rgba(244,195,139,.4);background:transparent;color:#F4C38B;font-size:13px;font-weight:700;cursor:pointer;margin-top:10px;font-family:"Source Sans 3",system-ui,sans-serif;transition:border-color .15s,background .15s;}
   .add-system-btn:hover{border-color:rgba(244,195,139,.9);background:rgba(244,195,139,.05);}
+  .att-card{background:#0F1B33;border:1px solid #2C3F6A;border-radius:12px;padding:14px 16px;display:flex;align-items:center;gap:14px;cursor:pointer;transition:border-color .15s,background .15s;}
+  .att-card:hover{background:#111F3D;border-color:rgba(244,195,139,.3);}
+  .att-icon{width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+  .att-body{flex:1;min-width:0;}
+  .att-name{font-size:13px;font-weight:700;color:#EAF0FF;margin:0 0 2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .att-meta{font-size:11px;color:#8899CC;margin:0;}
+  .att-right{display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0;}
+  .att-badge{font-size:10px;padding:3px 8px;border-radius:999px;font-weight:600;white-space:nowrap;}
+  .att-reason{font-size:10px;color:#8899CC;text-align:right;}
+  .att-empty{text-align:center;padding:32px;color:#8899CC;font-size:13px;background:#0F1B33;border:1px solid #2C3F6A;border-radius:12px;}
+  .att-empty-icon{font-size:28px;margin-bottom:8px;}
+  .attn-panel-wrap{ }
+  .attn-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
+  .attn-title{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:#8899CC;margin:0;display:flex;align-items:center;gap:6px;}
+  .attn-count{font-size:11px;color:#F09595;font-weight:600;}
+  .attn-count.ok{color:#97C459;}
+  .attn-grid{display:grid;gap:8px;}
+  .attn-ok{text-align:center;padding:24px;color:#97C459;font-size:13px;background:#0F1B33;border:1px solid #1B3560;border-radius:12px;}
+  .attn-item{background:#0F1B33;border:1px solid #2C3F6A;border-radius:12px;padding:14px 16px;display:flex;align-items:flex-start;justify-content:space-between;gap:14px;cursor:pointer;transition:border-color .15s,background .15s;}
+  .attn-item:hover{background:#111F3D;border-color:rgba(244,195,139,.3);}
+  .attn-item-left{flex:1;min-width:0;}
+  .attn-item-code{font-size:10px;color:#5A7299;font-family:monospace;margin:0 0 3px;}
+  .attn-item-name{font-size:13px;font-weight:700;color:#EAF0FF;margin:0 0 6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .attn-item-reason{font-size:11px;margin:2px 0 0;display:flex;align-items:flex-start;gap:5px;line-height:1.4;}
+  .attn-item-right{display:flex;flex-direction:column;align-items:flex-end;gap:5px;flex-shrink:0;}
+  .attn-tag{font-size:10px;padding:3px 8px;border-radius:999px;font-weight:600;white-space:nowrap;}
+  .attn-tag-red{background:#4A1515;color:#F09595;}
+  .attn-tag-amber{background:#3D2500;color:#FAC775;}
+  .attn-tag-blue{background:#0C2240;color:#85B7EB;}
   .db-loading{text-align:center;padding:40px;color:#8899CC;font-size:14px;}
   .db-empty{text-align:center;padding:30px;color:#8899CC;font-size:13px;}
 
@@ -1351,11 +1398,15 @@
     </div>
   </div>
 
-  <p class="inv-section-label" id="invSectionLabel">Inventory records</p>
-  <div class="inv-grid" id="invGrid">
-    <div class="db-loading">Loading inventory...</div>
+  <div id="attentionPanel">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+      <p class="inv-section-label" style="margin:0;">Attention required</p>
+      <span id="attentionCount" style="font-size:11px;color:#8899CC;"></span>
+    </div>
+    <div id="attentionGrid" style="display:grid;gap:8px;">
+      <div class="db-loading">Loading...</div>
+    </div>
   </div>
-  <button class="add-system-btn" id="addSystemBtn" onclick="openAddWizard()">+ Add new system</button>
 </div>
 </div>
 
@@ -2000,7 +2051,7 @@ function onBranchChange(branchId) {
   currentTab = 'all';
   document.querySelectorAll('.db-tab').forEach(t => t.classList.remove('active'));
   document.querySelector('.db-tab').classList.add('active');
-  document.getElementById('invSectionLabel').textContent = 'Inventory records';
+  
   loadSystems(currentCompanyId, branchId);
 }
 
@@ -2035,7 +2086,7 @@ async function loadAlerts(country) {
 }
 
 async function loadSystems(companyId, branchId) {
-  document.getElementById('invGrid').innerHTML = '<div class="db-loading">Loading systems...</div>';
+  
   let query = sb
     .from('ai_systems')
     .select(`
@@ -2056,7 +2107,7 @@ async function loadSystems(companyId, branchId) {
   }
 
   const { data, error } = await query;
-  if(error){ document.getElementById('invGrid').innerHTML = '<div class="db-empty">Error: ' + error.message + '</div>'; return; }
+  if(error){ document.getElementById('attentionGrid').innerHTML = '<div class="db-empty">Error: ' + error.message + '</div>'; return; }
   allSystems = data || [];
   renderDashboard(allSystems);
 }
@@ -2069,9 +2120,7 @@ function switchTab(tab, el) {
     ? allSystems.filter(s => s.branch_id === currentBranch || (s.branches && s.branches.id === currentBranch))
     : allSystems;
   const filtered = tab === 'all' ? base : base.filter(s => String(s.inventory_group) === tab);
-  const label = tab === 'all' ? 'All inventory records' : GROUP_NAMES[tab] + ' — records';
-  document.getElementById('invSectionLabel').textContent = label;
-  renderInventoryCards(filtered);
+  renderAttentionPanel(filtered);
 }
 
 function renderDashboard(systems) {
@@ -2191,52 +2240,103 @@ function renderCharts(systems) {
 }
 
 function renderInventoryCards(systems) {
-  const grid = document.getElementById('invGrid');
-  if(!systems || systems.length === 0){
-    grid.innerHTML = '<div class="db-empty">No records found for this group.</div>';
+  renderAttentionPanel(systems);
+}
+
+function renderAttentionPanel(systems) {
+  const panel = document.getElementById('attentionPanel');
+  if(!panel) return;
+  const now   = new Date();
+  const in60  = new Date(now.getTime() + 60*24*60*60*1000);
+
+  const flags = [];
+
+  systems.forEach(s => {
+    const reasons = [];
+    const tags    = [];
+
+    if(s.compliance_status === 'No conforme') {
+      reasons.push({ text: 'Non-compliant — requires immediate action', color: '#F09595' });
+      tags.push({ label: 'No conforme', cls: 'attn-tag-red' });
+    }
+    if(s.risk_level === 'Critical' && s.compliance_status === 'Sin evaluar') {
+      reasons.push({ text: 'Critical risk system not yet evaluated', color: '#F09595' });
+      tags.push({ label: 'Critical + uneval', cls: 'attn-tag-red' });
+    }
+    const rev = s.next_review_date ? new Date(s.next_review_date) : null;
+    if(rev && rev < now) {
+      reasons.push({ text: 'Review overdue since ' + rev.toLocaleDateString('en-US',{month:'short',year:'numeric'}), color: '#F09595' });
+      tags.push({ label: 'Overdue', cls: 'attn-tag-red' });
+    } else if(rev && rev < in60) {
+      reasons.push({ text: 'Review due ' + rev.toLocaleDateString('en-US',{month:'short',year:'numeric'}), color: '#FAC775' });
+      tags.push({ label: 'Due soon', cls: 'attn-tag-amber' });
+    }
+    const incidents = s.sec_performance?.[0]?.incident_count || 0;
+    if(incidents > 0) {
+      reasons.push({ text: incidents + ' incident' + (incidents > 1 ? 's' : '') + ' recorded', color: '#FAC775' });
+      tags.push({ label: incidents + ' incident' + (incidents > 1 ? 's':''), cls: 'attn-tag-amber' });
+    }
+    const bias = s.sec_performance?.[0]?.bias_evaluated || '';
+    if((bias === 'No disponible' || bias === '' || bias.toLowerCase().startsWith('no')) && s.risk_level === 'Critical') {
+      reasons.push({ text: 'Bias not evaluated on a Critical system', color: '#FAC775' });
+      tags.push({ label: 'Bias missing', cls: 'attn-tag-amber' });
+    }
+    if(s.compliance_status === 'Sin evaluar' && s.risk_level !== 'Low') {
+      reasons.push({ text: 'Compliance not yet evaluated', color: '#85B7EB' });
+      if(!tags.find(t => t.cls === 'attn-tag-red')) tags.push({ label: 'Sin evaluar', cls: 'attn-tag-blue' });
+    }
+
+    if(reasons.length > 0) flags.push({ s, reasons, tags });
+  });
+
+  if(flags.length === 0) {
+    panel.innerHTML = `
+      <div class="attn-panel-wrap">
+        <div class="attn-header">
+          <p class="attn-title">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" style="flex-shrink:0;"><circle cx="8" cy="8" r="7" stroke="#97C459" stroke-width="1.3"/><path d="M5 8l2 2 4-4" stroke="#97C459" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Attention required
+          </p>
+          <span class="attn-count ok">All clear</span>
+        </div>
+        <div class="attn-ok">No governance issues detected for the current view.</div>
+      </div>`;
     return;
   }
-  const now = new Date();
-  grid.innerHTML = systems.map(s => {
-    const riskClass  = {'Critical':'risk-critical','High':'risk-high','Medium':'risk-medium','Low':'risk-low'}[s.risk_level] || 'risk-medium';
-    const statusClass= {'Conforme':'sp-conforme','En proceso':'sp-proceso','No conforme':'sp-noconf','Sin evaluar':'sp-sineval'}[s.compliance_status] || 'sp-sineval';
-    const reviewDate = s.next_review_date ? new Date(s.next_review_date) : null;
-    const reviewStr  = reviewDate ? reviewDate.toLocaleDateString('en-US',{month:'short',year:'numeric'}) : '—';
-    const reviewClass= reviewDate && reviewDate < now ? 'danger' : (reviewDate && reviewDate < new Date(now.getTime()+60*24*60*60*1000) ? 'warn' : '');
-    const incidents  = s.sec_performance?.[0]?.incident_count ?? '—';
-    const bias       = s.sec_performance?.[0]?.bias_evaluated || '—';
-    const override   = s.sec_risk_operational?.[0]?.human_override_exists || '—';
-    const overrideSec= s.sec_risk_operational?.[0]?.override_response_time_sec;
-    const overrideStr= override === 'Si' && overrideSec ? `Yes — ${overrideSec}s` : override === 'No' ? 'No' : override === '—' ? '—' : override;
-    const deployYear = s.deploy_date ? new Date(s.deploy_date).getFullYear() : '—';
-    return `
-    <div class="inv-card">
-      <div class="inv-card-top">
-        <div>
-          <p class="inv-card-id">${s.system_code} · ${GROUP_NAMES[s.inventory_group] || 'Group '+s.inventory_group}</p>
-          <p class="inv-card-name">${s.name}</p>
-          <p class="inv-card-vendor">${s.vendor || '—'} · ${s.version || '—'} · Deployed ${deployYear}</p>
-        </div>
-        <span class="risk-badge ${riskClass}">${s.risk_level || '—'}</span>
+
+  const prioritized = flags.sort((a,b) => {
+    const score = f => f.tags.some(t=>t.cls==='attn-tag-red') ? 0 : f.tags.some(t=>t.cls==='attn-tag-amber') ? 1 : 2;
+    return score(a) - score(b);
+  });
+
+  panel.innerHTML = `
+    <div class="attn-panel-wrap">
+      <div class="attn-header">
+        <p class="attn-title">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" style="flex-shrink:0;"><path d="M8 2L1.5 13h13L8 2z" stroke="#F09595" stroke-width="1.3" stroke-linejoin="round"/><path d="M8 6v4" stroke="#F09595" stroke-width="1.3" stroke-linecap="round"/><circle cx="8" cy="11.5" r=".6" fill="#F09595"/></svg>
+          Attention required
+        </p>
+        <span class="attn-count">${flags.length} system${flags.length>1?'s':''}</span>
       </div>
-      <div class="inv-meta-grid">
-        <div><p class="inv-meta-label">Responsible</p><p class="inv-meta-val">${s.responsible_person || '—'}</p></div>
-        <div><p class="inv-meta-label">Country</p><p class="inv-meta-val">${s.country || '—'}</p></div>
-        <div><p class="inv-meta-label">Next review</p><p class="inv-meta-val ${reviewClass}">${reviewStr}${reviewClass === 'danger' ? ' ⚠' : ''}</p></div>
-        <div><p class="inv-meta-label">Human override</p><p class="inv-meta-val">${overrideStr}</p></div>
-        <div><p class="inv-meta-label">Incidents</p><p class="inv-meta-val ${incidents > 0 ? 'warn' : ''}">${incidents}</p></div>
-        <div><p class="inv-meta-label">Bias eval</p><p class="inv-meta-val ${bias === 'No disponible' || bias === '—' ? 'warn' : ''}">${bias}</p></div>
-      </div>
-      <div class="inv-card-bottom">
-        <span class="status-pill ${statusClass}">${s.compliance_status || 'Sin evaluar'}</span>
-        <div class="inv-actions">
-          <button class="inv-btn">View</button>
-          <button class="inv-btn">Edit</button>
-          <button class="inv-btn del" onclick="deleteSystem('${s.id}')">Delete</button>
-        </div>
+      <div class="attn-grid">
+        ${prioritized.map(({s, reasons, tags}) => `
+          <div class="attn-item" onclick="showS5('${s.id}')">
+            <div class="attn-item-left">
+              <p class="attn-item-code">${s.system_code} · ${GROUP_NAMES[s.inventory_group]||'Group '+s.inventory_group} · ${s.branches?.name||'—'}</p>
+              <p class="attn-item-name">${s.name}</p>
+              ${reasons.slice(0,2).map(r => `<p class="attn-item-reason" style="color:${r.color};">
+                <svg width="10" height="10" viewBox="0 0 10 10" fill="none" style="flex-shrink:0;"><circle cx="5" cy="5" r="4" stroke="${r.color}" stroke-width="1"/><path d="M5 3v3" stroke="${r.color}" stroke-width="1" stroke-linecap="round"/><circle cx="5" cy="7.2" r=".4" fill="${r.color}"/></svg>
+                ${r.text}
+              </p>`).join('')}
+              ${reasons.length > 2 ? `<p class="attn-item-reason" style="color:#5A7299;">+${reasons.length-2} more issue${reasons.length-2>1?'s':''}</p>` : ''}
+            </div>
+            <div class="attn-item-right">
+              ${tags.slice(0,2).map(t => `<span class="attn-tag ${t.cls}">${t.label}</span>`).join('')}
+              <span style="font-size:11px;color:#F4C38B;margin-top:4px;">View →</span>
+            </div>
+          </div>`).join('')}
       </div>
     </div>`;
-  }).join('');
 }
 
 async function deleteSystem(id) {
