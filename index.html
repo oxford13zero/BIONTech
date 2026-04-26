@@ -3017,32 +3017,56 @@ async function showS5(systemId) {
   if(!sys) { document.getElementById('s5Content').innerHTML = '<div style="text-align:center;padding:60px;color:#F09595;">System not found.</div>'; return; }
 
   document.getElementById('s5SystemName').textContent = sys.name;
-  document.getElementById('s5SystemCode').textContent = sys.system_code + ' · Group ' + sys.inventory_group;
+  document.getElementById('s5SystemCode').textContent = sys.system_code + ' · Group ' + sys.inventory_group + ' · ' + (sys.vendor||'—') + ' · v' + (sys.version||'—');
 
   const GROUP = ['','Operational','Analytical','Geoscience','General use'];
+  const RISK_PILL = {Critical:'s5-pill-critical',High:'s5-pill-high',Medium:'s5-pill-medium',Low:'s5-pill-low'};
+  const COMP_PILL = {'Conforme':'s5-pill-conforme','En proceso':'s5-pill-proceso','No conforme':'s5-pill-noconf','Sin evaluar':'s5-pill-sineval'};
   const RISK_COLOR = {Critical:'#F09595',High:'#FAC775',Medium:'#85B7EB',Low:'#97C459'};
   const RISK_BG    = {Critical:'#4A1515',High:'#3D2500',Medium:'#0C2240',Low:'#122010'};
   const SC = {'Conforme':'#97C459','En proceso':'#FAC775','No conforme':'#F09595','Sin evaluar':'#85B7EB'};
   const SB = {'Conforme':'#122010','En proceso':'#3D2500','No conforme':'#4A1515','Sin evaluar':'#0C2240'};
 
+  document.getElementById('s5HeroPills').innerHTML = [
+    sys.risk_level ? `<span class="s5-pill ${RISK_PILL[sys.risk_level]||'s5-pill-group'}">${sys.risk_level}</span>` : '',
+    sys.compliance_status ? `<span class="s5-pill ${COMP_PILL[sys.compliance_status]||'s5-pill-group'}">${sys.compliance_status}</span>` : '',
+    `<span class="s5-pill s5-pill-group">Group ${sys.inventory_group} — ${GROUP[sys.inventory_group]||''}</span>`,
+    sys.country ? `<span class="s5-pill s5-pill-group">${sys.country}</span>` : '',
+  ].filter(Boolean).join('');
+
   function field(label, value) {
     if(!value || value === 'null') return '';
-    return `<div style="padding:8px 0;border-bottom:0.5px solid #1B3560;">
-      <p style="font-size:10px;color:#5A7299;text-transform:uppercase;letter-spacing:.05em;margin:0 0 2px;">${label}</p>
-      <p style="font-size:13px;color:#EAF0FF;margin:0;line-height:1.5;">${value}</p>
+    const warn   = ['No','No disponible','No conforme','Pendiente','No - pendiente','No - pendiente urgente'];
+    const ok     = ['Si','Completo','Conforme','Complete'];
+    const valClass = warn.some(w => value.startsWith(w)) ? 's5-field-warn'
+                   : ok.some(o => value.startsWith(o)) ? 's5-field-ok' : 's5-field-val';
+    return `<div class="s5-field">
+      <p class="s5-field-label">${label}</p>
+      <p class="${valClass}">${value}</p>
     </div>`;
   }
 
-  function section(label, color, fields) {
-    const body = fields.filter(Boolean).join('');
-    if(!body) return '';
+  function section(label, color, fields, defaultOpen) {
+    const rows = fields.filter(Boolean);
+    if(!rows.length) return '';
+    const count = rows.length;
+    const isOpen = !!defaultOpen;
+    const headClass = isOpen ? 's5-section-head open' : 's5-section-head';
+    const bodyClass = isOpen ? 's5-section-body open' : 's5-section-body';
+    const arrowClass = isOpen ? 's5-section-arrow open' : 's5-section-arrow';
     return `<div class="s5-section">
-      <div class="s5-section-head" onclick="toggleS5Section(this)">
-        <span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:${color};margin-right:8px;flex-shrink:0;"></span>
+      <div class="${headClass}" onclick="toggleS5Section(this)" style="border-left:4px solid ${color};border-radius:10px;">
+        <div class="s5-section-color-dot" style="background:${color};"></div>
         <span class="s5-section-title">${label}</span>
-        <span class="s5-section-arrow">▾</span>
+        <span class="s5-section-count">${count} fields</span>
+        <span class="${arrowClass}">›</span>
       </div>
-      <div class="s5-section-body">${body}</div>
+      <div class="${bodyClass}" style="border-left:4px solid ${color}30;">
+        <div class="s5-fields-grid">${rows.join('')}</div>
+        <div class="s5-section-edit-row">
+          <button class="s5-sec-edit-btn" onclick="alert('Edit mode for: ${label} — coming soon')">Edit section</button>
+        </div>
+      </div>
     </div>`;
   }
 
@@ -3075,17 +3099,7 @@ async function showS5(systemId) {
     field('AI allowed in regulator reports', riskHu.ai_allowed_regulator_reports),
   ]) : '';
 
-  const rc = RISK_COLOR[sys.risk_level]||'#85B7EB';
-  const rb = RISK_BG[sys.risk_level]||'#0C2240';
-  const sc2 = SC[sys.compliance_status]||'#85B7EB';
-  const sb3 = SB[sys.compliance_status]||'#0C2240';
-
   document.getElementById('s5Content').innerHTML = `
-    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:20px;">
-      <span style="font-size:11px;padding:4px 10px;border-radius:999px;background:${rb};color:${rc};font-weight:700;">${sys.risk_level||'—'}</span>
-      <span style="font-size:11px;padding:4px 10px;border-radius:999px;background:${sb3};color:${sc2};font-weight:700;">${sys.compliance_status||'—'}</span>
-      <span style="font-size:11px;color:#8899CC;">Group ${sys.inventory_group} — ${GROUP[sys.inventory_group]||''}</span>
-    </div>
     ${section('Section A — Identification', '#378ADD', [
       field('System code', sys.system_code),
       field('Vendor', sys.vendor),
@@ -3096,7 +3110,7 @@ async function showS5(systemId) {
       field('Operational location', sys.operational_location),
       field('Country', sys.country),
       field('Next review date', sys.next_review_date),
-    ])}
+    ], true)}
     ${func ? section('Section B — Functional description', '#5DCAA5', [
       field('Main function', func.main_function),
       field('Autonomous decision', func.autonomous_decision),
@@ -3180,9 +3194,10 @@ async function showS5(systemId) {
 function toggleS5Section(head) {
   const body = head.nextElementSibling;
   const arrow = head.querySelector('.s5-section-arrow');
-  const isOpen = body.style.display !== 'none';
-  body.style.display = isOpen ? 'none' : 'block';
-  arrow.textContent = isOpen ? '▸' : '▾';
+  const isOpen = body.classList.contains('open');
+  body.classList.toggle('open', !isOpen);
+  head.classList.toggle('open', !isOpen);
+  arrow.classList.toggle('open', !isOpen);
 }
 </script>
 
@@ -3229,44 +3244,135 @@ function toggleS5Section(head) {
   #screenS5{
     min-height:100vh;
     background:var(--bg);
-    padding:40px 20px 80px;
+    padding:0 0 80px;
     box-sizing:border-box;
   }
-  .s5-wrap{ max-width:720px; margin:0 auto; }
+  .s5-topbar{
+    background:#0F1B33;
+    border-bottom:1px solid #1B3560;
+    padding:12px 28px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    position:sticky;
+    top:0;
+    z-index:5;
+  }
   .s5-back{
     display:inline-flex;align-items:center;gap:6px;
-    font-size:13px;color:var(--muted);cursor:pointer;
+    font-size:13px;color:#8899CC;cursor:pointer;
     background:none;border:none;
     font-family:"Source Sans 3",system-ui,sans-serif;
-    padding:0;margin-bottom:24px;transition:color .15s;
+    padding:0;transition:color .15s;
   }
   .s5-back:hover{ color:var(--text); }
-  .s5-system-name{ font-size:22px;font-weight:800;color:var(--text);margin:0 0 4px; }
-  .s5-system-code{ font-size:12px;color:#5A7299;font-family:monospace;margin:0 0 20px; }
-  .s5-section{
-    background:#0F1B33;border:1px solid #2C3F6A;
-    border-radius:12px;overflow:hidden;margin-bottom:10px;
+  .s5-edit-btn{
+    font-size:12px;padding:6px 14px;
+    border-radius:8px;border:1px solid rgba(244,195,139,.5);
+    background:transparent;color:#F4C38B;cursor:pointer;
+    font-family:"Source Sans 3",system-ui,sans-serif;
+    transition:border-color .15s,background .15s;
+    display:none;
   }
+  .s5-edit-btn.visible{ display:inline-block; }
+  .s5-edit-btn:hover{ border-color:rgba(244,195,139,.9);background:rgba(244,195,139,.06); }
+  .s5-hero{
+    background:#0A1525;
+    border-bottom:1px solid #1B3560;
+    padding:24px 28px 20px;
+  }
+  .s5-hero-name{ font-size:24px;font-weight:800;color:#EAF0FF;margin:0 0 4px;line-height:1.2; }
+  .s5-hero-meta{ font-size:12px;color:#5A7299;margin:0 0 12px;font-family:monospace; }
+  .s5-hero-pills{ display:flex;gap:8px;flex-wrap:wrap; }
+  .s5-pill{ font-size:11px;padding:3px 10px;border-radius:999px;font-weight:600; }
+  .s5-pill-critical{ background:#4A1515;color:#F09595; }
+  .s5-pill-high{ background:#3D2500;color:#FAC775; }
+  .s5-pill-medium{ background:#0C2240;color:#85B7EB; }
+  .s5-pill-low{ background:#122010;color:#97C459; }
+  .s5-pill-conforme{ background:#122010;color:#97C459; }
+  .s5-pill-proceso{ background:#3D2500;color:#FAC775; }
+  .s5-pill-noconf{ background:#4A1515;color:#F09595; }
+  .s5-pill-sineval{ background:#0C2240;color:#85B7EB; }
+  .s5-pill-group{ background:#1B3560;color:#85B7EB; }
+  .s5-wrap{ max-width:760px; margin:0 auto; padding:28px 28px 0; }
+  .s5-timeline{ display:flex; gap:0; }
+  .s5-tl-stripe{ width:4px; border-radius:2px; flex-shrink:0; margin-top:2px; }
+  .s5-tl-body{ flex:1; padding-bottom:6px; }
+  .s5-section{ margin-bottom:10px; }
   .s5-section-head{
-    display:flex;align-items:center;gap:4px;
-    padding:14px 16px;cursor:pointer;
+    display:flex;align-items:center;gap:10px;
+    padding:13px 18px;cursor:pointer;
+    background:#0F1B33;
+    border:1px solid #1B3560;
+    border-radius:10px;
     transition:background .15s;
     user-select:none;
   }
   .s5-section-head:hover{ background:#111F3D; }
+  .s5-section-head.open{ border-radius:10px 10px 0 0;border-bottom:none; }
+  .s5-section-color-dot{ width:10px;height:10px;border-radius:2px;flex-shrink:0; }
   .s5-section-title{ font-size:13px;font-weight:700;color:#EAF0FF;flex:1; }
-  .s5-section-arrow{ font-size:12px;color:#5A7299; }
-  .s5-section-body{ padding:4px 16px 12px;display:block; }
+  .s5-section-count{ font-size:11px;color:#5A7299; }
+  .s5-section-arrow{ font-size:11px;color:#5A7299;transition:transform .2s; }
+  .s5-section-arrow.open{ transform:rotate(90deg); }
+  .s5-section-body{
+    background:#0A1525;
+    border:1px solid #1B3560;
+    border-top:none;
+    border-radius:0 0 10px 10px;
+    padding:16px 18px;
+    display:none;
+  }
+  .s5-section-body.open{ display:block; }
+  .s5-fields-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:0;
+  }
+  @media(max-width:600px){ .s5-fields-grid{ grid-template-columns:1fr; } }
+  .s5-field{
+    padding:10px 0;
+    border-bottom:0.5px solid #1B3560;
+  }
+  .s5-field:nth-last-child(-n+2):not(:nth-child(odd)~*){ border-bottom:none; }
+  .s5-field-label{
+    font-size:10px;color:#5A7299;
+    text-transform:uppercase;letter-spacing:.05em;
+    margin:0 0 3px;
+  }
+  .s5-field-val{ font-size:13px;color:#EAF0FF;margin:0;line-height:1.5; }
+  .s5-field-warn{ font-size:13px;color:#FAC775;margin:0; }
+  .s5-field-danger{ font-size:13px;color:#F09595;margin:0; }
+  .s5-field-ok{ font-size:13px;color:#97C459;margin:0; }
+  .s5-section-edit-row{
+    display:flex;justify-content:flex-end;
+    padding-top:12px;margin-top:4px;
+    border-top:0.5px solid #1B3560;
+  }
+  .s5-sec-edit-btn{
+    font-size:11px;padding:5px 12px;
+    border-radius:7px;border:1px solid rgba(244,195,139,.4);
+    background:transparent;color:#F4C38B;cursor:pointer;
+    font-family:"Source Sans 3",system-ui,sans-serif;
+    transition:border-color .15s,background .15s;
+  }
+  .s5-sec-edit-btn:hover{ border-color:rgba(244,195,139,.9);background:rgba(244,195,139,.06); }
 </style>
-<div class="s5-wrap">
+<div class="s5-topbar">
   <button class="s5-back" onclick="showScreen('screenS4')">
     <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
       <path d="M10 12L6 8l4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
     </svg>
     Back
   </button>
-  <h2 class="s5-system-name" id="s5SystemName">—</h2>
-  <p class="s5-system-code" id="s5SystemCode">—</p>
+  <button class="s5-edit-btn" id="s5EditBtn">Edit record</button>
+</div>
+<div class="s5-hero">
+  <h2 class="s5-hero-name" id="s5SystemName">—</h2>
+  <p class="s5-hero-meta" id="s5SystemCode">—</p>
+  <div class="s5-hero-pills" id="s5HeroPills"></div>
+</div>
+<div class="s5-wrap">
   <div id="s5Content"></div>
 </div>
 </div>
