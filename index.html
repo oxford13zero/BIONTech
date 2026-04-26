@@ -1440,7 +1440,7 @@ const translations = {
     admin_sub:         "Restricted to BION administrators",
     admin_logout:      "Sign out",
 
-    hero_title:
+    hero_title:        "AI is already inside your company",
     hero_sub:          "If you don't control it, someone else will — or it will control you.",
     risk1_bold:        "Private data",
     risk1_text:        "is being shared through AI tools.",
@@ -3566,6 +3566,7 @@ function renderS3Results(query, tab) {
 }
 
 function onSelectBranch(branchId, branchName) {
+  console.log('onSelectBranch called', branchId, branchName);
   showS4Branch(branchId, branchName);
 }
 
@@ -3660,7 +3661,7 @@ async function saveSection(sectionId, tableKey, recordId) {
 function cancelEditMode(sectionId) {
   if(s5CurrentSystemId) showS5(s5CurrentSystemId);
 }
-</script>
+
 async function showS4Branch(branchId, branchName) {
   document.getElementById('s4Title').textContent = branchName;
   document.getElementById('s4Sub').textContent = 'AI systems registered in this branch';
