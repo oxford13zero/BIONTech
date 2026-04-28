@@ -3928,20 +3928,20 @@ async function showS5(systemId) {
   ].filter(Boolean).join('');
 
   function field(label, value, colName) {
-    if(!value || value === 'null') return '';
+    const v = value !== null && value !== undefined && value !== '' && value !== 'null' ? String(value) : null;
     const warn   = ['No','No disponible','No conforme','Pendiente','No - pendiente','No - pendiente urgente'];
     const ok     = ['Si','Completo','Conforme','Complete'];
-    const valClass = warn.some(w => value.startsWith(w)) ? 's5-field-warn'
-                   : ok.some(o => value.startsWith(o)) ? 's5-field-ok' : 's5-field-val';
-    return `<div class="s5-field" data-col="${colName||''}" data-val="${value.replace(/"/g,'&quot;')}">
+    const valClass = !v ? 's5-field-empty'
+                   : warn.some(w => v.startsWith(w)) ? 's5-field-warn'
+                   : ok.some(o => v.startsWith(o)) ? 's5-field-ok' : 's5-field-val';
+    return `<div class="s5-field" data-col="${colName||''}" data-val="${v ? v.replace(/"/g,'&quot;') : ''}">
       <p class="s5-field-label">${label}</p>
-      <p class="${valClass}">${value}</p>
+      <p class="${valClass}">${v || '—'}</p>
     </div>`;
   }
 
   function section(label, color, fields, defaultOpen, tableKey, recordId) {
     const rows = fields.filter(Boolean);
-    if(!rows.length) return '';
     const count = rows.length;
     const isOpen = !!defaultOpen;
     const headClass = isOpen ? 's5-section-head open' : 's5-section-head';
@@ -4011,7 +4011,7 @@ async function showS5(systemId) {
       field('Shadow AI label', sys.shadow_ai_label, 'shadow_ai_label'),
       field('Risk score total', sys.risk_score_total ? String(sys.risk_score_total) : null, 'risk_score_total'),
     ], true, 'ai_systems', sys.id)}
-    ${func ? section('Section B — Functional description', '#5DCAA5', [
+    ${section('Section B — Functional description', '#5DCAA5', [
       field('Main function', func.main_function, 'main_function'),
       field('Autonomous decision', func.autonomous_decision, 'autonomous_decision'),
       field('Decision speed', func.decision_speed, 'decision_speed'),
@@ -4026,8 +4026,8 @@ async function showS5(systemId) {
       field('People in impact area', func.people_in_impact_area, 'people_in_impact_area'),
       field('Can cause physical harm', func.can_cause_physical_harm, 'can_cause_physical_harm'),
       field('Feeds public reports', func.feeds_public_reports, 'feeds_public_reports'),
-    ], false, 'sec_functional', func?.id) : ''}
-    ${reg ? section('Section C — Regulatory classification', '#EF9F27', [
+    ], false, 'sec_functional', func?.id)}
+    ${section('Section C — Regulatory classification', '#EF9F27', [
       field('Risk level (Chile)', reg.risk_level_chile, 'risk_level_chile'),
       field('Articles Chile', reg.articles_chile, 'articles_chile'),
       field('Articles Peru', reg.articles_peru, 'articles_peru'),
@@ -4042,8 +4042,8 @@ async function showS5(systemId) {
       field('ISO 42001 alignment', reg.iso42001_alignment, 'iso42001_alignment'),
       field('ISO 42001 principles', reg.iso42001_principles, 'iso42001_principles'),
       field('Other frameworks', reg.other_frameworks, 'other_frameworks'),
-    ], false, 'sec_regulatory', reg?.id) : ''}
-    ${dat ? section('Section D — Data & engineering', '#D4537E', [
+    ], false, 'sec_regulatory', reg?.id)}
+    ${section('Section D — Data & engineering', '#D4537E', [
       field('Model type', dat.model_type, 'model_type'),
       field('Training data sources', dat.training_data_sources, 'training_data_sources'),
       field('Training data volume', dat.training_data_volume, 'training_data_volume'),
@@ -4060,8 +4060,8 @@ async function showS5(systemId) {
       field('Data stored on provider', dat.data_stored_on_provider, 'data_stored_on_provider'),
       field('Data processing region', dat.data_processing_region, 'data_processing_region'),
       field('Data processing agreement', dat.data_processing_agreement, 'data_processing_agreement'),
-    ], false, 'sec_data_engineering', dat?.id) : ''}
-    ${perf ? section('Section E — Performance & bias', '#97C459', [
+    ], false, 'sec_data_engineering', dat?.id)}
+    ${section('Section E — Performance & bias', '#97C459', [
       field('Performance metrics', perf.performance_metrics, 'performance_metrics'),
       field('Baseline comparison', perf.baseline_comparison, 'baseline_comparison'),
       field('Drift monitoring', perf.drift_monitoring, 'drift_monitoring'),
@@ -4073,9 +4073,9 @@ async function showS5(systemId) {
       field('Adoption metrics', perf.adoption_metrics, 'adoption_metrics'),
       field('Incident count', perf.incident_count !== null ? String(perf.incident_count) : null, 'incident_count'),
       field('Incident reporting process', perf.incident_reporting_process, 'incident_reporting_process'),
-    ], false, 'sec_performance', perf?.id) : ''}
+    ], false, 'sec_performance', perf?.id)}
     ${riskSection}
-    ${comp ? section('Section G — Compliance documentation', '#F4C38B', [
+    ${section('Section G — Compliance documentation', '#F4C38B', [
       field('Algorithmic impact assessment', comp.algorithmic_impact_assessment, 'algorithmic_impact_assessment'),
       field('Decision log exists', comp.decision_log_exists, 'decision_log_exists'),
       field('Log externally auditable', comp.log_externally_auditable, 'log_externally_auditable'),
@@ -4088,8 +4088,8 @@ async function showS5(systemId) {
       field('Board informed', comp.board_informed, 'board_informed'),
       field('Market regulator disclosure', comp.market_regulator_disclosure, 'market_regulator_disclosure'),
       field('Next contract renewal', comp.next_contract_renewal, 'next_contract_renewal'),
-    ]) : ''}
-    ${riskAss ? section('M2 — Risk assessment', '#7F77DD', [
+    ])}
+    ${section('M2 — Risk assessment', '#7F77DD', [
       field('Assessment code', riskAss.assessment_code, 'assessment_code'),
       field('Methodology', riskAss.methodology, 'methodology'),
       field('Probability scale', riskAss.probability_scale, 'probability_scale'),
@@ -4101,8 +4101,8 @@ async function showS5(systemId) {
       field('Management approval', riskAss.management_approval_name, 'management_approval_name'),
       field('Drift status', riskAss.drift_status, 'drift_status'),
       field('Monitoring frequency', riskAss.monitoring_frequency, 'monitoring_frequency'),
-    ], false, 'risk_assessments', riskAss?.id) : ''}
-    ${superv ? section('M4 — Human supervision', '#378ADD', [
+    ], false, 'risk_assessments', riskAss?.id)}
+    ${section('M4 — Human supervision', '#378ADD', [
       field('Approved autonomy level', superv.autonomy_level_approved ? String(superv.autonomy_level_approved) + ' / 5' : null, 'autonomy_level_approved'),
       field('Approved by', superv.autonomy_approved_by, 'autonomy_approved_by'),
       field('Kill switch mechanism', superv.kill_switch_mechanism, 'kill_switch_mechanism'),
@@ -4114,9 +4114,9 @@ async function showS5(systemId) {
       field('Override auto-logged', superv.override_auto_logged ? 'Yes' : 'No', 'override_auto_logged'),
       field('Override audit frequency', superv.override_audit_frequency, 'override_audit_frequency'),
       field('Degraded mode behavior', superv.degraded_mode_behavior, 'degraded_mode_behavior'),
-    ], false, 'human_supervision', superv?.id) : ''}
-    ${incidents_data.length > 0 ? section('M6 — Incidents', '#E24B4A',
-      incidents_data.flatMap((inc, i) => [
+    ], false, 'human_supervision', superv?.id)}
+    ${section('M6 — Incidents', '#E24B4A',
+      (incidents_data.length > 0 ? incidents_data : [{}]).flatMap((inc, i) => [
         field((i > 0 ? '— ' : '') + 'Incident code', inc.incident_code, 'incident_code'),
         field('Type', inc.incident_type, 'incident_type'),
         field('Status', inc.status, 'status'),
@@ -4126,9 +4126,9 @@ async function showS5(systemId) {
         field('Regulator notification', inc.requires_regulator_notification ? 'Required — ' + (inc.regulator_authority||'') : 'Not required', 'requires_regulator_notification'),
         field('Notification deadline', inc.notification_deadline, 'notification_deadline'),
         field('Lessons learned', inc.lessons_learned, 'lessons_learned'),
-      ]), false, 'incidents', incidents_data[0]?.id) : ''}
-    ${integrations.length > 0 ? section('M7 — System integrations', '#97C459',
-      integrations.flatMap((intg, i) => [
+      ]), false, 'incidents', incidents_data[0]?.id)}
+    ${section('M7 — System integrations', '#97C459',
+      (integrations.length > 0 ? integrations : [{}]).flatMap((intg, i) => [
         field((i > 0 ? '— ' : '') + 'Integration', intg.integration_name + (intg.vendor ? ' · ' + intg.vendor : ''), 'integration_name'),
         field('Type', intg.integration_type, 'integration_type'),
         field('Auth method', intg.auth_method, 'auth_method'),
@@ -4137,7 +4137,7 @@ async function showS5(systemId) {
         field('Last sync status', intg.last_sync_status, 'last_sync_status'),
         field('Offline capable', intg.offline_capable ? 'Yes — ' + (intg.offline_buffer_hours||72) + 'h buffer' : 'No', 'offline_capable'),
         field('Priority', intg.priority, 'priority'),
-      ]), false, 'system_integrations', integrations[0]?.id) : ''}
+      ]), false, 'system_integrations', integrations[0]?.id)}
     `;
 }
 
@@ -4301,6 +4301,7 @@ function toggleS5Section(head) {
     margin:0 0 3px;
   }
   .s5-field-val{ font-size:13px;color:#0F172A;margin:0;line-height:1.5; }
+  .s5-field-empty{ font-size:13px;color:#94A3B8;margin:0;font-style:italic; }
   .s5-field-warn{ font-size:13px;color:#B45309;margin:0; }
   .s5-field-danger{ font-size:13px;color:#DC2626;margin:0; }
   .s5-field-ok{ font-size:13px;color:#16A34A;margin:0; }
