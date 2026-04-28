@@ -593,6 +593,50 @@
     .from-right { transform:translateX(32px); }
     .reveal.visible { opacity:1; transform:translate(0,0); }
 
+    /* ── Portland parallax ── */
+    .portland-parallax{
+      position:relative;
+      height:420px;
+      overflow:hidden;
+      margin:0;
+    }
+    .portland-parallax-bg{
+      position:absolute;
+      inset:-80px 0;
+      background-image:url('https://images.unsplash.com/photo-1598935898639-81586f7d2129?w=1600&q=80&auto=format&fit=crop');
+      background-size:cover;
+      background-position:center 40%;
+      will-change:transform;
+    }
+    .portland-parallax-overlay{
+      position:absolute;
+      inset:0;
+      background:linear-gradient(to bottom, rgba(10,18,32,.45) 0%, rgba(10,18,32,.72) 100%);
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:center;
+      text-align:center;
+      padding:0 20px;
+    }
+    .portland-city{
+      font-size:clamp(28px,5vw,52px);
+      font-weight:800;
+      color:#FFFFFF;
+      margin:0 0 10px;
+      letter-spacing:-.01em;
+      text-shadow:0 2px 20px rgba(0,0,0,.4);
+    }
+    .portland-tagline{
+      font-size:clamp(14px,2vw,18px);
+      color:rgba(244,195,139,.9);
+      font-weight:600;
+      margin:0;
+      letter-spacing:.04em;
+      text-transform:uppercase;
+      text-shadow:0 1px 10px rgba(0,0,0,.5);
+    }
+
     .highlight-white{
       color:#FFFFFF;
       font-weight:700;
@@ -1121,6 +1165,15 @@
     </section>
 
     <!-- CONTACT -->
+    <!-- ── Portland parallax ── -->
+    <div class="portland-parallax" id="portland-parallax" aria-hidden="true">
+      <div class="portland-parallax-bg" id="parallaxBg"></div>
+      <div class="portland-parallax-overlay">
+        <p class="portland-city">Portland, Oregon</p>
+        <p class="portland-tagline" data-i18n="portland_tagline">Built here. Thinking globally.</p>
+      </div>
+    </div>
+
     <section class="section grid-2 reveal" data-page="contact">
       <div class="panel">
         <h2 data-i18n="contact_left_title">Built in Portland. Focused on what's next.</h2>
@@ -1471,7 +1524,7 @@ const translations = {
     admin_sub:         "Restricted to BION administrators",
     admin_logout:      "Sign out",
 
-    hero_title:        "AI is already inside your company",
+    portland_tagline:  "Built here. Thinking globally.",
     hero_sub:          "If you don't control it, someone else will — or it will control you.",
     risk1_bold:        "Private data",
     risk1_text:        "is being shared through AI tools.",
@@ -1562,7 +1615,7 @@ const translations = {
     admin_sub:         "Restringido a administradores de BION",
     admin_logout:      "Cerrar sesión",
 
-    hero_title:        "La IA ya está dentro de tu empresa",
+    portland_tagline:  "Construido aquí. Pensando globalmente.",
     hero_sub:          "Si no la controlas tú, alguien más lo hará — o ella te controlará a ti.",
     risk1_bold:        "Datos privados",
     risk1_text:        "están siendo compartidos a través de herramientas de IA.",
@@ -2027,6 +2080,22 @@ applyLang(currentLang);
     if(hero) setTimeout(() => hero.classList.add('visible'), 80);
     const cards = document.querySelector('.home-cards.reveal');
     if(cards) setTimeout(() => cards.classList.add('visible'), 220);
+
+    // Portland parallax scroll
+    const parallaxBg = document.getElementById('parallaxBg');
+    const parallaxSection = document.getElementById('portland-parallax');
+    if(parallaxBg && parallaxSection) {
+      function updateParallax() {
+        const rect = parallaxSection.getBoundingClientRect();
+        const viewH = window.innerHeight;
+        if(rect.bottom < 0 || rect.top > viewH) return;
+        const progress = (viewH - rect.top) / (viewH + rect.height);
+        const shift = (progress - 0.5) * 120;
+        parallaxBg.style.transform = 'translateY(' + shift + 'px)';
+      }
+      window.addEventListener('scroll', updateParallax, { passive: true });
+      updateParallax();
+    }
   })();
 </script>
 
