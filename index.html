@@ -3875,7 +3875,7 @@ async function showS5(systemId) {
   document.getElementById('s5Content').innerHTML = '<div style="text-align:center;padding:60px;color:#8899CC;font-size:14px;">Loading full record…</div>';
   showScreen('screenS5');
 
-  const [sysRes, funcRes, regRes, dataRes, perfRes, riskOpRes, riskDecRes, riskStrRes, riskHuRes, compRes] = await Promise.all([
+  const [sysRes, funcRes, regRes, dataRes, perfRes, riskOpRes, riskDecRes, riskStrRes, riskHuRes, compRes, riskAssRes, supervRes, incRes, intRes] = await Promise.all([
     sb.from('ai_systems').select('*').eq('id', systemId).single(),
     sb.from('sec_functional').select('*').eq('system_id', systemId).single(),
     sb.from('sec_regulatory').select('*').eq('system_id', systemId).single(),
@@ -3886,18 +3886,26 @@ async function showS5(systemId) {
     sb.from('sec_risk_strategic').select('*').eq('system_id', systemId).maybeSingle(),
     sb.from('sec_risk_human_use').select('*').eq('system_id', systemId).maybeSingle(),
     sb.from('sec_compliance_docs').select('*').eq('system_id', systemId).single(),
+    sb.from('risk_assessments').select('*').eq('system_id', systemId).maybeSingle(),
+    sb.from('human_supervision').select('*').eq('system_id', systemId).maybeSingle(),
+    sb.from('incidents').select('*').eq('system_id', systemId).limit(5),
+    sb.from('system_integrations').select('*').eq('system_id', systemId).limit(10),
   ]);
 
-  const sys   = sysRes.data;
-  const func  = funcRes.data;
-  const reg   = regRes.data;
-  const dat   = dataRes.data;
-  const perf  = perfRes.data;
+  const sys     = sysRes.data;
+  const func    = funcRes.data;
+  const reg     = regRes.data;
+  const dat     = dataRes.data;
+  const perf    = perfRes.data;
   const riskOp  = riskOpRes.data;
   const riskDec = riskDecRes.data;
   const riskStr = riskStrRes.data;
   const riskHu  = riskHuRes.data;
-  const comp  = compRes.data;
+  const comp    = compRes.data;
+  const riskAss        = riskAssRes?.data;
+  const superv         = supervRes?.data;
+  const incidents_data = incRes?.data || [];
+  const integrations   = intRes?.data || [];
 
   if(!sys) { document.getElementById('s5Content').innerHTML = '<div style="text-align:center;padding:60px;color:#F09595;">System not found.</div>'; return; }
 
@@ -3996,6 +4004,12 @@ async function showS5(systemId) {
       field('Operational location', sys.operational_location, 'operational_location'),
       field('Country', sys.country, 'country'),
       field('Next review date', sys.next_review_date, 'next_review_date'),
+      field('Autonomy level', sys.autonomy_level ? String(sys.autonomy_level) + ' / 5' : null, 'autonomy_level'),
+      field('EU AI Act category', sys.eu_ai_act_risk_category, 'eu_ai_act_risk_category'),
+      field('Environment', sys.environment, 'environment'),
+      field('Infrastructure provider', sys.infrastructure_provider, 'infrastructure_provider'),
+      field('Shadow AI label', sys.shadow_ai_label, 'shadow_ai_label'),
+      field('Risk score total', sys.risk_score_total ? String(sys.risk_score_total) : null, 'risk_score_total'),
     ], true, 'ai_systems', sys.id)}
     ${func ? section('Section B — Functional description', '#5DCAA5', [
       field('Main function', func.main_function, 'main_function'),
@@ -4074,7 +4088,57 @@ async function showS5(systemId) {
       field('Board informed', comp.board_informed, 'board_informed'),
       field('Market regulator disclosure', comp.market_regulator_disclosure, 'market_regulator_disclosure'),
       field('Next contract renewal', comp.next_contract_renewal, 'next_contract_renewal'),
-    ]) : ''}`;
+    ]) : ''}
+    ${riskAss ? section('M2 — Risk assessment', '#7F77DD', [
+      field('Assessment code', riskAss.assessment_code, 'assessment_code'),
+      field('Methodology', riskAss.methodology, 'methodology'),
+      field('Probability scale', riskAss.probability_scale, 'probability_scale'),
+      field('Residual risk level', riskAss.residual_risk_level, 'residual_risk_level'),
+      field('Mitigation controls', riskAss.mitigation_controls, 'mitigation_controls'),
+      field('Contingency plan', riskAss.contingency_plan, 'contingency_plan'),
+      field('Next mandatory review', riskAss.next_mandatory_review, 'next_mandatory_review'),
+      field('Evaluator', riskAss.evaluator_name, 'evaluator_name'),
+      field('Management approval', riskAss.management_approval_name, 'management_approval_name'),
+      field('Drift status', riskAss.drift_status, 'drift_status'),
+      field('Monitoring frequency', riskAss.monitoring_frequency, 'monitoring_frequency'),
+    ], false, 'risk_assessments', riskAss?.id) : ''}
+    ${superv ? section('M4 — Human supervision', '#378ADD', [
+      field('Approved autonomy level', superv.autonomy_level_approved ? String(superv.autonomy_level_approved) + ' / 5' : null, 'autonomy_level_approved'),
+      field('Approved by', superv.autonomy_approved_by, 'autonomy_approved_by'),
+      field('Kill switch mechanism', superv.kill_switch_mechanism, 'kill_switch_mechanism'),
+      field('Kill switch response (sec)', superv.kill_switch_response_time_sec ? String(superv.kill_switch_response_time_sec) + ' seconds' : null, 'kill_switch_response_time_sec'),
+      field('Last kill switch test', superv.kill_switch_last_tested, 'kill_switch_last_tested'),
+      field('Test result', superv.kill_switch_test_result, 'kill_switch_test_result'),
+      field('Next kill switch test', superv.kill_switch_next_test, 'kill_switch_next_test'),
+      field('Escalation thresholds', superv.escalation_thresholds, 'escalation_thresholds'),
+      field('Override auto-logged', superv.override_auto_logged ? 'Yes' : 'No', 'override_auto_logged'),
+      field('Override audit frequency', superv.override_audit_frequency, 'override_audit_frequency'),
+      field('Degraded mode behavior', superv.degraded_mode_behavior, 'degraded_mode_behavior'),
+    ], false, 'human_supervision', superv?.id) : ''}
+    ${incidents_data.length > 0 ? section('M6 — Incidents', '#E24B4A',
+      incidents_data.flatMap((inc, i) => [
+        field((i > 0 ? '— ' : '') + 'Incident code', inc.incident_code, 'incident_code'),
+        field('Type', inc.incident_type, 'incident_type'),
+        field('Status', inc.status, 'status'),
+        field('Description', inc.description, 'description'),
+        field('Root cause (technical)', inc.root_cause_technical, 'root_cause_technical'),
+        field('Root cause (organizational)', inc.root_cause_organizational, 'root_cause_organizational'),
+        field('Regulator notification', inc.requires_regulator_notification ? 'Required — ' + (inc.regulator_authority||'') : 'Not required', 'requires_regulator_notification'),
+        field('Notification deadline', inc.notification_deadline, 'notification_deadline'),
+        field('Lessons learned', inc.lessons_learned, 'lessons_learned'),
+      ]), false, 'incidents', incidents_data[0]?.id) : ''}
+    ${integrations.length > 0 ? section('M7 — System integrations', '#97C459',
+      integrations.flatMap((intg, i) => [
+        field((i > 0 ? '— ' : '') + 'Integration', intg.integration_name + (intg.vendor ? ' · ' + intg.vendor : ''), 'integration_name'),
+        field('Type', intg.integration_type, 'integration_type'),
+        field('Auth method', intg.auth_method, 'auth_method'),
+        field('Sync frequency', intg.sync_frequency, 'sync_frequency'),
+        field('Last sync', intg.last_sync_at, 'last_sync_at'),
+        field('Last sync status', intg.last_sync_status, 'last_sync_status'),
+        field('Offline capable', intg.offline_capable ? 'Yes — ' + (intg.offline_buffer_hours||72) + 'h buffer' : 'No', 'offline_capable'),
+        field('Priority', intg.priority, 'priority'),
+      ]), false, 'system_integrations', integrations[0]?.id) : ''}
+    `;
 }
 
 function toggleS5Section(head) {
