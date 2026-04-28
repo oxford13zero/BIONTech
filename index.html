@@ -2090,7 +2090,7 @@ applyLang(currentLang);
         const viewH = window.innerHeight;
         if(rect.bottom < 0 || rect.top > viewH) return;
         const progress = (viewH - rect.top) / (viewH + rect.height);
-        const shift = (progress - 0.5) * 300;
+        const shift = (progress - 0.5) * 350;
         parallaxBg.style.transform = 'translateY(' + shift + 'px)';
       }
       window.addEventListener('scroll', updateParallax, { passive: true });
