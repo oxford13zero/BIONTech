@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" style="scroll-behavior:smooth;">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -583,8 +583,15 @@
     }
 
     /* One page per menu option */
-    [data-page]{ display:none; }
-    [data-page].active{ display:block; }
+    [data-page]{ display:block; }
+
+
+    /* ── Long scroll reveal ── */
+    section[data-page], .team-card[data-page] { scroll-margin-top: 80px; }
+    .reveal { opacity:0; transform:translateY(24px); transition:opacity .65s ease, transform .65s ease; }
+    .from-left  { transform:translateX(-32px); }
+    .from-right { transform:translateX(32px); }
+    .reveal.visible { opacity:1; transform:translate(0,0); }
 
     .highlight-white{
       color:#FFFFFF;
@@ -900,7 +907,7 @@
   <main class="card" id="home">
 
     <!-- HERO -->
-    <section class="hero active" data-page="home">
+    <section class="hero active reveal" data-page="home">
       <div class="hero-copy">
         <div>
           <h1 data-i18n="hero_title">AI is already inside your company</h1>
@@ -945,7 +952,7 @@
     </section>
 
     <!-- Home service cards -->
-    <section class="home-cards active" data-page="home">
+    <section class="home-cards active reveal" data-page="home">
       <div class="cards-grid">
         <article class="home-card">
           <div class="photo" style="background-image:url('home_healthcare.jpg');"></div>
@@ -980,7 +987,7 @@
     <section class="bridge-break active" aria-hidden="true" data-page="home"></section>
 
     <!-- AI FOR YOUR ORG -->
-    <section class="section" id="ai-for-your-org" data-page="ai-for-your-org">
+    <section class="section reveal from-left" id="ai-for-your-org" data-page="ai-for-your-org">
       <div class="panel panel-flex">
         <div class="panel-text">
           <h2 data-i18n="aiorg_title">Turn the technological tsunami into a wave you can safely ride.</h2>
@@ -997,7 +1004,7 @@
     </section>
 
     <!-- AI GOVERNANCE -->
-    <section class="section" id="ai-governance" data-page="ai-governance">
+    <section class="section reveal from-right" id="ai-governance" data-page="ai-governance">
       <div class="panel panel-flex">
         <div class="panel-text">
           <h2 data-i18n="gov_title">AI GOVERNANCE PROGRAM</h2>
@@ -1012,7 +1019,7 @@
     </section>
 
     <!-- TEAM -->
-    <section class="team-card" id="team" data-page="team">
+    <section class="team-card reveal" id="team" data-page="team">
       <div class="team-wrap">
         <div class="team-head">
           <div><h2 data-i18n="team_title">Team</h2></div>
@@ -1020,7 +1027,7 @@
 
         <div class="team-grid">
           <!-- Lester -->
-          <article class="team-member">
+          <article class="team-member reveal">
             <img class="team-photo" src="Lesterfoto33.png" alt="Lester W. Lino">
             <div class="team-body">
               <div class="team-name">
@@ -1037,7 +1044,7 @@
           </article>
 
           <!-- Faye -->
-          <article class="team-member">
+          <article class="team-member reveal delay-1">
             <img class="team-photo photo-faye" src="Fayefoto.jfif" alt="Faye Douangchit">
             <div class="team-body">
               <div class="team-name">
@@ -1054,7 +1061,7 @@
           </article>
 
           <!-- Luis -->
-          <article class="team-member">
+          <article class="team-member reveal delay-2">
             <img class="team-photo" src="Fotoportafolio55.png" alt="Luis Eduardo Reinoso Pino">
             <div class="team-body">
               <div class="team-name">
@@ -1071,7 +1078,7 @@
           </article>
 
           <!-- Rodolfo -->
-          <article class="team-member">
+          <article class="team-member reveal delay-3">
             <img class="team-photo" src="Rodyfoto.png" alt="Rodolfo O. Lino">
             <div class="team-body">
               <div class="team-name">
@@ -1086,7 +1093,7 @@
             </div>
           </article>
 
-<article class="team-member">
+<article class="team-member reveal delay-4">
   <img class="team-photo" src="nachoBion2.png" alt="Ignacio Canales">
   <div class="team-body">
     <div class="team-name">
@@ -1114,7 +1121,7 @@
     </section>
 
     <!-- CONTACT -->
-    <section class="section grid-2" data-page="contact">
+    <section class="section grid-2 reveal" data-page="contact">
       <div class="panel">
         <h2 data-i18n="contact_left_title">Built in Portland. Focused on what's next.</h2>
         <p data-i18n="contact_left_body">
@@ -2000,17 +2007,26 @@ applyLang(currentLang);
 
 <!-- ── Page router ───────────────────────────────────────────── -->
 <script>
+  // Scroll reveal — IntersectionObserver replaces hash router
   (function(){
-    function setActivePage() {
-      const hash = (location.hash || '#home').replace('#','').trim();
-      const page = hash === 'contact' ? 'contact' : hash;
-      document.querySelectorAll('[data-page]').forEach(n => {
-        n.classList.toggle('active', n.getAttribute('data-page') === page);
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach(e => {
+        if(e.isIntersecting){
+          e.target.classList.add('visible');
+          io.unobserve(e.target);
+        }
       });
-      window.scrollTo({ top: 0, behavior: 'auto' });
-    }
-    window.addEventListener('hashchange', setActivePage);
-    setActivePage();
+    }, { threshold: 0.1 });
+
+    document.querySelectorAll('.reveal').forEach((el, i) => {
+      io.observe(el);
+    });
+
+    // First section visible immediately
+    const hero = document.querySelector('.hero.reveal');
+    if(hero) setTimeout(() => hero.classList.add('visible'), 80);
+    const cards = document.querySelector('.home-cards.reveal');
+    if(cards) setTimeout(() => cards.classList.add('visible'), 220);
   })();
 </script>
 
