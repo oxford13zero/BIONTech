@@ -3875,21 +3875,24 @@ async function showS5(systemId) {
   document.getElementById('s5Content').innerHTML = '<div style="text-align:center;padding:60px;color:#8899CC;font-size:14px;">Loading full record…</div>';
   showScreen('screenS5');
 
+  // Safe query wrapper — never throws, returns {data:null} on error
+  const safe = (query) => query.then(r => r).catch(() => ({ data: null }));
+
   const [sysRes, funcRes, regRes, dataRes, perfRes, riskOpRes, riskDecRes, riskStrRes, riskHuRes, compRes, riskAssRes, supervRes, incRes, intRes] = await Promise.all([
-    sb.from('ai_systems').select('*').eq('id', systemId).single(),
-    sb.from('sec_functional').select('*').eq('system_id', systemId).single(),
-    sb.from('sec_regulatory').select('*').eq('system_id', systemId).single(),
-    sb.from('sec_data_engineering').select('*').eq('system_id', systemId).single(),
-    sb.from('sec_performance').select('*').eq('system_id', systemId).single(),
-    sb.from('sec_risk_operational').select('*').eq('system_id', systemId).maybeSingle(),
-    sb.from('sec_risk_decision').select('*').eq('system_id', systemId).maybeSingle(),
-    sb.from('sec_risk_strategic').select('*').eq('system_id', systemId).maybeSingle(),
-    sb.from('sec_risk_human_use').select('*').eq('system_id', systemId).maybeSingle(),
-    sb.from('sec_compliance_docs').select('*').eq('system_id', systemId).single(),
-    sb.from('risk_assessments').select('*').eq('system_id', systemId).maybeSingle(),
-    sb.from('human_supervision').select('*').eq('system_id', systemId).maybeSingle(),
-    sb.from('incidents').select('*').eq('system_id', systemId).limit(5),
-    sb.from('system_integrations').select('*').eq('system_id', systemId).limit(10),
+    safe(sb.from('ai_systems').select('*').eq('id', systemId).single()),
+    safe(sb.from('sec_functional').select('*').eq('system_id', systemId).single()),
+    safe(sb.from('sec_regulatory').select('*').eq('system_id', systemId).single()),
+    safe(sb.from('sec_data_engineering').select('*').eq('system_id', systemId).single()),
+    safe(sb.from('sec_performance').select('*').eq('system_id', systemId).single()),
+    safe(sb.from('sec_risk_operational').select('*').eq('system_id', systemId).maybeSingle()),
+    safe(sb.from('sec_risk_decision').select('*').eq('system_id', systemId).maybeSingle()),
+    safe(sb.from('sec_risk_strategic').select('*').eq('system_id', systemId).maybeSingle()),
+    safe(sb.from('sec_risk_human_use').select('*').eq('system_id', systemId).maybeSingle()),
+    safe(sb.from('sec_compliance_docs').select('*').eq('system_id', systemId).single()),
+    safe(sb.from('risk_assessments').select('*').eq('system_id', systemId).maybeSingle()),
+    safe(sb.from('human_supervision').select('*').eq('system_id', systemId).maybeSingle()),
+    safe(sb.from('incidents').select('*').eq('system_id', systemId).limit(5)),
+    safe(sb.from('system_integrations').select('*').eq('system_id', systemId).limit(10)),
   ]);
 
   const sys     = sysRes.data;
@@ -3908,6 +3911,8 @@ async function showS5(systemId) {
   const integrations   = intRes?.data || [];
 
   if(!sys) { document.getElementById('s5Content').innerHTML = '<div style="text-align:center;padding:60px;color:#F09595;">System not found.</div>'; return; }
+
+  try {
 
   document.getElementById('s5SystemName').textContent = sys.name;
   document.getElementById('s5SystemCode').textContent = sys.system_code + ' · Group ' + sys.inventory_group + ' · ' + (sys.vendor||'—') + ' · v' + (sys.version||'—');
@@ -4139,6 +4144,10 @@ async function showS5(systemId) {
         field('Priority', intg.priority, 'priority'),
       ]), false, 'system_integrations', integrations[0]?.id)}
     `;
+  } catch(err) {
+    console.error('S5 render error:', err);
+    document.getElementById('s5Content').innerHTML = '<div style="text-align:center;padding:60px;color:#F09595;">Error loading record: ' + err.message + '</div>';
+  }
 }
 
 function toggleS5Section(head) {
