@@ -155,10 +155,56 @@
 
     /* HERO */
     .hero{
+      display:flex;
+      flex-direction:column;
+      align-items:stretch;
+      gap:0;
+      padding:0;
+    }
+    .hero-center{
+      width:100%;
+      box-sizing:border-box;
+      padding:36px 24px 20px;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      text-align:center;
+    }
+    .hero-control{
+      font-size:15px;
+      color:#D7DFFF;
+      margin:14px 0 6px;
+      text-align:center;
+    }
+    .hero-cta-line{
+      font-size:15px;
+      margin:0 0 4px;
+      text-align:center;
+    }
+    .hero-splash{
       display:grid;
-      grid-template-columns:1fr;
-      gap:16px;
-      padding:22px;
+      grid-template-columns:1fr 8px 1fr 8px 1fr;
+      height:200px;
+      width:100%;
+    }
+    .hero-splash-div{ background:var(--panel2); }
+    .hero-splash-img{
+      background:url("dashb.png") center/cover no-repeat;
+    }
+    .hero-splash-img2{
+      background:url("risk_management.png") center/cover no-repeat;
+      background-position:center center;
+    }
+    .hero-splash-img3{
+      background:url("mining.png") center/cover no-repeat;
+    }
+    .hero-industries{
+      padding:14px 24px 20px;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      gap:8px;
+      text-align:center;
     }
 
     @media(max-width:900px){
@@ -231,14 +277,11 @@
 
     .risk-list{
       text-align:left;
-      display:inline-block;
-      margin:14px auto 0;
-      padding:0;
       list-style:none;
+      margin:14px 0 0;
+      padding:0;
       display:grid;
       gap:8px;
-      max-width:90ch;
-      width:fit-content;
     }
 
     .risk-list li{
@@ -970,50 +1013,39 @@
 
     <!-- HERO -->
     <section class="hero active reveal" data-page="home">
-      <div class="hero-copy">
-        <div>
-          <p class="hero-label" data-i18n="hero_label">AI Governance</p>
-          <h1>
-            <span data-i18n="hero_title">AI is already operating inside your company.</span><br>
-            <span class="hero-question" data-i18n="hero_question">Who's managing the risk?</span>
-          </h1>
-
-          <p class="hero-sub" data-i18n="hero_sub" style="visibility:hidden;margin:0;height:0;overflow:hidden;">
-            If you don't control it, someone else will — or it will control you.
-          </p>
-
-          <ul class="risk-list">
-            <li><span class="dot"></span>
-                <span><span class="highlight-white" data-i18n="risk1_bold">Your most sensitive operational data</span> <span data-i18n="risk1_text">is leaving the company — through tools no one approved.</span></span></li>
-            <li><span class="dot"></span>
-                <span><span class="highlight-white" data-i18n="risk2_bold">Business-critical decisions</span> <span data-i18n="risk2_text">are being made with AI information that no one has validated.</span></span></li>
-            <li style="visibility:hidden;"><span class="dot"></span>
-                <span>&nbsp;</span></li>
-          </ul>
-
-          <p style="margin-top:14px; text-align:center; color:#D7DFFF; font-size:16px;" data-i18n="hero_sub">
-            If you don't control it, someone else will — or it will control you.
-          </p>
-          <p style="margin-top:8px; margin-bottom:40px; text-align:center;">
-            <strong class="warm-sand" data-i18n="hero_cta_text">We help teams use AI safely, keep control, and stay competitive.</strong>
-          </p>
-        </div>
-
-
+      <div class="hero-center">
+        <p class="hero-label" data-i18n="hero_label">AI Governance Module</p>
+        <h1>
+          <span data-i18n="hero_title">AI is already operating inside your company.</span><br>
+          <span class="hero-question" data-i18n="hero_question">Who's managing the risk?</span>
+        </h1>
+        <ul class="risk-list">
+          <li><span class="dot"></span>
+              <span><span class="highlight-white" data-i18n="risk1_bold">Your most sensitive operational data</span> <span data-i18n="risk1_text">is leaving the company — through tools no one approved.</span></span></li>
+          <li><span class="dot"></span>
+              <span><span class="highlight-white" data-i18n="risk2_bold">Business-critical decisions</span> <span data-i18n="risk2_text">are being made with AI information that no one has validated.</span></span></li>
+        </ul>
+        <p class="hero-control" data-i18n="hero_sub">If you don't control it, someone else will — or it will control you.</p>
+        <p class="hero-cta-line"><strong class="warm-sand" data-i18n="hero_cta_text">We help teams use AI safely, keep control, and stay competitive.</strong></p>
       </div>
 
-      <aside class="side" style="display:none;">
-        <div class="img"></div>
-        <div class="inner">
-          <strong class="warm-sand" data-i18n="industries_label">Industries we support</strong>
-          <div class="team-tags">
-            <span class="team-tag" data-i18n="ind_mining">&gt; Mining</span>
-            <span class="team-tag" data-i18n="ind_banking">&gt; Banking</span>
-            <span class="team-tag" data-i18n="ind_health">&gt; Healthcare</span>
-            <span class="team-tag" data-i18n="ind_gov">&gt; Government</span>
-          </div>
+      <div class="hero-splash">
+        <div class="hero-splash-img"></div>
+        <div class="hero-splash-div"></div>
+        <div class="hero-splash-img hero-splash-img2"></div>
+        <div class="hero-splash-div"></div>
+        <div class="hero-splash-img hero-splash-img3"></div>
+      </div>
+
+      <div class="hero-industries">
+        <strong class="warm-sand" data-i18n="industries_label">Industries we support</strong>
+        <div class="team-tags">
+          <span class="team-tag" data-i18n="ind_mining">&gt; Mining</span>
+          <span class="team-tag" data-i18n="ind_banking">&gt; Banking</span>
+          <span class="team-tag" data-i18n="ind_health">&gt; Healthcare</span>
+          <span class="team-tag" data-i18n="ind_gov">&gt; Government</span>
         </div>
-      </aside>
+      </div>
     </section>
 
     <!-- Home service cards -->
