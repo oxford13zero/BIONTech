@@ -1077,34 +1077,72 @@
     <!-- BRIDGE IMAGE -->
     <section class="bridge-break active" aria-hidden="true" data-page="home"></section>
 
-    <!-- AI FOR YOUR ORG -->
-    <section class="section reveal from-left" id="ai-for-your-org" data-page="ai-for-your-org">
-      <div class="panel panel-flex">
-        <div class="panel-text">
-          <h2 data-i18n="aiorg_title">AI is running in your mine. The risk is real. The control starts here.</h2>
-          <p data-i18n="aiorg_body">
-            AI is already being used across mining, banking, healthcare, and public institutions—often without supervision or clear rules.
-            Employees at all levels, with or without technical backgrounds, use AI to summarize safety incidents, create or modify programming code,
-            analyze production reports, and organize client data—often without realizing the risks involved.<br><br>
-            We make AI practical for real teams through focused <b>workshops</b>. We help leaders and staff understand where AI truly fits,
-            how to use it safely in day-to-day work, and how to turn it into a tool that improves efficiency without putting the organization's assets and value at risk.
-          </p>
-        </div>
-        <a class="btn-primary" href="#contact" data-i18n="aiorg_btn">AI WORKSHOPS</a>
-      </div>
-    </section>
+    <!-- AI FOR YOUR ORG + AI GOVERNANCE — unified section -->
+    <section class="section reveal" id="ai-for-your-org" data-page="ai-for-your-org" style="padding:0;background:transparent;">
+    <section class="section reveal" id="ai-governance" data-page="ai-governance" style="padding:0;background:transparent;">
+    <div style="background:#07111F;padding:48px 40px;border-radius:0;">
 
-    <!-- AI GOVERNANCE -->
-    <section class="section reveal from-right" id="ai-governance" data-page="ai-governance">
-      <div class="panel panel-flex">
-        <div class="panel-text">
-          <h2 data-i18n="gov_title">AI GOVERNANCE PROGRAM</h2>
-          <p data-i18n="gov_body">
-            Our platform centralizes your entire AI inventory — classifying systems by risk, tracking compliance status, and alerting your team when legislation changes or a system needs attention. We implement the framework, train your people, and leave you in full control. Built for mining companies where European clients and regulators are already asking for proof of AI governance.
-          </p>
+      <!-- Block 1: text left, bullets right -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:48px;align-items:center;margin-bottom:48px;padding-bottom:48px;border-bottom:1px solid #1B3560;">
+        <div>
+          <p style="font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:#E24B4A;margin:0 0 10px;" data-i18n="aiorg_label">AI for your org</p>
+          <h2 style="font-size:20px;font-weight:700;color:#EAF0FF;margin:0 0 16px;line-height:1.35;" data-i18n="aiorg_title">AI is running in your mine. The risk is real. The control starts here.</h2>
+          <p style="font-size:13px;color:#8899CC;margin:0;line-height:1.7;max-width:100%;" data-i18n="aiorg_body">AI is already running across your mine sites — in geology, planning, HSE, and finance — often without inventory, oversight, or clear rules. Engineers and operators use AI to analyze production reports, summarize safety incidents, and process critical operational data — without realizing the risks they are creating.<br><br>Our AI Governance Module maps every AI system in use, triggers alerts when new regulations apply, and gives your leadership the visibility to act before risks become incidents.</p>
         </div>
-        <a class="btn-primary" href="#contact" data-i18n="gov_btn">AI GOVERNANCE IMPLEMENTATION</a>
+        <div style="background:#0F1B33;border-radius:14px;padding:24px;border:1px solid #1B3560;">
+          <p style="font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:#5A7299;margin:0 0 16px;">What's happening right now in your operation</p>
+          <div style="display:grid;gap:12px;">
+            <div style="display:flex;align-items:flex-start;gap:12px;">
+              <div style="width:8px;height:8px;border-radius:50%;background:#E24B4A;flex-shrink:0;margin-top:4px;"></div>
+              <p style="font-size:13px;color:#C2CDED;margin:0;line-height:1.5;" data-i18n="risk1_full">Sensitive operational data leaving through unapproved AI tools</p>
+            </div>
+            <div style="display:flex;align-items:flex-start;gap:12px;">
+              <div style="width:8px;height:8px;border-radius:50%;background:#EF9F27;flex-shrink:0;margin-top:4px;"></div>
+              <p style="font-size:13px;color:#C2CDED;margin:0;line-height:1.5;" data-i18n="risk2_full">Critical decisions made with unvalidated AI outputs</p>
+            </div>
+            <div style="display:flex;align-items:flex-start;gap:12px;">
+              <div style="width:8px;height:8px;border-radius:50%;background:#85B7EB;flex-shrink:0;margin-top:4px;"></div>
+              <p style="font-size:13px;color:#C2CDED;margin:0;line-height:1.5;" data-i18n="risk3_full">No record of who approved which AI system or why</p>
+            </div>
+            <div style="display:flex;align-items:flex-start;gap:12px;">
+              <div style="width:8px;height:8px;border-radius:50%;background:#5DCAA5;flex-shrink:0;margin-top:4px;"></div>
+              <p style="font-size:13px;color:#C2CDED;margin:0;line-height:1.5;" data-i18n="risk4_full">Regulators and European clients already asking for governance proof</p>
+            </div>
+          </div>
+        </div>
       </div>
+
+      <!-- Block 2: stats left, text right -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:48px;align-items:center;">
+        <div style="background:#0F1B33;border-radius:14px;padding:24px;border:1px solid #1B3560;">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+            <div style="background:#152A52;border-radius:10px;padding:18px;text-align:center;">
+              <p style="font-size:26px;font-weight:800;color:#F4C38B;margin:0 0 4px;">13</p>
+              <p style="font-size:11px;color:#5A7299;margin:0;" data-i18n="stat1">sections per AI system</p>
+            </div>
+            <div style="background:#152A52;border-radius:10px;padding:18px;text-align:center;">
+              <p style="font-size:26px;font-weight:800;color:#5DCAA5;margin:0 0 4px;">EU</p>
+              <p style="font-size:11px;color:#5A7299;margin:0;" data-i18n="stat2">AI Act aligned</p>
+            </div>
+            <div style="background:#152A52;border-radius:10px;padding:18px;text-align:center;">
+              <p style="font-size:26px;font-weight:800;color:#85B7EB;margin:0 0 4px;">Live</p>
+              <p style="font-size:11px;color:#5A7299;margin:0;" data-i18n="stat3">regulatory alerts</p>
+            </div>
+            <div style="background:#152A52;border-radius:10px;padding:18px;text-align:center;">
+              <p style="font-size:26px;font-weight:800;color:#ED93B1;margin:0 0 4px;">Full</p>
+              <p style="font-size:11px;color:#5A7299;margin:0;" data-i18n="stat4">audit trail</p>
+            </div>
+          </div>
+        </div>
+        <div>
+          <p style="font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:#F4C38B;margin:0 0 10px;" data-i18n="gov_label">AI Governance Program</p>
+          <h2 style="font-size:20px;font-weight:700;color:#EAF0FF;margin:0 0 16px;line-height:1.35;" data-i18n="gov_title">AI GOVERNANCE PROGRAM</h2>
+          <p style="font-size:13px;color:#8899CC;margin:0;line-height:1.7;max-width:100%;" data-i18n="gov_body">Our platform centralizes your entire AI inventory — classifying systems by risk, tracking compliance status, and alerting your team when legislation changes or a system needs attention. We implement the framework, train your people, and leave you in full control. Built for mining companies where European clients and regulators are already asking for proof of AI governance.</p>
+        </div>
+      </div>
+
+    </div>
+    </section>
     </section>
 
     <!-- TEAM -->
@@ -1568,6 +1606,16 @@ const translations = {
     admin_sub:         "Restricted to BION administrators",
     admin_logout:      "Sign out",
 
+    aiorg_label:       "AI for your org",
+    gov_label:         "AI Governance Program",
+    risk1_full:        "Sensitive operational data leaving through unapproved AI tools",
+    risk2_full:        "Critical decisions made with unvalidated AI outputs",
+    risk3_full:        "No record of who approved which AI system or why",
+    risk4_full:        "Regulators and European clients already asking for governance proof",
+    stat1:             "sections per AI system",
+    stat2:             "AI Act aligned",
+    stat3:             "regulatory alerts",
+    stat4:             "audit trail",
     vr_label:          "Validated reality",
     vr_title:          "Benefits you. Not the vendors.",
     vr_sub:            "All processes developed and controlled by an intelligent algorithm",
@@ -1582,11 +1630,11 @@ const translations = {
     risk2_text:        "are being made with AI information that no one has validated.",
     risk3_bold:        "Right now, your employees are using AI freely",
     risk3_text:        "— with no policies, no controls, and no one responsible.",
-    hero_title:        "AI is already operating inside your company",
-    hero_question:     "Who's protecting you from the risk?",
+    hero_title:        "AI is already operating inside your company.",
+    hero_question:     "Who's managing the risk?",
     hero_label:        "AI Governance Module",
     hero_sub:          "Every uncontrolled AI tool is an open risk — to your reserves, your people, and your operation.",
-    hero_cta_text:     "Our platform provides: Live inventory, automatic regulatory alerts, and full compliance visibility — across every mine site.",
+    hero_cta_text:     "One platform. Live inventory, automatic regulatory alerts, and full compliance visibility — across every mine site.",
 
     btn_consulting:    "AI GOVERNANCE: CONSULTING & TRAINING",
     btn_privacy:       "PRIVACY AND DATA ASSESSMENT",
@@ -1669,6 +1717,16 @@ const translations = {
     admin_sub:         "Restringido a administradores de BION",
     admin_logout:      "Cerrar sesión",
 
+    aiorg_label:       "IA para tu organización",
+    gov_label:         "Programa de Gobernanza de IA",
+    risk1_full:        "Datos operacionales sensibles saliendo a través de herramientas de IA no aprobadas",
+    risk2_full:        "Decisiones críticas tomadas con resultados de IA no validados",
+    risk3_full:        "Sin registro de quién aprobó qué sistema de IA ni por qué",
+    risk4_full:        "Reguladores y clientes europeos ya exigen evidencia de gobernanza",
+    stat1:             "secciones por sistema de IA",
+    stat2:             "alineado con la Ley de IA de la UE",
+    stat3:             "alertas regulatorias en tiempo real",
+    stat4:             "trazabilidad completa",
     vr_label:          "Realidad validada",
     vr_title:          "Te beneficia a ti. No a los proveedores.",
     vr_sub:            "Todos los procesos desarrollados y controlados por un algoritmo inteligente",
@@ -1684,10 +1742,10 @@ const translations = {
     risk3_bold:        "En este momento, tus empleados usan IA libremente",
     risk3_text:        "— sin políticas, sin controles, y sin responsables.",
     hero_title:        "La IA ya opera en tu empresa",
-    hero_question:     "¿Quién te protege del riesgo?",
+    hero_question:     "¿Quién gestiona el riesgo?",
     hero_label:        "Módulo de Gobernanza de IA",
     hero_sub:          "Cada herramienta de IA sin control es un riesgo abierto.",
-    hero_cta_text:     "Nuestra plataforma provee: Inventario en tiempo real, alertas regulatorias automáticas y visibilidad de cumplimiento total — en cada faena minera.",
+    hero_cta_text:     "Una plataforma. Inventario en tiempo real, alertas regulatorias automáticas <br>y visibilidad de cumplimiento total — en cada faena minera.",
 
     btn_consulting:    "GOBERNANZA DE IA: CONSULTORÍA Y CAPACITACIÓN",
     btn_privacy:       "EVALUACIÓN DE PRIVACIDAD Y DATOS",
