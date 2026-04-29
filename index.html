@@ -188,6 +188,14 @@
       max-width:68ch;
     }
 
+    .hero-label{
+      font-size:11px;font-weight:700;letter-spacing:.1em;
+      text-transform:uppercase;color:var(--secondary);
+      margin:0 0 10px;
+    }
+    .hero-question{
+      color:#F4C38B;
+    }
     .hero-copy{
       display:flex;
       flex-direction:column;
@@ -957,7 +965,11 @@
     <section class="hero active reveal" data-page="home">
       <div class="hero-copy">
         <div>
-          <h1 data-i18n="hero_title">AI is already operating inside your company. Who's managing the risk?</h1>
+          <p class="hero-label" data-i18n="hero_label">AI Governance</p>
+          <h1>
+            <span data-i18n="hero_title">AI is already operating inside your company.</span><br>
+            <span class="hero-question" data-i18n="hero_question">Who's managing the risk?</span>
+          </h1>
 
           <p class="hero-sub" data-i18n="hero_sub">
             If you don't control it, someone else will — or it will control you.
@@ -965,14 +977,14 @@
 
           <ul class="risk-list">
             <li><span class="dot"></span>
-                <span><span class="highlight-white" data-i18n="risk1_bold">Private data</span> <span data-i18n="risk1_text">is being shared through AI tools.</span></span></li>
+                <span><span class="highlight-white" data-i18n="risk1_bold">Your most sensitive operational data</span> <span data-i18n="risk1_text">is leaving the company — through tools no one approved.</span></span></li>
             <li><span class="dot"></span>
-                <span><span class="highlight-white" data-i18n="risk2_bold">AI answers</span> <span data-i18n="risk2_text">go unchecked risking real decisions.</span></span></li>
+                <span><span class="highlight-white" data-i18n="risk2_bold">Business-critical decisions</span> <span data-i18n="risk2_text">are being made with AI information that no one has validated.</span></span></li>
             <li><span class="dot"></span>
-                <span><span class="highlight-white" data-i18n="risk3_bold">Employees use AI</span> <span data-i18n="risk3_text">without any rules or guidance.</span></span></li>
+                <span><span class="highlight-white" data-i18n="risk3_bold">Right now, your employees are using AI freely</span> <span data-i18n="risk3_text">— with no policies, no controls, and no one responsible.</span></span></li>
           </ul>
 
-         <p class="hero-sub" style="margin-top:14px; margin-bottom:40px;">
+          <p class="hero-sub" style="margin-top:14px; margin-bottom:40px;">
             <strong class="warm-sand" data-i18n="hero_cta_text">We help teams use AI safely, keep control, and stay competitive.</strong>
           </p>
         </div>
@@ -1529,8 +1541,10 @@ const translations = {
     risk2_bold:        "Business-critical decisions",
     risk2_text:        "are being made with AI information that no one has validated.",
     risk3_bold:        "Right now, your employees are using AI freely",
-    risk3_text:        "— with no policies, no controls, and no one responsible if something goes wrong.",
-    hero_title:        "AI is already operating inside your company. <br>Who's managing the risk?",
+    risk3_text:        "— with no policies, no controls, and no one responsible.",
+    hero_title:        "AI is already operating inside your company.",
+    hero_question:     "Who's managing the risk?",
+    hero_label:        "AI Governance",
     hero_sub:          "If you don't control it, someone else will — or it will control you.",
     hero_cta_text:     "We help teams use AI safely, keep control, and stay competitive.",
 
@@ -1622,8 +1636,10 @@ const translations = {
     risk2_bold:        "Decisiones críticas para el negocio",
     risk2_text:        "se están tomando con información de IA que nadie ha validado.",
     risk3_bold:        "En este momento, tus empleados usan IA libremente",
-    risk3_text:        "— sin políticas, sin controles, y sin que nadie sea responsable si algo sale mal.",
-    hero_title:        "La IA ya opera dentro de tu empresa. <br>¿Quién está gestionando el riesgo?",
+    risk3_text:        "— sin políticas, sin controles, y sin responsables.",
+    hero_title:        "La IA ya opera dentro de tu empresa.",
+    hero_question:     "¿Quién está gestionando el riesgo?",
+    hero_label:        "Gobernanza de IA",
     hero_sub:          "Si no la controlas tú, alguien más lo hará — o ella te controlará a ti.",
     hero_cta_text:     "Ayudamos a los equipos a usar la IA de forma segura, mantener el control y seguir siendo competitivos — sin frenar el negocio.",
 
