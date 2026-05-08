@@ -8,9 +8,7 @@ async function provisionAzureDatabase(companyName) {
   const { ClientSecretCredential } = require('@azure/identity');
   const postgresql = require('@azure/arm-postgresql-flexible');
 
-  // Log all exports so we can see what's available
   console.log('PostgreSQL package exports:', Object.keys(postgresql));
-  console.log('Package version check:', postgresql.VERSION || 'no version');
 
   const credential = new ClientSecretCredential(
     process.env.AZURE_TENANT_ID,
@@ -18,7 +16,7 @@ async function provisionAzureDatabase(companyName) {
     process.env.AZURE_CLIENT_SECRET
   );
 
-  const ClientClass = postgresql.PostgreSQLManagementClient 
+  const ClientClass = postgresql.PostgreSQLManagementClient
     || postgresql.FlexibleServerManagementClient
     || postgresql.PostgreSQLManagementFlexibleServerManagementClient
     || Object.values(postgresql).find(v => typeof v === 'function');
@@ -41,46 +39,6 @@ async function provisionAzureDatabase(companyName) {
   const adminUser  = process.env.AZURE_MASTER_DB_USER;
   const adminPass  = process.env.AZURE_MASTER_DB_PASSWORD;
 
-  await azureClient.databases.beginCreateOrUpdateAndWait(
-    process.env.AZURE_RESOURCE_GROUP,
-    serverName,
-    dbName,
-    { charset: 'UTF8', collation: 'en_US.utf8' }
-  );
-
-  return {
-    host:     process.env.AZURE_MASTER_DB_HOST,
-    dbName,
-    user:     adminUser,
-    password: adminPass
-  };
-}
-  // Try all possible export names
-  const ClientClass = postgresql.PostgreSQLManagementClient 
-    || postgresql.FlexibleServerManagementClient
-    || postgresql.PostgreSQLManagementFlexibleServerManagementClient
-    || Object.values(postgresql).find(v => typeof v === 'function' && v.name.includes('Client'));
-
-  if (!ClientClass) {
-    throw new Error('Could not find PostgreSQL management client in package. Available exports: ' + Object.keys(postgresql).join(', '));
-  }
-
-  const azureClient = new ClientClass(credential, process.env.AZURE_SUBSCRIPTION_ID);
-
-  //const client = new PostgreSQLManagementClient(credential, process.env.AZURE_SUBSCRIPTION_ID);
-
-  // Sanitize company name for DB naming
-  const dbName = 'bion_' + companyName.toLowerCase()
-    .replace(/[^a-z0-9]/g, '_')
-    .replace(/__+/g, '_')
-    .substring(0, 40)
-    + '_' + Date.now().toString().slice(-4);
-
-  const serverName = process.env.AZURE_MASTER_DB_HOST.replace('.postgres.database.azure.com', '');
-  const adminUser  = process.env.AZURE_MASTER_DB_USER;
-  const adminPass  = process.env.AZURE_MASTER_DB_PASSWORD;
-
-  // Create new database on existing server
   await azureClient.databases.beginCreateOrUpdateAndWait(
     process.env.AZURE_RESOURCE_GROUP,
     serverName,
@@ -159,7 +117,6 @@ module.exports = async function handler(req, res) {
     const { name, industry, country, contact_name, contact_email, contact_phone, contract_status } = req.body;
     if (!name || !industry) return res.status(400).json({ error: 'Name and industry required' });
 
-    // 1. Insert company record first
     const insertResult = await pool.query(`
       INSERT INTO companies (name, industry, country, contact_name, contact_email, contact_phone, contract_status, status, azure_db_status)
       VALUES ($1, $2, $3, $4, $5, $6, $7, 'pending', 'provisioning')
@@ -168,24 +125,14 @@ module.exports = async function handler(req, res) {
 
     const companyId = insertResult.rows[0].id;
 
-    // 2. Provision Azure database asynchronously
     try {
       const { host, dbName, user, password } = await provisionAzureDatabase(name);
-
-      // 3. Run client schema
       await runClientSchema(host, dbName, user, password);
-
-      // 4. Update company with connection details
       await pool.query(`
         UPDATE companies SET
-          azure_db_host = $1,
-          azure_db_name = $2,
-          azure_db_user = $3,
-          azure_db_password = $4,
-          azure_db_status = 'ready',
-          status = 'active',
-          onboarded_at = NOW(),
-          updated_at = NOW()
+          azure_db_host = $1, azure_db_name = $2, azure_db_user = $3,
+          azure_db_password = $4, azure_db_status = 'ready', status = 'active',
+          onboarded_at = NOW(), updated_at = NOW()
         WHERE id = $5
       `, [host, dbName, user, password, companyId]);
 
@@ -195,7 +142,6 @@ module.exports = async function handler(req, res) {
         db_name: dbName
       });
     } catch (azureErr) {
-      // Mark as error but keep the company record
       await pool.query(
         `UPDATE companies SET azure_db_status = 'error', updated_at = NOW() WHERE id = $1`,
         [companyId]
@@ -203,7 +149,7 @@ module.exports = async function handler(req, res) {
       console.error('Azure provisioning error:', azureErr);
       return res.status(201).json({
         id: companyId,
-        warning: 'Client created but database provisioning failed. Please retry.',
+        warning: 'Client created but database provisioning failed.',
         error: azureErr.message
       });
     }
@@ -214,14 +160,10 @@ module.exports = async function handler(req, res) {
     const { name, industry, country, contact_name, contact_email, contact_phone, status, contract_status } = req.body;
     await pool.query(`
       UPDATE companies SET
-        name = COALESCE($1, name),
-        industry = COALESCE($2, industry),
-        country = COALESCE($3, country),
-        contact_name = COALESCE($4, contact_name),
-        contact_email = COALESCE($5, contact_email),
-        contact_phone = COALESCE($6, contact_phone),
-        status = COALESCE($7, status),
-        contract_status = COALESCE($8, contract_status),
+        name = COALESCE($1, name), industry = COALESCE($2, industry),
+        country = COALESCE($3, country), contact_name = COALESCE($4, contact_name),
+        contact_email = COALESCE($5, contact_email), contact_phone = COALESCE($6, contact_phone),
+        status = COALESCE($7, status), contract_status = COALESCE($8, contract_status),
         updated_at = NOW()
       WHERE id = $9
     `, [name, industry, country, contact_name, contact_email, contact_phone, status, contract_status, id]);
