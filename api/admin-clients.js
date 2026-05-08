@@ -8,12 +8,53 @@ async function provisionAzureDatabase(companyName) {
   const { ClientSecretCredential } = require('@azure/identity');
   const postgresql = require('@azure/arm-postgresql-flexible');
 
+  // Log all exports so we can see what's available
+  console.log('PostgreSQL package exports:', Object.keys(postgresql));
+  console.log('Package version check:', postgresql.VERSION || 'no version');
+
   const credential = new ClientSecretCredential(
     process.env.AZURE_TENANT_ID,
     process.env.AZURE_CLIENT_ID,
     process.env.AZURE_CLIENT_SECRET
   );
 
+  const ClientClass = postgresql.PostgreSQLManagementClient 
+    || postgresql.FlexibleServerManagementClient
+    || postgresql.PostgreSQLManagementFlexibleServerManagementClient
+    || Object.values(postgresql).find(v => typeof v === 'function');
+
+  console.log('ClientClass found:', ClientClass ? ClientClass.name : 'NOT FOUND');
+
+  if (!ClientClass) {
+    throw new Error('Exports available: ' + Object.keys(postgresql).join(', '));
+  }
+
+  const azureClient = new ClientClass(credential, process.env.AZURE_SUBSCRIPTION_ID);
+
+  const dbName = 'bion_' + companyName.toLowerCase()
+    .replace(/[^a-z0-9]/g, '_')
+    .replace(/__+/g, '_')
+    .substring(0, 40)
+    + '_' + Date.now().toString().slice(-4);
+
+  const serverName = process.env.AZURE_MASTER_DB_HOST.replace('.postgres.database.azure.com', '');
+  const adminUser  = process.env.AZURE_MASTER_DB_USER;
+  const adminPass  = process.env.AZURE_MASTER_DB_PASSWORD;
+
+  await azureClient.databases.beginCreateOrUpdateAndWait(
+    process.env.AZURE_RESOURCE_GROUP,
+    serverName,
+    dbName,
+    { charset: 'UTF8', collation: 'en_US.utf8' }
+  );
+
+  return {
+    host:     process.env.AZURE_MASTER_DB_HOST,
+    dbName,
+    user:     adminUser,
+    password: adminPass
+  };
+}
   // Try all possible export names
   const ClientClass = postgresql.PostgreSQLManagementClient 
     || postgresql.FlexibleServerManagementClient
