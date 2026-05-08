@@ -237,8 +237,21 @@
     btn.textContent = id ? 'Saving…' : 'Provisioning database…';
 
     if (!id) {
-      document.getElementById('provisioningNote').style.display = 'block';
-    }
+  document.getElementById('provisioningNote').style.display = 'block';
+  const steps = [
+    'Creating client record…',
+    'Connecting to Azure…',
+    'Provisioning database…',
+    'Running governance schema…',
+    'Finalizing setup…'
+  ];
+  let stepIndex = 0;
+  window._provisioningTimer = setInterval(() => {
+    stepIndex = (stepIndex + 1) % steps.length;
+    const el = document.getElementById('provisioningStep');
+    if (el) el.textContent = steps[stepIndex];
+  }, 4000);
+}
 
     const payload = {
       name, industry,
