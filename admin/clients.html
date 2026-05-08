@@ -124,9 +124,18 @@
       <input type="text" id="fContactPhone" placeholder="+56 9 xxxx xxxx">
     </div>
 
-    <div id="provisioningNote" style="display:none;" class="alert alert-info">
-      Creating client and provisioning Azure database — this may take 1-2 minutes. Please wait…
-    </div>
+    <div id="provisioningNote" style="display:none;background:#0C2240;border:1px solid rgba(133,183,235,.35);border-radius:10px;padding:16px 20px;text-align:center;">
+  <div style="display:flex;align-items:center;justify-content:center;gap:12px;margin-bottom:8px;">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" style="animation:spin 1s linear infinite;flex-shrink:0;">
+      <circle cx="12" cy="12" r="10" stroke="#85B7EB" stroke-width="2" stroke-dasharray="32" stroke-dashoffset="12"/>
+    </svg>
+    <p style="font-size:13px;font-weight:600;color:#85B7EB;margin:0;" id="provisioningStep">Creating client record…</p>
+  </div>
+  <p style="font-size:11px;color:#5A7299;margin:0;">This may take up to 30 seconds. Please do not close this window.</p>
+</div>
+<style>
+  @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+</style>
 
     <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:6px;">
       <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
