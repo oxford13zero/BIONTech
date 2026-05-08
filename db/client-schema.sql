@@ -55,6 +55,9 @@ CREATE TABLE IF NOT EXISTS ai_systems (
   environment                 TEXT CHECK (environment IN ('Cloud','On-premise','Edge','Hybrid')),
   infrastructure_provider     TEXT,
   shadow_ai_label             TEXT DEFAULT 'Declarado',
+  eu_ai_act_applicable        BOOLEAN DEFAULT false,
+  annex_iii_applicable        BOOLEAN DEFAULT false,
+  ce_marking_required         BOOLEAN DEFAULT false,
   risk_score_total            NUMERIC(4,2),
   created_at                  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at                  TIMESTAMPTZ NOT NULL DEFAULT NOW()
