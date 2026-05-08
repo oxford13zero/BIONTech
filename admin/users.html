@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>BION Admin — Users</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/admin/css/admin.css">
+</head>
+<body>
+
+<nav class="admin-nav">
+  <a href="/admin/dashboard.html" class="admin-nav-logo">bion <span>Azure Admin</span></a>
+  <a href="/admin/dashboard.html">Dashboard</a>
+  <a href="/admin/clients.html">Clients</a>
+  <a href="/admin/users.html" class="active">Users</a>
+  <a href="/admin/settings.html">Settings</a>
+  <div class="admin-nav-spacer"></div>
+  <div class="admin-nav-user">
+    <span id="adminNavName">—</span>
+    <button class="admin-nav-logout" onclick="logout()">Sign out</button>
+  </div>
+</nav>
+
+<div class="admin-wrap">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
+    <h1 class="admin-page-title" style="margin:0;">Users</h1>
+    <button class="btn btn-primary" onclick="openModal()">+ New User</button>
+  </div>
+
+  <div class="admin-table-wrap">
+    <div class="admin-table-header">
+      <div class="admin-filters">
+        <select class="admin-select" id="companyFilter" onchange="loadUsers()">
+          <option value="">All companies</option>
+        </select>
+        <select class="admin-select" id="roleFilter" onchange="loadUsers()">
+          <option value="">All roles</option>
+          <option value="company_admin">Company Admin</option>
+          <option value="company_user">Company User</option>
+          <option value="branch_manager">Branch Manager</option>
+        </select>
+      </div>
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th>Full Name</th>
+          <th>Email</th>
+          <th>Company</th>
+          <th>Role</th>
+          <th>Status</th>
+          <th>Created</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody id="usersBody">
+        <tr><td colspan="7" class="admin-loading">Loading…</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Create / Edit Modal -->
+<div class="modal-overlay" id="userModal">
+  <div class="modal-box">
+    <button class="modal-close" onclick="closeModal()">✕</button>
+    <p class="modal-title" id="modalTitle">New User</p>
+
+    <div class="alert" id="modalAlert" style="display:none;"></div>
+    <input type="hidden" id="editUserId">
+
+    <div class="field-row">
+      <div class="field">
+        <label>Full Name *</label>
+        <input type="text" id="fFullName" placeholder="Full name">
+      </div>
+      <div class="field">
+        <label>Email *</label>
+        <input type="email" id="fEmail" placeholder="name@company.com">
+      </div>
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <label>Company *</label>
+        <select id="fCompany">
+          <option value="">Select company…</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Role *</label>
+        <select id="fRole">
+          <option value="company_admin">Company Admin</option>
+          <option value="company_user">Company User</option>
+          <option value="branch_manager">Branch Manager</option>
+        </select>
+      </div>
+    </div>
+    <div class="field">
+      <label id="passwordLabel">Password * (min 8 characters)</label>
+      <input type="password" id="fPassword" placeholder="••••••••">
+      <p style="font-size:11px;color:#5A7299;margin-top:4px;" id="passwordHint"></p>
+    </div>
+
+    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:6px;">
+      <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" id="saveBtn" onclick="saveUser()">Create User</button>
+    </div>
+  </div>
+</div>
+
+<script src="/admin/js/auth.js"></script>
+<script>
+  requireAuth();
+
+  async function loadCompanies() {
+    const data = await apiFetch('/api/admin-clients');
+    if (!data) return;
+    const activeCompanies = data.filter(c => c.status === 'active');
+
+    const companyFilter = document.getElementById('companyFilter');
+    const fCompany = document.getElementById('fCompany');
+
+    activeCompanies.forEach(c => {
+      [companyFilter, fCompany].forEach(sel => {
+        const opt = document.createElement('option');
+        opt.value = c.id;
+        opt.textContent = c.name;
+        sel.appendChild(opt);
+      });
+    });
+
+    // Pre-select from URL param
+    const urlCompany = new URLSearchParams(window.location.search).get('company');
+    if (urlCompany) {
+      companyFilter.value = urlCompany;
+      fCompany.value = urlCompany;
+    }
+  }
+
+  async function loadUsers() {
+    const company = document.getElementById('companyFilter').value;
+    const role    = document.getElementById('roleFilter').value;
+    let url = '/api/admin-users';
+    const params = [];
+    if (company) params.push(`company_id=${company}`);
+    if (role)    params.push(`role=${role}`);
+    if (params.length) url += '?' + params.join('&');
+
+    const data = await apiFetch(url);
+    if (!data) return;
+
+    const tbody = document.getElementById('usersBody');
+    if (!data.length) {
+      tbody.innerHTML = '<tr><td colspan="7" class="admin-empty">No users found</td></tr>';
+      return;
+    }
+    tbody.innerHTML = data.map(u => `
+      <tr>
+        <td style="font-weight:600;color:#EAF0FF;">${u.full_name}</td>
+        <td style="font-size:12px;">${u.email}</td>
+        <td>${u.company_name || '—'}</td>
+        <td><span style="font-size:11px;color:#85B7EB;">${u.role}</span></td>
+        <td>${statusBadge(u.status)}</td>
+        <td>${formatDate(u.created_at)}</td>
+        <td>
+          <div style="display:flex;gap:6px;">
+            <button class="btn btn-secondary btn-sm" onclick="editUser('${u.id}','${u.full_name}','${u.email}','${u.company_id}','${u.role}')">Edit</button>
+            ${u.status !== 'inactive' ? `<button class="btn btn-danger btn-sm" onclick="deactivateUser('${u.id}')">Deactivate</button>` : ''}
+          </div>
+        </td>
+      </tr>
+    `).join('');
+  }
+
+  function openModal(userData = null) {
+    document.getElementById('editUserId').value      = userData?.id || '';
+    document.getElementById('modalTitle').textContent = userData ? 'Edit User' : 'New User';
+    document.getElementById('saveBtn').textContent    = userData ? 'Save Changes' : 'Create User';
+    document.getElementById('fFullName').value        = userData?.full_name || '';
+    document.getElementById('fEmail').value           = userData?.email || '';
+    document.getElementById('fRole').value            = userData?.role || 'company_user';
+    document.getElementById('fPassword').value        = '';
+    document.getElementById('passwordLabel').textContent = userData
+      ? 'New Password (leave blank to keep current)'
+      : 'Password * (min 8 characters)';
+    document.getElementById('passwordHint').textContent = userData
+      ? 'Only fill if you want to change the password'
+      : '';
+    if (userData?.company_id) document.getElementById('fCompany').value = userData.company_id;
+    document.getElementById('modalAlert').style.display = 'none';
+    document.getElementById('userModal').classList.add('open');
+  }
+
+  function closeModal() {
+    document.getElementById('userModal').classList.remove('open');
+  }
+
+  async function saveUser() {
+    const id       = document.getElementById('editUserId').value;
+    const fullName = document.getElementById('fFullName').value.trim();
+    const email    = document.getElementById('fEmail').value.trim();
+    const company  = document.getElementById('fCompany').value;
+    const role     = document.getElementById('fRole').value;
+    const password = document.getElementById('fPassword').value;
+
+    if (!fullName || !email || !company || !role) {
+      showAlert('modalAlert', 'All fields except password are required.');
+      return;
+    }
+    if (!id && !password) {
+      showAlert('modalAlert', 'Password is required for new users.');
+      return;
+    }
+
+    const btn = document.getElementById('saveBtn');
+    btn.disabled = true;
+    btn.textContent = 'Saving…';
+
+    const payload = { full_name: fullName, email, company_id: company, role };
+    if (password) payload.password = password;
+
+    const url    = id ? `/api/admin-users?id=${id}` : '/api/admin-users';
+    const method = id ? 'PUT' : 'POST';
+
+    const result = await apiFetch(url, { method, body: payload });
+    btn.disabled = false;
+    btn.textContent = id ? 'Save Changes' : 'Create User';
+
+    if (result?.error) {
+      showAlert('modalAlert', result.error);
+      return;
+    }
+    closeModal();
+    loadUsers();
+  }
+
+  function editUser(id, name, email, company, role) {
+    openModal({ id, full_name: name, email, company_id: company, role });
+  }
+
+  async function deactivateUser(id) {
+    if (!confirm('Deactivate this user? They will no longer be able to log in.')) return;
+    await apiFetch(`/api/admin-users?id=${id}`, { method: 'DELETE' });
+    loadUsers();
+  }
+
+  if (new URLSearchParams(window.location.search).get('action') === 'new') {
+    window.addEventListener('DOMContentLoaded', () => openModal());
+  }
+
+  loadCompanies().then(() => loadUsers());
+</script>
+</body>
+</html>
