@@ -1,0 +1,16 @@
+{
+  "name": "bion-admin-panel",
+  "version": "1.0.0",
+  "description": "BION Azure Admin Panel — Serverless API functions for Vercel",
+  "main": "index.js",
+  "scripts": {
+    "dev": "vercel dev"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "jsonwebtoken": "^9.0.2",
+    "pg": "^8.11.3",
+    "@azure/identity": "^4.0.0",
+    "@azure/arm-postgresql-flexible": "^8.0.0"
+  }
+}
