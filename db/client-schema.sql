@@ -230,7 +230,19 @@ CREATE TABLE IF NOT EXISTS sec_compliance_docs (
   approved_use_policy             TEXT,
   board_informed                  TEXT,
   created_at                      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  updated_at                      TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  updated_at                      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  docs_accessible_for_audit    TEXT,
+  board_informed               TEXT,
+  market_regulator_disclosure  TEXT,
+  next_contract_renewal        DATE,
+  annex_iv_complete            BOOLEAN DEFAULT false,
+  ce_marking_declared          BOOLEAN DEFAULT false,
+  vendor_questionnaire_received BOOLEAN DEFAULT false,
+  independent_review_completed BOOLEAN DEFAULT false,
+  legal_review_completed       BOOLEAN DEFAULT false,
+  board_approval_required      BOOLEAN DEFAULT false,
+  log_retention_months         INTEGER DEFAULT 6,
+  log_integrity_method         TEXT
 );
 
 -- M2 — Risk Assessments
