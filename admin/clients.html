@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>BION Admin — Clients</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/admin/css/admin.css">
+</head>
+<body>
+
+<nav class="admin-nav">
+  <a href="/admin/dashboard.html" class="admin-nav-logo">bion <span>Azure Admin</span></a>
+  <a href="/admin/dashboard.html">Dashboard</a>
+  <a href="/admin/clients.html" class="active">Clients</a>
+  <a href="/admin/users.html">Users</a>
+  <a href="/admin/settings.html">Settings</a>
+  <div class="admin-nav-spacer"></div>
+  <div class="admin-nav-user">
+    <span id="adminNavName">—</span>
+    <button class="admin-nav-logout" onclick="logout()">Sign out</button>
+  </div>
+</nav>
+
+<div class="admin-wrap">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
+    <h1 class="admin-page-title" style="margin:0;">Clients</h1>
+    <button class="btn btn-primary" onclick="openModal()">+ New Client</button>
+  </div>
+
+  <div class="admin-table-wrap">
+    <div class="admin-table-header">
+      <div class="admin-filters">
+        <input class="admin-input" id="searchInput" placeholder="Search by name…" oninput="filterClients()">
+        <select class="admin-select" id="statusFilter" onchange="filterClients()">
+          <option value="">All statuses</option>
+          <option value="active">Active</option>
+          <option value="pending">Pending</option>
+          <option value="inactive">Inactive</option>
+          <option value="cancelled">Cancelled</option>
+        </select>
+      </div>
+      <span id="clientCount" style="font-size:12px;color:#5A7299;"></span>
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th>Company Name</th>
+          <th>Industry</th>
+          <th>Country</th>
+          <th>Status</th>
+          <th>Contract</th>
+          <th>DB Status</th>
+          <th>Azure Host</th>
+          <th>Onboarded</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody id="clientsBody">
+        <tr><td colspan="9" class="admin-loading">Loading…</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Create / Edit Modal -->
+<div class="modal-overlay" id="clientModal">
+  <div class="modal-box">
+    <button class="modal-close" onclick="closeModal()">✕</button>
+    <p class="modal-title" id="modalTitle">New Client</p>
+
+    <div class="alert" id="modalAlert" style="display:none;"></div>
+
+    <input type="hidden" id="editClientId">
+
+    <div class="field-row">
+      <div class="field">
+        <label>Company Name *</label>
+        <input type="text" id="fName" placeholder="e.g. Codelco">
+      </div>
+      <div class="field">
+        <label>Industry *</label>
+        <select id="fIndustry">
+          <option value="">Loading…</option>
+        </select>
+      </div>
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <label>Country</label>
+        <select id="fCountry">
+          <option value="Chile">Chile</option>
+          <option value="Peru">Peru</option>
+          <option value="Brazil">Brazil</option>
+          <option value="Colombia">Colombia</option>
+          <option value="Argentina">Argentina</option>
+          <option value="Mexico">Mexico</option>
+          <option value="USA">USA</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Contract Status</label>
+        <select id="fContractStatus">
+          <option value="pending">Pending</option>
+          <option value="active">Active</option>
+          <option value="expired">Expired</option>
+          <option value="cancelled">Cancelled</option>
+        </select>
+      </div>
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <label>Contact Name</label>
+        <input type="text" id="fContactName" placeholder="Full name">
+      </div>
+      <div class="field">
+        <label>Contact Email</label>
+        <input type="email" id="fContactEmail" placeholder="name@company.com">
+      </div>
+    </div>
+    <div class="field">
+      <label>Contact Phone</label>
+      <input type="text" id="fContactPhone" placeholder="+56 9 xxxx xxxx">
+    </div>
+
+    <div id="provisioningNote" style="display:none;" class="alert alert-info">
+      Creating client and provisioning Azure database — this may take 1-2 minutes. Please wait…
+    </div>
+
+    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:6px;">
+      <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" id="saveBtn" onclick="saveClient()">Create Client & Provision DB</button>
+    </div>
+  </div>
+</div>
+
+<script src="/admin/js/auth.js"></script>
+<script>
+  requireAuth();
+
+  let allClients = [];
+
+  async function loadClients() {
+    const data = await apiFetch('/api/admin-clients');
+    if (!data) return;
+    allClients = data;
+    renderClients(allClients);
+    document.getElementById('clientCount').textContent = `${data.length} client${data.length !== 1 ? 's' : ''}`;
+  }
+
+  function renderClients(clients) {
+    const tbody = document.getElementById('clientsBody');
+    if (!clients.length) {
+      tbody.innerHTML = '<tr><td colspan="9" class="admin-empty">No clients found</td></tr>';
+      return;
+    }
+    tbody.innerHTML = clients.map(c => `
+      <tr>
+        <td style="font-weight:600;color:#EAF0FF;">${c.name}</td>
+        <td>${c.industry}</td>
+        <td>${c.country}</td>
+        <td>${statusBadge(c.status)}</td>
+        <td>${statusBadge(c.contract_status)}</td>
+        <td>${statusBadge(c.azure_db_status || 'pending')}</td>
+        <td style="font-size:11px;font-family:monospace;color:#5A7299;">${c.azure_db_name || '—'}</td>
+        <td>${formatDate(c.onboarded_at)}</td>
+        <td>
+          <div style="display:flex;gap:6px;">
+            <button class="btn btn-secondary btn-sm" onclick="editClient('${c.id}')">Edit</button>
+            <a href="/admin/users.html?company=${c.id}" class="btn btn-secondary btn-sm">Users</a>
+            ${c.status !== 'inactive' ? `<button class="btn btn-danger btn-sm" onclick="deactivateClient('${c.id}')">Deactivate</button>` : ''}
+          </div>
+        </td>
+      </tr>
+    `).join('');
+  }
+
+  function filterClients() {
+    const q      = document.getElementById('searchInput').value.toLowerCase();
+    const status = document.getElementById('statusFilter').value;
+    const filtered = allClients.filter(c =>
+      (!q || c.name.toLowerCase().includes(q)) &&
+      (!status || c.status === status)
+    );
+    renderClients(filtered);
+  }
+
+  async function loadInventoryTypes() {
+    const types = await apiFetch('/api/admin-clients?types=true');
+    if (!types) return;
+    const sel = document.getElementById('fIndustry');
+    sel.innerHTML = '<option value="">Select industry…</option>' +
+      types.map(t => `<option value="${t.code}">${t.label}</option>`).join('');
+  }
+
+  function openModal(clientData = null) {
+    document.getElementById('editClientId').value = clientData?.id || '';
+    document.getElementById('modalTitle').textContent = clientData ? 'Edit Client' : 'New Client';
+    document.getElementById('saveBtn').textContent = clientData ? 'Save Changes' : 'Create Client & Provision DB';
+    document.getElementById('fName').value          = clientData?.name || '';
+    document.getElementById('fCountry').value       = clientData?.country || 'Chile';
+    document.getElementById('fContractStatus').value= clientData?.contract_status || 'pending';
+    document.getElementById('fContactName').value   = clientData?.contact_name || '';
+    document.getElementById('fContactEmail').value  = clientData?.contact_email || '';
+    document.getElementById('fContactPhone').value  = clientData?.contact_phone || '';
+    if (clientData?.industry) document.getElementById('fIndustry').value = clientData.industry;
+    document.getElementById('modalAlert').style.display = 'none';
+    document.getElementById('provisioningNote').style.display = 'none';
+    document.getElementById('clientModal').classList.add('open');
+  }
+
+  function closeModal() {
+    document.getElementById('clientModal').classList.remove('open');
+  }
+
+  async function saveClient() {
+    const id   = document.getElementById('editClientId').value;
+    const name = document.getElementById('fName').value.trim();
+    const industry = document.getElementById('fIndustry').value;
+    if (!name || !industry) {
+      showAlert('modalAlert', 'Company name and industry are required.');
+      return;
+    }
+
+    const btn = document.getElementById('saveBtn');
+    btn.disabled = true;
+    btn.textContent = id ? 'Saving…' : 'Provisioning database…';
+
+    if (!id) {
+      document.getElementById('provisioningNote').style.display = 'block';
+    }
+
+    const payload = {
+      name, industry,
+      country:          document.getElementById('fCountry').value,
+      contract_status:  document.getElementById('fContractStatus').value,
+      contact_name:     document.getElementById('fContactName').value.trim(),
+      contact_email:    document.getElementById('fContactEmail').value.trim(),
+      contact_phone:    document.getElementById('fContactPhone').value.trim()
+    };
+
+    const url    = id ? `/api/admin-clients?id=${id}` : '/api/admin-clients';
+    const method = id ? 'PUT' : 'POST';
+
+    const result = await apiFetch(url, { method, body: payload });
+    btn.disabled = false;
+
+    if (result?.error) {
+      showAlert('modalAlert', result.error);
+      btn.textContent = id ? 'Save Changes' : 'Create Client & Provision DB';
+      document.getElementById('provisioningNote').style.display = 'none';
+      return;
+    }
+
+    if (result?.warning) {
+      showAlert('modalAlert', result.warning, 'error');
+      btn.textContent = id ? 'Save Changes' : 'Create Client & Provision DB';
+    } else {
+      closeModal();
+    }
+    loadClients();
+  }
+
+  async function editClient(id) {
+    const data = await apiFetch(`/api/admin-clients?id=${id}`);
+    if (data) openModal(data);
+  }
+
+  async function deactivateClient(id) {
+    if (!confirm('Deactivate this client? Their database will remain intact.')) return;
+    await apiFetch(`/api/admin-clients?id=${id}`, { method: 'DELETE' });
+    loadClients();
+  }
+
+  // Open new client modal automatically if ?action=new
+  if (new URLSearchParams(window.location.search).get('action') === 'new') {
+    window.addEventListener('DOMContentLoaded', () => openModal());
+  }
+
+  loadInventoryTypes();
+  loadClients();
+</script>
+</body>
+</html>
