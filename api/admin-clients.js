@@ -6,14 +6,25 @@ const path = require('path');
 // ── Azure provisioning ────────────────────────────────────────
 async function provisionAzureDatabase(companyName) {
   const { ClientSecretCredential } = require('@azure/identity');
-  const armPostgresql = require('@azure/arm-postgresql-flexible');
-  const PostgreSQLManagementClient = armPostgresql.PostgreSQLManagementFlexibleServerManagementClient || armPostgresql.default || armPostgresql;
+  const postgresql = require('@azure/arm-postgresql-flexible');
 
   const credential = new ClientSecretCredential(
     process.env.AZURE_TENANT_ID,
     process.env.AZURE_CLIENT_ID,
     process.env.AZURE_CLIENT_SECRET
   );
+
+  // Try all possible export names
+  const ClientClass = postgresql.PostgreSQLManagementClient 
+    || postgresql.FlexibleServerManagementClient
+    || postgresql.PostgreSQLManagementFlexibleServerManagementClient
+    || Object.values(postgresql).find(v => typeof v === 'function' && v.name.includes('Client'));
+
+  if (!ClientClass) {
+    throw new Error('Could not find PostgreSQL management client in package. Available exports: ' + Object.keys(postgresql).join(', '));
+  }
+
+  const client = new ClientClass(credential, process.env.AZURE_SUBSCRIPTION_ID);
 
   const client = new PostgreSQLManagementClient(credential, process.env.AZURE_SUBSCRIPTION_ID);
 
