@@ -736,27 +736,25 @@
       transform:translateY(-1px);
     }
 
-.btn-azure-admin{
-  width:34px;
-  height:34px;
-  border-radius:10px;
-  border:1px solid rgba(93,202,165,.5);
-  background:var(--panel2);
-  display:inline-flex;
-  align-items:center;
-  justify-content:center;
-  cursor:pointer;
-  font-family:"Source Sans 3", system-ui, sans-serif;
-  transition:background .15s ease, transform .12s ease, border-color .15s ease;
-  flex-shrink:0;
-}
-.btn-azure-admin:hover{
-  background:#1A2C52;
-  border-color:rgba(93,202,165,.95);
-  transform:translateY(-1px);
-}
-    
-    
+    .btn-azure-admin{
+      width:34px;
+      height:34px;
+      border-radius:10px;
+      border:1px solid rgba(93,202,165,.5);
+      background:var(--panel2);
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      cursor:pointer;
+      font-family:"Source Sans 3", system-ui, sans-serif;
+      transition:background .15s ease, transform .12s ease, border-color .15s ease;
+      flex-shrink:0;
+    }
+    .btn-azure-admin:hover{
+      background:#1A2C52;
+      border-color:rgba(93,202,165,.95);
+      transform:translateY(-1px);
+    }
 
     /* Admin dropdown */
     .admin-wrap{
@@ -1016,18 +1014,12 @@
           </button>
         </div>
       </div>
-
-<button class="btn-azure-admin" onclick="window.location.href='/admin'" title="Azure Admin Panel">
-  <svg width="18" height="18" viewBox="0 0 16 16" fill="none">
-    <path d="M8 1.5L2 4v4c0 3 2.5 5.5 6 6.5 3.5-1 6-3.5 6-6.5V4L8 1.5z" stroke="#5DCAA5" stroke-width="1.4" stroke-linejoin="round"/>
-    <path d="M5.5 8l2 2 3-3" stroke="#5DCAA5" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
-  </svg>
-</button>
-
-
-
-
-      
+      <button class="btn-azure-admin" onclick="window.location.href='/admin'" title="Azure Admin Panel">
+        <svg width="18" height="18" viewBox="0 0 16 16" fill="none">
+          <path d="M8 1.5L2 4v4c0 3 2.5 5.5 6 6.5 3.5-1 6-3.5 6-6.5V4L8 1.5z" stroke="#5DCAA5" stroke-width="1.4" stroke-linejoin="round"/>
+          <path d="M5.5 8l2 2 3-3" stroke="#5DCAA5" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
     </nav>
   </header>
 
@@ -1038,8 +1030,8 @@
       <div class="hero-center">
         <p class="hero-label" data-i18n="hero_label">AI Governance Module</p>
         <h1>
-          <span data-i18n="hero_title">The AI Governance Module that controls</span><br>
-          <span class="hero-question" data-i18n="hero_question">how AI tools are used <br>across your company.</span>
+          <span data-i18n="hero_title">AI is already operating inside your company.</span><br>
+          <span class="hero-question" data-i18n="hero_question">Who's managing the risk?</span>
         </h1>
         <ul class="risk-list">
           <li><span class="dot"></span>
@@ -1048,12 +1040,16 @@
               <span><span class="highlight-white" data-i18n="risk2_bold">Business-critical decisions</span> <span data-i18n="risk2_text">are being made with AI information that no one has validated.</span></span></li>
         </ul>
         <br>
-        <p class="hero-control" style="white-space:nowrap;" data-i18n="hero_sub">Every uncontrolled AI tool is an open risk.</p>
+        <p class="hero-control" style="white-space:nowrap;" data-i18n="hero_sub">Every uncontrolled AI tool is an open risk — to your reserves, your people, and your operation.</p>
         <div style="border:1px solid rgba(244,195,139,.35);border-radius:16px;background:#071120;padding:18px 28px;display:inline-block;margin:8px 40px 0;">
           <div style="display:flex;flex-direction:column;align-items:center;gap:10px;text-align:center;">
-            
-    
-            <p style="font-size:17px;font-weight:400;color:#F4C38B;margin:0;line-height:1.5;text-align:center;" data-i18n="hero_cta_text">One platform to inventory, monitor, and control every AI tool used in your organization. Real-time visibility, policy enforcement, and audit-ready reporting.</p>
+            <div style="width:36px;height:36px;border-radius:8px;background:rgba(244,195,139,.12);border:1px solid rgba(244,195,139,.3);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+              <svg width="18" height="18" viewBox="0 0 16 16" fill="none">
+                <path d="M8 1.5L2 4v4c0 3 2.5 5.5 6 6.5 3.5-1 6-3.5 6-6.5V4L8 1.5z" stroke="#F4C38B" stroke-width="1.3" stroke-linejoin="round"/>
+                <path d="M5.5 8l2 2 3-3" stroke="#F4C38B" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+            <p style="font-size:17px;font-weight:800;color:#F4C38B;margin:0;line-height:1.5;text-align:left;" data-i18n="hero_cta_text">One platform. Live inventory, automatic regulatory alerts, and full compliance visibility — across every mine site.</p>
           </div>
         </div>
         <br>
@@ -1244,7 +1240,7 @@
                 <div class="team-background"><b data-i18n="rodo_bg">MSc in Educational Psychology</b></div>
               </div>
               <p class="team-bio" data-i18n="rodo_bio">
-                Leads adoption enablement and practical learning
+                Resume Rodolfo — replace with your real team member later. Leads adoption enablement and practical learning
                 so teams use AI confidently without creating unnecessary risk.
               </p>
             </div>
@@ -1339,7 +1335,7 @@
               <label style="font-size:10px;font-weight:700;color:#8BB4D4;text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:5px;" data-i18n="form_message">Mensaje</label>
               <textarea name="message" data-i18n-placeholder="form_message_ph" placeholder="¿Cómo podemos ayudarte?" required style="width:100%;padding:10px 14px;border-radius:9px;border:1px solid rgba(255,255,255,.15);background:rgba(255,255,255,.08);color:#EAF0FF;font-size:13px;font-family:inherit;box-sizing:border-box;outline:none;min-height:90px;resize:none;"></textarea>
             </div>
-            <button class="btn-primary" type="submit" style="width:100%;padding:13px;font-size:13px;" data-i18n="form_submit">Enviar →</button>
+            <button class="btn-primary" type="submit" style="width:100%;padding:13px;font-size:13px;" data-i18n="form_submit">Agendar una llamada de 30 minutos →</button>
             <p style="font-size:11px;color:#4A7099;text-align:center;margin:10px 0 0;" data-i18n="form_note">Sin compromiso. Sin spam. Respondemos en 24h.</p>
           </form>
         </div>
@@ -1682,11 +1678,11 @@ const translations = {
     risk2_text:        "are being made with AI information that no one has validated.",
     risk3_bold:        "Right now, your employees are using AI freely",
     risk3_text:        "— with no policies, no controls, and no one responsible.",
-    hero_title:        "The AI Governance Module that controls",
-    hero_question:     "how AI tools are used <br>across your company.",
+    hero_title:        "AI is already operating inside your company.",
+    hero_question:     "Who's managing the risk?",
     hero_label:        "AI Governance Module",
-    hero_sub:          "Every uncontrolled AI tool is an open risk.",
-    hero_cta_text:     "One platform to inventory, monitor, and control every AI tool used in your organization. Real-time visibility, policy enforcement, and audit-ready reporting.",
+    hero_sub:          "Every uncontrolled AI tool is an open risk — to your reserves, your people, and your operation.",
+    hero_cta_text:     "One platform. Live inventory, automatic regulatory alerts, and full compliance visibility — across every mine site.",
 
     btn_consulting:    "AI GOVERNANCE: CONSULTING & TRAINING",
     btn_privacy:       "PRIVACY AND DATA ASSESSMENT",
@@ -1749,7 +1745,7 @@ const translations = {
     trust_stat3_val:    "Free",
     trust_stat3:        "initial assessment",
     form_note:          "No commitment. No spam. We respond within 24h.",
-    form_submit:        "Send →",
+    form_submit:        "Schedule a 30-minute call →",
     form_note:          "Please don't include sensitive personal data."
   },
 
@@ -1800,11 +1796,11 @@ const translations = {
     risk2_text:        "se están tomando con datos que nadie ha validado.",
     risk3_bold:        "En este momento, tus empleados usan IA libremente",
     risk3_text:        "— sin políticas, sin controles, y sin responsables.",
-    hero_title:        "El modulo inteligente que controla",
-    hero_question:     "como las herramientas IA <br>se usan en tu empresa",
+    hero_title:        "La IA ya opera en tu empresa",
+    hero_question:     "¿Quién gestiona el riesgo?",
     hero_label:        "Módulo de Gobernanza de IA",
     hero_sub:          "Cada herramienta de IA sin control es un riesgo abierto.",
-    hero_cta_text:     "Una Plataforma inteligente que monitorea el inventario de todas las herramientas IA de su empresa. Visibilidad en tiempo real, notificaciones de nueva legislacion y reportes de auditoria.",
+    hero_cta_text:     "Una plataforma. Inventario en tiempo real, alertas regulatorias automáticas <br>y visibilidad de cumplimiento total — en cada faena minera.",
 
     btn_consulting:    "GOBERNANZA DE IA: CONSULTORÍA Y CAPACITACIÓN",
     btn_privacy:       "EVALUACIÓN DE PRIVACIDAD Y DATOS",
@@ -1846,7 +1842,7 @@ const translations = {
     luis_bio:          "Consultor de gobernanza de IA con profunda experiencia en gestión de la innovación, transferencia tecnológica y uso responsable de tecnologías avanzadas. Lideró y asesoró iniciativas de transformación digital e inteligencia tecnológica para universidades, organizaciones privadas e instituciones públicas.",
     rodo_pos:          "Director de Aprendizaje y Adopción de IA",
     rodo_bg:           "Máster en Psicología Educativa",
-    rodo_bio:          "Lidera la habilitación de adopción y el aprendizaje práctico para que los equipos usen la IA con confianza sin generar riesgos innecesarios.",
+    rodo_bio:          "Bio de Rodolfo — reemplazar con el texto real del miembro del equipo. Lidera la habilitación de adopción y el aprendizaje práctico para que los equipos usen la IA con confianza sin generar riesgos innecesarios.",
 
     contact_left_title: "La normativa de IA avanza más rápido que la mayoría de las organizaciones.",
     contact_form_title: "Solicita una evaluación de gobernanza",
@@ -1867,7 +1863,7 @@ const translations = {
     trust_stat3_val:    "Gratis",
     trust_stat3:        "evaluación inicial",
     form_note:          "Sin compromiso. Sin spam. Respondemos en 24h.",
-    form_submit:        "Enviar →",
+    form_submit:        "Agendar una llamada de 30 minutos →",
     form_note:          "Por favor, no incluyas datos personales sensibles."
   }
 };
@@ -2047,6 +2043,24 @@ applyLang(currentLang);
     handleClientBtnClick({ stopPropagation: function(){} });
   }
 
+  async function setClientLoggedInAzure(user) {
+    clientLoggedIn = true;
+    document.getElementById('clientDropdownEmail').textContent = user.email;
+    document.getElementById('clientBtn').style.borderColor = 'rgba(244,195,139,.95)';
+    document.getElementById('clientBtn').style.background  = '#1A2C52';
+    s_companyName = user.companyName;
+    s_companyId   = user.companyId;
+    s_country     = user.country;
+    s_userId      = user.id;
+    s_userEmail   = user.email;
+    s_dbName      = user.dbName;
+    setupS1(user.email, user.companyName);
+    showScreen('screenS1');
+    const addBtn = document.getElementById('s1AddBranchBtn');
+    if(addBtn && user.role === 'company_admin') addBtn.style.display = 'inline-flex';
+    if(s_companyId) loadS3Data();
+  }
+
   async function setClientLoggedIn(email, userId){
     clientLoggedIn = true;
     document.getElementById('clientDropdownEmail').textContent = email;
@@ -2060,23 +2074,20 @@ applyLang(currentLang);
     const companyName = profile?.companies?.name || email;
     const country     = profile?.companies?.country || null;
     const companyId   = profile?.company_id || null;
-    // Store globally for S1/S3 screens
     s_companyName = companyName;
     s_companyId   = companyId;
     s_country     = country;
     s_userId      = userId;
     s_userEmail   = email;
-    // Show S1 landing screen
+    s_dbName      = null; // Supabase mode
     setupS1(email, companyName);
     showScreen('screenS1');
-    // Show add branch only for company_admin
     console.log('profile role:', profile?.role, 'profile:', JSON.stringify(profile));
     const addBtn = document.getElementById('s1AddBranchBtn');
     console.log('addBtn found:', !!addBtn);
     if(addBtn) {
       addBtn.style.display = 'inline-flex';
     }
-    // Preload search data in background
     if(companyId) loadS3Data();
   }
 
@@ -2086,8 +2097,10 @@ applyLang(currentLang);
     document.getElementById('clientBtn').style.borderColor = '';
     document.getElementById('clientBtn').style.background  = '';
     document.getElementById('clientDropdown').classList.remove('open');
-    s_companyName = ''; s_companyId = null; s_country = null; s_userId = null;
+    s_companyName = ''; s_companyId = null; s_country = null; s_userId = null; s_dbName = null;
     s3_allData = { branches: [], systems: [] };
+    localStorage.removeItem('bion_client_token');
+    localStorage.removeItem('bion_client_user');
     hideDashboard();
     ['screenS1','screenS3'].forEach(id => {
       const el = document.getElementById(id);
@@ -2096,7 +2109,7 @@ applyLang(currentLang);
   }
 
   async function handleClientLogout(){
-    await sb.auth.signOut();
+    await sb.auth.signOut().catch(() => {});
     setClientLoggedOut();
   }
 
@@ -2210,13 +2223,37 @@ applyLang(currentLang);
     const password = document.getElementById('loginPassword').value;
     if(!email || !password){ showError('login', lang === 'es' ? 'Por favor completa todos los campos.' : 'Please fill in all fields.'); return; }
     setLoading('loginSubmit', true);
-    const { data, error } = await sb.auth.signInWithPassword({ email, password });
-    setLoading('loginSubmit', false);
-    if(error){
-      showError('login', error.message);
-    } else {
+
+    try {
+      const res = await fetch('/api/client-login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
+      });
+      const data = await res.json();
+      setLoading('loginSubmit', false);
+      if (!res.ok) {
+        // Azure failed — fallback to Supabase
+        const { data: sbData, error: sbError } = await sb.auth.signInWithPassword({ email, password });
+        if (sbError) { showError('login', sbError.message); return; }
+        showSuccess('login', lang === 'es' ? '¡Acceso correcto!' : 'Login successful!');
+        setClientLoggedIn(sbData.user.email, sbData.user.id);
+        setTimeout(() => closeModal('loginModal'), 1000);
+        return;
+      }
+      // Azure login successful
+      localStorage.setItem('bion_client_token', data.token);
+      localStorage.setItem('bion_client_user', JSON.stringify(data.user));
       showSuccess('login', lang === 'es' ? '¡Acceso correcto!' : 'Login successful!');
-      setClientLoggedIn(data.user.email, data.user.id);
+      setClientLoggedInAzure(data.user);
+      setTimeout(() => closeModal('loginModal'), 1000);
+    } catch(err) {
+      setLoading('loginSubmit', false);
+      // Network error — fallback to Supabase
+      const { data: sbData, error: sbError } = await sb.auth.signInWithPassword({ email, password });
+      if (sbError) { showError('login', sbError.message); return; }
+      showSuccess('login', lang === 'es' ? '¡Acceso correcto!' : 'Login successful!');
+      setClientLoggedIn(sbData.user.email, sbData.user.id);
       setTimeout(() => closeModal('loginModal'), 1000);
     }
   }
@@ -2253,17 +2290,31 @@ applyLang(currentLang);
   document.getElementById('adminEmail').addEventListener('keydown',    function(e){ if(e.key==='Enter') handleAdminLogin(); });
   document.getElementById('adminPassword').addEventListener('keydown', function(e){ if(e.key==='Enter') handleAdminLogin(); });
 
-  sb.auth.getSession().then(({ data }) => {
-    if(data.session){
-      sb.from('profiles').select('role').eq('user_id', data.session.user.id).single().then(({ data: profile }) => {
-        if(profile && profile.role === 'bion_admin'){
-          setAdminLoggedIn(data.session.user.email);
-        } else if(profile){
-          setClientLoggedIn(data.session.user.email, data.session.user.id);
-        }
-      });
+  // ── Session restore ───────────────────────────────────────
+  // Check Azure JWT first, then fall back to Supabase session
+  const storedToken = localStorage.getItem('bion_client_token');
+  const storedUser  = localStorage.getItem('bion_client_user');
+  if (storedToken && storedUser) {
+    try {
+      const user = JSON.parse(storedUser);
+      setClientLoggedInAzure(user);
+    } catch(e) {
+      localStorage.removeItem('bion_client_token');
+      localStorage.removeItem('bion_client_user');
     }
-  });
+  } else {
+    sb.auth.getSession().then(({ data }) => {
+      if(data.session){
+        sb.from('profiles').select('role').eq('user_id', data.session.user.id).single().then(({ data: profile }) => {
+          if(profile && profile.role === 'bion_admin'){
+            setAdminLoggedIn(data.session.user.email);
+          } else if(profile){
+            setClientLoggedIn(data.session.user.email, data.session.user.id);
+          }
+        });
+      }
+    });
+  }
 </script>
 
 <!-- ── Parallax bridge ───────────────────────────────────────── -->
@@ -2391,6 +2442,20 @@ function hideDashboard() {
 }
 
 async function loadBranches(companyId) {
+  if (s_dbName) {
+    // Azure mode
+    const token = localStorage.getItem('bion_client_token');
+    const res = await fetch('/api/client-data?type=branches', {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    const data = await res.json();
+    if(!data || data.length === 0) return;
+    const sel = document.getElementById('branchSelect');
+    sel.innerHTML = '<option value="all">All branches</option>' +
+      data.map(b => `<option value="${b.id}">${b.name}</option>`).join('');
+    return;
+  }
+  // Supabase fallback
   const { data } = await sb
     .from('branches')
     .select('id, name')
@@ -2421,13 +2486,23 @@ function hideDashboard() {
 
 async function loadAlerts(country) {
   if(!country) return;
-  const { data } = await sb
-    .from('legislation_alerts')
-    .select('*')
-    .eq('country', country)
-    .eq('active', true)
-    .order('published_at', { ascending: false })
-    .limit(3);
+  let data;
+  if (s_dbName) {
+    const token = localStorage.getItem('bion_client_token');
+    const res = await fetch('/api/client-data?type=alerts', {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    data = await res.json();
+  } else {
+    const result = await sb
+      .from('legislation_alerts')
+      .select('*')
+      .eq('country', country)
+      .eq('active', true)
+      .order('published_at', { ascending: false })
+      .limit(3);
+    data = result.data;
+  }
   if(!data || data.length === 0) return;
   document.getElementById('alertStrip').style.display = 'block';
   document.getElementById('alertCountry').textContent = country;
@@ -2443,7 +2518,19 @@ async function loadAlerts(country) {
 }
 
 async function loadSystems(companyId, branchId) {
-  
+  if (s_dbName) {
+    // Azure mode
+    const token = localStorage.getItem('bion_client_token');
+    const url = branchId && branchId !== 'all'
+      ? `/api/client-data?type=ai_systems_full&branch_id=${branchId}`
+      : '/api/client-data?type=ai_systems_full';
+    const res = await fetch(url, { headers: { 'Authorization': `Bearer ${token}` } });
+    const data = await res.json();
+    if(res.ok) { allSystems = data; renderDashboard(allSystems); }
+    else { document.getElementById('attentionGrid').innerHTML = '<div class="db-empty">Error loading systems</div>'; }
+    return;
+  }
+  // Supabase fallback
   let query = sb
     .from('ai_systems')
     .select(`
@@ -3698,6 +3785,7 @@ let s_companyId   = null;
 let s_country     = null;
 let s_userId      = null;
 let s_userEmail   = '';
+let s_dbName      = null; // Azure client database name
 let s3_tab        = 'all';
 let s3_allData    = { branches: [], systems: [] };
 
@@ -3829,8 +3917,23 @@ function onS1Search(query) {
 // ── S3 data loading ──────────────────────────────────────────
 async function loadS3Data() {
   if(!s_companyId) return;
-  if(s3_allData.branches.length > 0) return; // already loaded
+  if(s3_allData.branches.length > 0) return;
 
+  if (s_dbName) {
+    // Azure mode
+    const token = localStorage.getItem('bion_client_token');
+    const res = await fetch('/api/client-search', {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    const data = await res.json();
+    if (res.ok) {
+      s3_allData.branches = data.branches || [];
+      s3_allData.systems  = data.systems  || [];
+    }
+    return;
+  }
+
+  // Supabase fallback
   const [branchRes, systemRes] = await Promise.all([
     sb.from('branches').select('id, name, country').eq('company_id', s_companyId).eq('status','active').order('name'),
     sb.from('ai_systems').select('id, system_code, name, inventory_group, risk_level, compliance_status, branches(name)').eq('company_id', s_companyId).eq('status','active').order('name')
@@ -3988,19 +4091,40 @@ async function saveSection(sectionId, tableKey, recordId) {
   }
 
   let error;
-  if(tableKey === 'ai_systems') {
-    ({ error } = await sb.from('ai_systems').update(payload).eq('id', recordId || s5CurrentSystemId));
-  } else if(recordId && recordId !== 'undefined' && recordId !== 'null') {
-    ({ error } = await sb.from(tableKey).update(payload).eq('id', recordId));
+  if (s_dbName) {
+    // Azure mode
+    const token = localStorage.getItem('bion_client_token');
+    const res = await fetch('/api/client-write?action=update_section', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+      body: JSON.stringify({
+        table: tableKey,
+        record_id: recordId,
+        system_id: s5CurrentSystemId,
+        payload
+      })
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      alert('Error saving: ' + data.error);
+      if(saveBtn) { saveBtn.textContent = 'Save changes'; saveBtn.disabled = false; }
+      return;
+    }
   } else {
-    payload.system_id = s5CurrentSystemId;
-    ({ error } = await sb.from(tableKey).upsert(payload, { onConflict: 'system_id' }));
-  }
-
-  if(error) {
-    alert('Error saving: ' + error.message);
-    if(saveBtn) { saveBtn.textContent = 'Save changes'; saveBtn.disabled = false; }
-    return;
+    // Supabase fallback
+    if(tableKey === 'ai_systems') {
+      ({ error } = await sb.from('ai_systems').update(payload).eq('id', recordId || s5CurrentSystemId));
+    } else if(recordId && recordId !== 'undefined' && recordId !== 'null') {
+      ({ error } = await sb.from(tableKey).update(payload).eq('id', recordId));
+    } else {
+      payload.system_id = s5CurrentSystemId;
+      ({ error } = await sb.from(tableKey).upsert(payload, { onConflict: 'system_id' }));
+    }
+    if(error) {
+      alert('Error saving: ' + error.message);
+      if(saveBtn) { saveBtn.textContent = 'Save changes'; saveBtn.disabled = false; }
+      return;
+    }
   }
 
   await showS5(s5CurrentSystemId);
@@ -4016,6 +4140,24 @@ async function showS4Branch(branchId, branchName) {
   document.getElementById('s4List').innerHTML = '<div class="s4-loading">Loading systems…</div>';
   showScreen('screenS4');
 
+  if (s_dbName) {
+    // Azure mode
+    const token = localStorage.getItem('bion_client_token');
+    const res = await fetch(`/api/client-data?type=ai_systems_full&branch_id=${branchId}`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    const data = await res.json();
+    if (!res.ok || !data || data.length === 0) {
+      document.getElementById('s4List').innerHTML = '<div class="s4-empty">No AI systems found for this branch.</div>';
+      showS4AddBtn(branchId, branchName);
+      return;
+    }
+    renderS4Systems(data, 'branch');
+    showS4AddBtn(branchId, branchName);
+    return;
+  }
+
+  // Supabase fallback
   const { data, error } = await sb
     .from('ai_systems')
     .select('id, system_code, name, inventory_group, vendor, version, deploy_date, risk_level, compliance_status, next_review_date, sec_performance(incident_count, bias_evaluated), sec_risk_operational(human_override_exists)')
@@ -4117,40 +4259,49 @@ async function showS5(systemId) {
   document.getElementById('s5Content').innerHTML = '<div style="text-align:center;padding:60px;color:#8899CC;font-size:14px;">Loading full record…</div>';
   showScreen('screenS5');
 
-  // Safe query wrapper — never throws, returns {data:null} on error
-  const safe = (query) => query.then(r => r).catch(() => ({ data: null }));
+  let sys, func, reg, dat, perf, riskOp, riskDec, riskStr, riskHu, comp, riskAss, superv, incidents_data, integrations;
 
-  const [sysRes, funcRes, regRes, dataRes, perfRes, riskOpRes, riskDecRes, riskStrRes, riskHuRes, compRes, riskAssRes, supervRes, incRes, intRes] = await Promise.all([
-    safe(sb.from('ai_systems').select('*').eq('id', systemId).single()),
-    safe(sb.from('sec_functional').select('*').eq('system_id', systemId).single()),
-    safe(sb.from('sec_regulatory').select('*').eq('system_id', systemId).single()),
-    safe(sb.from('sec_data_engineering').select('*').eq('system_id', systemId).single()),
-    safe(sb.from('sec_performance').select('*').eq('system_id', systemId).single()),
-    safe(sb.from('sec_risk_operational').select('*').eq('system_id', systemId).maybeSingle()),
-    safe(sb.from('sec_risk_decision').select('*').eq('system_id', systemId).maybeSingle()),
-    safe(sb.from('sec_risk_strategic').select('*').eq('system_id', systemId).maybeSingle()),
-    safe(sb.from('sec_risk_human_use').select('*').eq('system_id', systemId).maybeSingle()),
-    safe(sb.from('sec_compliance_docs').select('*').eq('system_id', systemId).single()),
-    safe(sb.from('risk_assessments').select('*').eq('system_id', systemId).maybeSingle()),
-    safe(sb.from('human_supervision').select('*').eq('system_id', systemId).maybeSingle()),
-    safe(sb.from('incidents').select('*').eq('system_id', systemId).limit(5)),
-    safe(sb.from('system_integrations').select('*').eq('system_id', systemId).limit(10)),
-  ]);
-
-  const sys     = sysRes.data;
-  const func    = funcRes.data;
-  const reg     = regRes.data;
-  const dat     = dataRes.data;
-  const perf    = perfRes.data;
-  const riskOp  = riskOpRes.data;
-  const riskDec = riskDecRes.data;
-  const riskStr = riskStrRes.data;
-  const riskHu  = riskHuRes.data;
-  const comp    = compRes.data;
-  const riskAss        = riskAssRes?.data;
-  const superv         = supervRes?.data;
-  const incidents_data = incRes?.data || [];
-  const integrations   = intRes?.data || [];
+  if (s_dbName) {
+    // Azure mode — single API call
+    const token = localStorage.getItem('bion_client_token');
+    const res = await fetch(`/api/client-record?system_id=${systemId}`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    if (!res.ok) {
+      document.getElementById('s5Content').innerHTML = '<div style="text-align:center;padding:60px;color:#F09595;">Error loading record.</div>';
+      return;
+    }
+    const d = await res.json();
+    sys = d.sys; func = d.func; reg = d.reg; dat = d.dat; perf = d.perf;
+    riskOp = d.riskOp; riskDec = d.riskDec; riskStr = d.riskStr; riskHu = d.riskHu;
+    comp = d.comp; riskAss = d.riskAss; superv = d.superv;
+    incidents_data = d.incidents || [];
+    integrations   = d.integrations || [];
+  } else {
+    // Supabase fallback
+    const safe = (query) => query.then(r => r).catch(() => ({ data: null }));
+    const [sysRes, funcRes, regRes, dataRes, perfRes, riskOpRes, riskDecRes, riskStrRes, riskHuRes, compRes, riskAssRes, supervRes, incRes, intRes] = await Promise.all([
+      safe(sb.from('ai_systems').select('*').eq('id', systemId).single()),
+      safe(sb.from('sec_functional').select('*').eq('system_id', systemId).single()),
+      safe(sb.from('sec_regulatory').select('*').eq('system_id', systemId).single()),
+      safe(sb.from('sec_data_engineering').select('*').eq('system_id', systemId).single()),
+      safe(sb.from('sec_performance').select('*').eq('system_id', systemId).single()),
+      safe(sb.from('sec_risk_operational').select('*').eq('system_id', systemId).maybeSingle()),
+      safe(sb.from('sec_risk_decision').select('*').eq('system_id', systemId).maybeSingle()),
+      safe(sb.from('sec_risk_strategic').select('*').eq('system_id', systemId).maybeSingle()),
+      safe(sb.from('sec_risk_human_use').select('*').eq('system_id', systemId).maybeSingle()),
+      safe(sb.from('sec_compliance_docs').select('*').eq('system_id', systemId).single()),
+      safe(sb.from('risk_assessments').select('*').eq('system_id', systemId).maybeSingle()),
+      safe(sb.from('human_supervision').select('*').eq('system_id', systemId).maybeSingle()),
+      safe(sb.from('incidents').select('*').eq('system_id', systemId).limit(5)),
+      safe(sb.from('system_integrations').select('*').eq('system_id', systemId).limit(10)),
+    ]);
+    sys = sysRes.data; func = funcRes.data; reg = regRes.data; dat = dataRes.data; perf = perfRes.data;
+    riskOp = riskOpRes.data; riskDec = riskDecRes.data; riskStr = riskStrRes.data; riskHu = riskHuRes.data;
+    comp = compRes.data; riskAss = riskAssRes?.data; superv = supervRes?.data;
+    incidents_data = incRes?.data || [];
+    integrations   = intRes?.data || [];
+  }
 
   if(!sys) { document.getElementById('s5Content').innerHTML = '<div style="text-align:center;padding:60px;color:#F09595;">System not found.</div>'; return; }
 
