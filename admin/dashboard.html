@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>BION Admin — Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/admin/css/admin.css">
+</head>
+<body>
+
+<nav class="admin-nav">
+  <a href="/admin/dashboard.html" class="admin-nav-logo">bion <span>Azure Admin</span></a>
+  <a href="/admin/dashboard.html" class="active">Dashboard</a>
+  <a href="/admin/clients.html">Clients</a>
+  <a href="/admin/users.html">Users</a>
+  <a href="/admin/settings.html">Settings</a>
+  <div class="admin-nav-spacer"></div>
+  <div class="admin-nav-user">
+    <span id="adminNavName">—</span>
+    <button class="admin-nav-logout" onclick="logout()">Sign out</button>
+  </div>
+</nav>
+
+<div class="admin-wrap">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;">
+    <h1 class="admin-page-title" style="margin:0;">Dashboard</h1>
+    <div style="display:flex;gap:10px;">
+      <a href="/admin/clients.html?action=new" class="btn btn-primary">+ New Client</a>
+      <a href="/admin/users.html?action=new" class="btn btn-secondary">+ New User</a>
+    </div>
+  </div>
+
+  <!-- Stats cards -->
+  <div class="admin-cards">
+    <div class="admin-card">
+      <p class="admin-card-label">Total Clients</p>
+      <p class="admin-card-val" id="statTotal">—</p>
+    </div>
+    <div class="admin-card">
+      <p class="admin-card-label">Active Clients</p>
+      <p class="admin-card-val" id="statActive" style="color:#5DCAA5;">—</p>
+    </div>
+    <div class="admin-card">
+      <p class="admin-card-label">Total Users</p>
+      <p class="admin-card-val" id="statUsers" style="color:#85B7EB;">—</p>
+    </div>
+    <div class="admin-card">
+      <p class="admin-card-label">Pending Clients</p>
+      <p class="admin-card-val" id="statPending" style="color:#EF9F27;">—</p>
+    </div>
+  </div>
+
+  <!-- Recent clients -->
+  <div class="admin-table-wrap">
+    <div class="admin-table-header">
+      <span class="admin-table-title">Recent Clients</span>
+      <a href="/admin/clients.html" class="btn btn-secondary btn-sm">View all →</a>
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th>Company Name</th>
+          <th>Industry</th>
+          <th>Country</th>
+          <th>Status</th>
+          <th>DB Status</th>
+          <th>Onboarded</th>
+        </tr>
+      </thead>
+      <tbody id="recentClientsBody">
+        <tr><td colspan="6" class="admin-loading">Loading…</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<script src="/admin/js/auth.js"></script>
+<script>
+  requireAuth();
+
+  async function loadDashboard() {
+    const data = await apiFetch('/api/admin-stats');
+    if (!data) return;
+
+    document.getElementById('statTotal').textContent   = data.total_clients;
+    document.getElementById('statActive').textContent  = data.active_clients;
+    document.getElementById('statUsers').textContent   = data.total_users;
+    document.getElementById('statPending').textContent = data.pending_clients;
+
+    const tbody = document.getElementById('recentClientsBody');
+    if (!data.recent_clients || data.recent_clients.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="6" class="admin-empty">No clients yet</td></tr>';
+      return;
+    }
+    tbody.innerHTML = data.recent_clients.map(c => `
+      <tr>
+        <td style="font-weight:600;color:#EAF0FF;">${c.name}</td>
+        <td>${c.industry}</td>
+        <td>${c.country}</td>
+        <td>${statusBadge(c.status)}</td>
+        <td>${statusBadge(c.azure_db_status || 'pending')}</td>
+        <td>${formatDate(c.created_at)}</td>
+      </tr>
+    `).join('');
+  }
+
+  loadDashboard();
+</script>
+</body>
+</html>
