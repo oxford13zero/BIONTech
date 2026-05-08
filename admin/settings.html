@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>BION Admin — Settings</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/admin/css/admin.css">
+</head>
+<body>
+
+<nav class="admin-nav">
+  <a href="/admin/dashboard.html" class="admin-nav-logo">bion <span>Azure Admin</span></a>
+  <a href="/admin/dashboard.html">Dashboard</a>
+  <a href="/admin/clients.html">Clients</a>
+  <a href="/admin/users.html">Users</a>
+  <a href="/admin/settings.html" class="active">Settings</a>
+  <div class="admin-nav-spacer"></div>
+  <div class="admin-nav-user">
+    <span id="adminNavName">—</span>
+    <button class="admin-nav-logout" onclick="logout()">Sign out</button>
+  </div>
+</nav>
+
+<div class="admin-wrap" style="max-width:680px;">
+  <h1 class="admin-page-title">Settings</h1>
+
+  <!-- Change Password -->
+  <div class="admin-table-wrap" style="margin-bottom:20px;">
+    <div class="admin-table-header">
+      <span class="admin-table-title">Change Password</span>
+    </div>
+    <div style="padding:20px;">
+      <div class="alert" id="pwAlert" style="display:none;"></div>
+      <div class="field">
+        <label>Current Password</label>
+        <input type="password" id="currentPw" placeholder="••••••••">
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label>New Password</label>
+          <input type="password" id="newPw" placeholder="Min 8 characters">
+        </div>
+        <div class="field">
+          <label>Confirm New Password</label>
+          <input type="password" id="confirmPw" placeholder="••••••••">
+        </div>
+      </div>
+      <button class="btn btn-primary" onclick="changePassword()">Update Password</button>
+    </div>
+  </div>
+
+  <!-- Update Profile -->
+  <div class="admin-table-wrap" style="margin-bottom:20px;">
+    <div class="admin-table-header">
+      <span class="admin-table-title">Admin Profile</span>
+    </div>
+    <div style="padding:20px;">
+      <div class="alert" id="profileAlert" style="display:none;"></div>
+      <div class="field-row">
+        <div class="field">
+          <label>Full Name</label>
+          <input type="text" id="profileName" placeholder="Your name">
+        </div>
+        <div class="field">
+          <label>Email</label>
+          <input type="email" id="profileEmail" placeholder="admin@biontech-ai.com">
+        </div>
+      </div>
+      <button class="btn btn-primary" onclick="updateProfile()">Save Profile</button>
+    </div>
+  </div>
+
+  <!-- Inventory Types -->
+  <div class="admin-table-wrap">
+    <div class="admin-table-header">
+      <span class="admin-table-title">Inventory Types</span>
+      <span style="font-size:12px;color:#5A7299;">Toggle active/inactive</span>
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th>Code</th>
+          <th>Label</th>
+          <th>Status</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody id="inventoryBody">
+        <tr><td colspan="4" class="admin-loading">Loading…</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<script src="/admin/js/auth.js"></script>
+<script>
+  requireAuth();
+
+  async function changePassword() {
+    const current = document.getElementById('currentPw').value;
+    const newPw   = document.getElementById('newPw').value;
+    const confirm = document.getElementById('confirmPw').value;
+
+    if (!current || !newPw || !confirm) {
+      showAlert('pwAlert', 'All fields are required.'); return;
+    }
+    if (newPw !== confirm) {
+      showAlert('pwAlert', 'New passwords do not match.'); return;
+    }
+    if (newPw.length < 8) {
+      showAlert('pwAlert', 'Password must be at least 8 characters.'); return;
+    }
+
+    const result = await apiFetch('/api/admin-settings?action=password', {
+      method: 'PUT',
+      body: { current_password: current, new_password: newPw }
+    });
+
+    if (result?.error) { showAlert('pwAlert', result.error); return; }
+    showAlert('pwAlert', 'Password updated successfully.', 'success');
+    document.getElementById('currentPw').value = '';
+    document.getElementById('newPw').value = '';
+    document.getElementById('confirmPw').value = '';
+  }
+
+  async function updateProfile() {
+    const name  = document.getElementById('profileName').value.trim();
+    const email = document.getElementById('profileEmail').value.trim();
+    const result = await apiFetch('/api/admin-settings?action=profile', {
+      method: 'PUT',
+      body: { full_name: name, email }
+    });
+    if (result?.error) { showAlert('profileAlert', result.error); return; }
+    showAlert('profileAlert', 'Profile updated.', 'success');
+    localStorage.setItem('bion_azure_admin_name', name);
+    document.getElementById('adminNavName').textContent = name;
+  }
+
+  async function loadInventoryTypes() {
+    const data = await apiFetch('/api/admin-settings?action=inventory');
+    if (!data) return;
+    const tbody = document.getElementById('inventoryBody');
+    tbody.innerHTML = data.map(t => `
+      <tr>
+        <td style="font-family:monospace;font-size:12px;">${t.code}</td>
+        <td style="font-weight:600;color:#EAF0FF;">${t.label}</td>
+        <td>${statusBadge(t.active ? 'active' : 'inactive')}</td>
+        <td>
+          <button class="btn btn-secondary btn-sm" onclick="toggleInventory('${t.id}')">
+            ${t.active ? 'Deactivate' : 'Activate'}
+          </button>
+        </td>
+      </tr>
+    `).join('');
+  }
+
+  async function toggleInventory(id) {
+    await apiFetch(`/api/admin-settings?action=inventory&id=${id}`, { method: 'PUT', body: {} });
+    loadInventoryTypes();
+  }
+
+  loadInventoryTypes();
+</script>
+</body>
+</html>
