@@ -98,7 +98,18 @@ CREATE TABLE IF NOT EXISTS sec_regulatory (
   oecd_alignment              TEXT,
   iso42001_alignment          TEXT,
   created_at                  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  updated_at                  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  updated_at                  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  articles_peru                    TEXT,
+  articles_brazil                  TEXT,
+  affects_market_regulator_reports TEXT,
+  applies_environmental_regulation TEXT,
+  nist_functions                   TEXT,
+  oecd_principles                  TEXT,
+  iso42001_principles              TEXT,
+  other_frameworks                 TEXT,
+  eu_ai_act_article6_applicable    BOOLEAN DEFAULT false,
+  machinery_directive_applicable   BOOLEAN DEFAULT false,
+  affects_cmf_reports              BOOLEAN DEFAULT false,
 );
 
 -- Section D — Data Engineering
