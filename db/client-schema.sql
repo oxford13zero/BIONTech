@@ -123,7 +123,16 @@ CREATE TABLE IF NOT EXISTS sec_performance (
   incident_count            INTEGER DEFAULT 0,
   incident_reporting_process TEXT,
   created_at                TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  updated_at                TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  updated_at                TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  last_performance_report     DATE,
+  bias_type                   TEXT,
+  baseline_metrics_defined    BOOLEAN DEFAULT false,
+  data_drift_detected         BOOLEAN DEFAULT false,
+  model_drift_detected        BOOLEAN DEFAULT false,
+  prediction_outliers_detected BOOLEAN DEFAULT false,
+  last_retraining_date        DATE,
+  retraining_approval_process TEXT,
+  sensor_monitoring_active    BOOLEAN DEFAULT false,
 );
 
 -- Section F — Risk (Operational)
