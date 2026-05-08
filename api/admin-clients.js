@@ -39,7 +39,14 @@ async function provisionAzureDatabase(companyName) {
   const adminUser  = process.env.AZURE_MASTER_DB_USER;
   const adminPass  = process.env.AZURE_MASTER_DB_PASSWORD;
 
-  await azureClient.databases.beginCreateOrUpdateAndWait(
+const dbsApi = azureClient.databases || azureClient.flexibleServers;
+
+  if (!dbsApi) {
+    const available = Object.keys(azureClient).filter(k => typeof azureClient[k] === 'object');
+    throw new Error('Available client properties: ' + available.join(', '));
+  }
+
+  await dbsApi.beginCreateOrUpdateAndWait(
     process.env.AZURE_RESOURCE_GROUP,
     serverName,
     dbName,
