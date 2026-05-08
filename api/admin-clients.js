@@ -6,15 +6,58 @@ const path = require('path');
 // ── Azure provisioning ────────────────────────────────────────
 async function provisionAzureDatabase(companyName) {
   const { ClientSecretCredential } = require('@azure/identity');
-  const postgresql = require('@azure/arm-postgresql-flexible');
-
-  console.log('PostgreSQL package exports:', Object.keys(postgresql));
 
   const credential = new ClientSecretCredential(
     process.env.AZURE_TENANT_ID,
     process.env.AZURE_CLIENT_ID,
     process.env.AZURE_CLIENT_SECRET
   );
+
+  // Get access token
+  const tokenResponse = await credential.getToken('https://management.azure.com/.default');
+  const token = tokenResponse.token;
+
+  const dbName = 'bion_' + companyName.toLowerCase()
+    .replace(/[^a-z0-9]/g, '_')
+    .replace(/__+/g, '_')
+    .substring(0, 40)
+    + '_' + Date.now().toString().slice(-4);
+
+  const serverName = process.env.AZURE_MASTER_DB_HOST.replace('.postgres.database.azure.com', '');
+  const subscriptionId = process.env.AZURE_SUBSCRIPTION_ID;
+  const resourceGroup = process.env.AZURE_RESOURCE_GROUP;
+
+  // Call Azure REST API directly
+  const url = `https://management.azure.com/subscriptions/${subscriptionId}/resourceGroups/${resourceGroup}/providers/Microsoft.DBforPostgreSQL/flexibleServers/${serverName}/databases/${dbName}?api-version=2022-12-01`;
+
+  const response = await fetch(url, {
+    method: 'PUT',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      properties: {
+        charset: 'UTF8',
+        collation: 'en_US.utf8'
+      }
+    })
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`Azure API error ${response.status}: ${errorText}`);
+  }
+
+  console.log('Database created successfully:', dbName);
+
+  return {
+    host:     process.env.AZURE_MASTER_DB_HOST,
+    dbName,
+    user:     process.env.AZURE_MASTER_DB_USER,
+    password: process.env.AZURE_MASTER_DB_PASSWORD
+  };
+}
 
   const ClientClass = postgresql.PostgreSQLManagementClient
     || postgresql.FlexibleServerManagementClient
