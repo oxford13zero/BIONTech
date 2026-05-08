@@ -6,7 +6,8 @@ const path = require('path');
 // ── Azure provisioning ────────────────────────────────────────
 async function provisionAzureDatabase(companyName) {
   const { ClientSecretCredential } = require('@azure/identity');
-  const { PostgreSQLManagementClient } = require('@azure/arm-postgresql-flexible');
+  const armPostgresql = require('@azure/arm-postgresql-flexible');
+  const PostgreSQLManagementClient = armPostgresql.PostgreSQLManagementFlexibleServerManagementClient || armPostgresql.default || armPostgresql;
 
   const credential = new ClientSecretCredential(
     process.env.AZURE_TENANT_ID,
