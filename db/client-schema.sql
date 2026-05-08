@@ -109,7 +109,7 @@ CREATE TABLE IF NOT EXISTS sec_regulatory (
   other_frameworks                 TEXT,
   eu_ai_act_article6_applicable    BOOLEAN DEFAULT false,
   machinery_directive_applicable   BOOLEAN DEFAULT false,
-  affects_cmf_reports              BOOLEAN DEFAULT false,
+  affects_cmf_reports              BOOLEAN DEFAULT false
 );
 
 -- Section D — Data Engineering
