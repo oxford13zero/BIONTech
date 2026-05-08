@@ -24,9 +24,9 @@ async function provisionAzureDatabase(companyName) {
     throw new Error('Could not find PostgreSQL management client in package. Available exports: ' + Object.keys(postgresql).join(', '));
   }
 
-  const client = new ClientClass(credential, process.env.AZURE_SUBSCRIPTION_ID);
+  const azureClient = new ClientClass(credential, process.env.AZURE_SUBSCRIPTION_ID);
 
-  const client = new PostgreSQLManagementClient(credential, process.env.AZURE_SUBSCRIPTION_ID);
+  //const client = new PostgreSQLManagementClient(credential, process.env.AZURE_SUBSCRIPTION_ID);
 
   // Sanitize company name for DB naming
   const dbName = 'bion_' + companyName.toLowerCase()
@@ -40,7 +40,7 @@ async function provisionAzureDatabase(companyName) {
   const adminPass  = process.env.AZURE_MASTER_DB_PASSWORD;
 
   // Create new database on existing server
-  await client.databases.beginCreateOrUpdateAndWait(
+  await azureClient.databases.beginCreateOrUpdateAndWait(
     process.env.AZURE_RESOURCE_GROUP,
     serverName,
     dbName,
