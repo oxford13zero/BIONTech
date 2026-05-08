@@ -77,7 +77,13 @@ CREATE TABLE IF NOT EXISTS sec_functional (
   impact_if_fails       TEXT,
   can_cause_physical_harm TEXT,
   created_at            TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  updated_at            TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  updated_at            TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  autonomous_decision   TEXT,
+  decision_speed        TEXT,
+  affected_equipment    TEXT,
+  people_in_impact_area TEXT,
+  affected_processes    TEXT,
+  feeds_public_reports  TEXT,
 );
 
 -- Section C — Regulatory
