@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>BION Admin — Login</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/admin/css/admin.css">
+  <style>
+    .login-wrap {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .login-box {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 40px 36px;
+      width: 100%;
+      max-width: 380px;
+      box-shadow: 0 24px 60px rgba(0,0,0,.4);
+    }
+    .login-logo {
+      font-size: 24px;
+      font-weight: 800;
+      color: var(--amber);
+      margin-bottom: 4px;
+    }
+    .login-sub {
+      font-size: 12px;
+      color: var(--dim);
+      margin-bottom: 28px;
+    }
+    .login-btn {
+      width: 100%;
+      padding: 12px;
+      border-radius: 10px;
+      border: 1px solid rgba(244,195,139,.6);
+      background: #1A2C52;
+      color: var(--amber);
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      font-family: inherit;
+      margin-top: 6px;
+      transition: background .15s, border-color .15s;
+    }
+    .login-btn:hover { background: #203765; border-color: rgba(244,195,139,.95); }
+    .login-btn:disabled { opacity: .5; cursor: not-allowed; }
+    .login-note {
+      font-size: 11px;
+      color: var(--dim);
+      text-align: center;
+      margin-top: 14px;
+    }
+  </style>
+</head>
+<body>
+<div class="login-wrap">
+  <div class="login-box">
+    <p class="login-logo">bion</p>
+    <p class="login-sub">Azure Admin Panel · Restricted access</p>
+
+    <div class="alert alert-error" id="loginError" style="display:none;"></div>
+
+    <div class="field">
+      <label>Email address</label>
+      <input type="email" id="loginEmail" placeholder="admin@biontech-ai.com" autocomplete="email">
+    </div>
+    <div class="field">
+      <label>Password</label>
+      <input type="password" id="loginPassword" placeholder="••••••••" autocomplete="current-password">
+    </div>
+
+    <button class="login-btn" id="loginBtn" onclick="handleLogin()">Sign in</button>
+    <p class="login-note">Session expires after 8 hours</p>
+  </div>
+</div>
+
+<script>
+  // Redirect if already logged in
+  if (localStorage.getItem('bion_azure_admin_token')) {
+    window.location.href = '/admin/dashboard.html';
+  }
+
+  document.getElementById('loginEmail').addEventListener('keydown', e => { if (e.key === 'Enter') handleLogin(); });
+  document.getElementById('loginPassword').addEventListener('keydown', e => { if (e.key === 'Enter') handleLogin(); });
+
+  async function handleLogin() {
+    const email    = document.getElementById('loginEmail').value.trim();
+    const password = document.getElementById('loginPassword').value;
+    const btn      = document.getElementById('loginBtn');
+    const errEl    = document.getElementById('loginError');
+
+    errEl.style.display = 'none';
+    if (!email || !password) {
+      errEl.textContent = 'Please fill in all fields.';
+      errEl.style.display = 'block';
+      return;
+    }
+
+    btn.disabled = true;
+    btn.textContent = 'Signing in…';
+
+    try {
+      const res = await fetch('/api/admin-login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        errEl.textContent = data.error || 'Invalid credentials';
+        errEl.style.display = 'block';
+        btn.disabled = false;
+        btn.textContent = 'Sign in';
+        return;
+      }
+
+      localStorage.setItem('bion_azure_admin_token', data.token);
+      localStorage.setItem('bion_azure_admin_name', data.admin_name);
+      window.location.href = '/admin/dashboard.html';
+    } catch (err) {
+      errEl.textContent = 'Connection error. Please try again.';
+      errEl.style.display = 'block';
+      btn.disabled = false;
+      btn.textContent = 'Sign in';
+    }
+  }
+</script>
+</body>
+</html>
