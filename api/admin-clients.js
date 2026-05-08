@@ -3,7 +3,7 @@ const { Pool } = require('pg');
 const fs = require('fs');
 const path = require('path');
 
-// ── Azure provisioning ────────────────────────────────────────
+// ── Azure provisioning via REST API ──────────────────────────
 async function provisionAzureDatabase(companyName) {
   const { ClientSecretCredential } = require('@azure/identity');
 
@@ -13,7 +13,6 @@ async function provisionAzureDatabase(companyName) {
     process.env.AZURE_CLIENT_SECRET
   );
 
-  // Get access token
   const tokenResponse = await credential.getToken('https://management.azure.com/.default');
   const token = tokenResponse.token;
 
@@ -25,9 +24,8 @@ async function provisionAzureDatabase(companyName) {
 
   const serverName = process.env.AZURE_MASTER_DB_HOST.replace('.postgres.database.azure.com', '');
   const subscriptionId = process.env.AZURE_SUBSCRIPTION_ID;
-  const resourceGroup = process.env.AZURE_RESOURCE_GROUP;
+  const resourceGroup  = process.env.AZURE_RESOURCE_GROUP;
 
-  // Call Azure REST API directly
   const url = `https://management.azure.com/subscriptions/${subscriptionId}/resourceGroups/${resourceGroup}/providers/Microsoft.DBforPostgreSQL/flexibleServers/${serverName}/databases/${dbName}?api-version=2022-12-01`;
 
   const response = await fetch(url, {
@@ -37,10 +35,7 @@ async function provisionAzureDatabase(companyName) {
       'Content-Type': 'application/json'
     },
     body: JSON.stringify({
-      properties: {
-        charset: 'UTF8',
-        collation: 'en_US.utf8'
-      }
+      properties: { charset: 'UTF8', collation: 'en_US.utf8' }
     })
   });
 
@@ -56,51 +51,6 @@ async function provisionAzureDatabase(companyName) {
     dbName,
     user:     process.env.AZURE_MASTER_DB_USER,
     password: process.env.AZURE_MASTER_DB_PASSWORD
-  };
-}
-
-  const ClientClass = postgresql.PostgreSQLManagementClient
-    || postgresql.FlexibleServerManagementClient
-    || postgresql.PostgreSQLManagementFlexibleServerManagementClient
-    || Object.values(postgresql).find(v => typeof v === 'function');
-
-  console.log('ClientClass found:', ClientClass ? ClientClass.name : 'NOT FOUND');
-
-  if (!ClientClass) {
-    throw new Error('Exports available: ' + Object.keys(postgresql).join(', '));
-  }
-
-  const azureClient = new ClientClass(credential, process.env.AZURE_SUBSCRIPTION_ID);
-
-  const dbName = 'bion_' + companyName.toLowerCase()
-    .replace(/[^a-z0-9]/g, '_')
-    .replace(/__+/g, '_')
-    .substring(0, 40)
-    + '_' + Date.now().toString().slice(-4);
-
-  const serverName = process.env.AZURE_MASTER_DB_HOST.replace('.postgres.database.azure.com', '');
-  const adminUser  = process.env.AZURE_MASTER_DB_USER;
-  const adminPass  = process.env.AZURE_MASTER_DB_PASSWORD;
-
-const dbsApi = azureClient.databases || azureClient.flexibleServers;
-
-  if (!dbsApi) {
-    const available = Object.keys(azureClient).filter(k => typeof azureClient[k] === 'object');
-    throw new Error('Available client properties: ' + available.join(', '));
-  }
-
-  await dbsApi.beginCreateOrUpdateAndWait(
-    process.env.AZURE_RESOURCE_GROUP,
-    serverName,
-    dbName,
-    { charset: 'UTF8', collation: 'en_US.utf8' }
-  );
-
-  return {
-    host:     process.env.AZURE_MASTER_DB_HOST,
-    dbName,
-    user:     adminUser,
-    password: adminPass
   };
 }
 
@@ -135,7 +85,6 @@ module.exports = async function handler(req, res) {
   const pool = getMasterPool();
   const { id } = req.query;
 
-  // ── GET /api/admin-clients?types=true — inventory types dropdown
   if (req.method === 'GET' && req.query.types === 'true') {
     const result = await pool.query(
       'SELECT id, code, label FROM inventory_types WHERE active = true ORDER BY label'
@@ -143,7 +92,6 @@ module.exports = async function handler(req, res) {
     return res.status(200).json(result.rows);
   }
 
-  // ── GET /api/admin-clients — list all clients
   if (req.method === 'GET' && !id) {
     const { search, status } = req.query;
     let query = 'SELECT * FROM companies WHERE 1=1';
@@ -155,14 +103,12 @@ module.exports = async function handler(req, res) {
     return res.status(200).json(result.rows);
   }
 
-  // ── GET /api/admin-clients?id=xxx — single client
   if (req.method === 'GET' && id) {
     const result = await pool.query('SELECT * FROM companies WHERE id = $1', [id]);
     if (!result.rows[0]) return res.status(404).json({ error: 'Not found' });
     return res.status(200).json(result.rows[0]);
   }
 
-  // ── POST /api/admin-clients — create new client + provision Azure DB
   if (req.method === 'POST') {
     const { name, industry, country, contact_name, contact_email, contact_phone, contract_status } = req.body;
     if (!name || !industry) return res.status(400).json({ error: 'Name and industry required' });
@@ -196,7 +142,7 @@ module.exports = async function handler(req, res) {
         `UPDATE companies SET azure_db_status = 'error', updated_at = NOW() WHERE id = $1`,
         [companyId]
       );
-      console.error('Azure provisioning error:', azureErr);
+      console.error('Azure provisioning error:', azureErr.message);
       return res.status(201).json({
         id: companyId,
         warning: 'Client created but database provisioning failed.',
@@ -205,7 +151,6 @@ module.exports = async function handler(req, res) {
     }
   }
 
-  // ── PUT /api/admin-clients?id=xxx — update client
   if (req.method === 'PUT' && id) {
     const { name, industry, country, contact_name, contact_email, contact_phone, status, contract_status } = req.body;
     await pool.query(`
@@ -220,7 +165,6 @@ module.exports = async function handler(req, res) {
     return res.status(200).json({ success: true });
   }
 
-  // ── DELETE /api/admin-clients?id=xxx — deactivate
   if (req.method === 'DELETE' && id) {
     await pool.query(
       `UPDATE companies SET status = 'inactive', updated_at = NOW() WHERE id = $1`, [id]
