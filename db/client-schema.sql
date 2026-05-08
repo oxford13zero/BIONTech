@@ -126,7 +126,15 @@ CREATE TABLE IF NOT EXISTS sec_data_engineering (
   data_quality_control        TEXT,
   vendor_provides_tech_access TEXT,
   created_at                  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  updated_at                  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  updated_at                  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  training_data_volume      TEXT,
+  includes_community_data   TEXT,
+  includes_confidential_data TEXT,
+  last_retrain_date         DATE,
+  data_owner                TEXT,
+  data_stored_on_provider   TEXT,
+  data_processing_region    TEXT,
+  data_processing_agreement TEXT,
 );
 
 -- Section E — Performance
