@@ -2098,6 +2098,7 @@ applyLang(currentLang);
     s3_allData = { branches: [], systems: [] };
     localStorage.removeItem('bion_client_token');
     localStorage.removeItem('bion_client_user');
+    localStorage.setItem('bion_logged_out', '1'); 
     hideDashboard();
     ['screenS1','screenS3'].forEach(id => {
       const el = document.getElementById(id);
@@ -2167,6 +2168,7 @@ applyLang(currentLang);
 
   function setAdminLoggedOut(){
     adminLoggedIn = false;
+    localStorage.setItem('bion_logged_out', '1'); 
     document.getElementById('adminDropdownEmail').textContent = '—';
     document.getElementById('adminBtn').style.borderColor = '';
     document.getElementById('adminBtn').style.background  = '';
@@ -2217,6 +2219,7 @@ applyLang(currentLang);
 
   
   async function handleLogin(){
+    localStorage.removeItem('bion_logged_out');
     const lang = (typeof currentLang !== 'undefined') ? currentLang : 'en';
     const email    = document.getElementById('loginEmail').value.trim();
     const password = document.getElementById('loginPassword').value;
@@ -2273,6 +2276,7 @@ applyLang(currentLang);
 
   
   async function handleAdminLogin(){
+    localStorage.removeItem('bion_logged_out'); 
     console.log('handleAdminLogin fired');
     const email    = document.getElementById('adminEmail').value.trim();
     const password = document.getElementById('adminPassword').value;
@@ -2304,31 +2308,45 @@ applyLang(currentLang);
   document.getElementById('adminEmail').addEventListener('keydown',    function(e){ if(e.key==='Enter') handleAdminLogin(); });
   document.getElementById('adminPassword').addEventListener('keydown', function(e){ if(e.key==='Enter') handleAdminLogin(); });
 
-  // ── Session restore ───────────────────────────────────────
+
+
+
+  
+// ── Session restore ───────────────────────────────────────
   // Check Azure JWT first, then fall back to Supabase session
-  const storedToken = localStorage.getItem('bion_client_token');
-  const storedUser  = localStorage.getItem('bion_client_user');
-  if (storedToken && storedUser) {
-    try {
-      const user = JSON.parse(storedUser);
-      setClientLoggedInAzure(user);
-    } catch(e) {
-      localStorage.removeItem('bion_client_token');
-      localStorage.removeItem('bion_client_user');
-    }
-  } else {
-    sb.auth.getSession().then(({ data }) => {
-      if(data.session){
-        sb.from('profiles').select('role').eq('user_id', data.session.user.id).single().then(({ data: profile }) => {
-          if(profile && profile.role === 'bion_admin'){
-            setAdminLoggedIn(data.session.user.email);
-          } else if(profile){
-            setClientLoggedIn(data.session.user.email, data.session.user.id);
-          }
-        });
+  if (localStorage.getItem('bion_logged_out') !== '1') {
+    const storedToken = localStorage.getItem('bion_client_token');
+    const storedUser  = localStorage.getItem('bion_client_user');
+    if (storedToken && storedUser) {
+      try {
+        const user = JSON.parse(storedUser);
+        setClientLoggedInAzure(user);
+      } catch(e) {
+        localStorage.removeItem('bion_client_token');
+        localStorage.removeItem('bion_client_user');
       }
-    });
+    } else {
+      sb.auth.getSession().then(({ data }) => {
+        if(data.session){
+          sb.from('profiles').select('role').eq('user_id', data.session.user.id).single().then(({ data: profile }) => {
+            if(profile && profile.role === 'bion_admin'){
+              setAdminLoggedIn(data.session.user.email);
+            } else if(profile){
+              setClientLoggedIn(data.session.user.email, data.session.user.id);
+            }
+          });
+        }
+      });
+    }
   }
+
+
+
+
+
+
+
+  
 </script>
 
 <!-- ── Parallax bridge ───────────────────────────────────────── -->
