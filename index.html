@@ -4485,7 +4485,7 @@ async function showS5(systemId) {
       field('Bias type', perf?.bias_type, 'bias_type'),
       field('Bias result', perf?.bias_result, 'bias_result'),
       field('Independent validation', perf?.independent_validation, 'independent_validation'),
-      field('Adoption metrics', perf?.adoption_metrics, 'adoption_metrics'),
+      // field('Adoption metrics', perf?.adoption_metrics, 'adoption_metrics'),
       field('Incident count', perf?.incident_count !== null ? String(perf.incident_count) : null, 'incident_count'),
       field('Incident reporting process', perf?.incident_reporting_process, 'incident_reporting_process'),
     ], false, 'sec_performance', perf?.id)}
