@@ -2054,10 +2054,12 @@ applyLang(currentLang);
     s_userId      = user.id;
     s_userEmail   = user.email;
     s_dbName      = user.dbName;
+    s_userRole    = user.role      || 'company_user';
+    s_branchId    = user.branch_id || null;
     setupS1(user.email, user.companyName);
     showScreen('screenS1');
     const addBtn = document.getElementById('s1AddBranchBtn');
-    if(addBtn && user.role === 'company_admin') addBtn.style.display = 'inline-flex';
+    if(addBtn) addBtn.style.display = s_userRole === 'company_admin' ? 'flex' : 'none';
     if(s_companyId) loadS3Data();
   }
 
@@ -2098,6 +2100,7 @@ applyLang(currentLang);
     document.getElementById('clientBtn').style.background  = '';
     document.getElementById('clientDropdown').classList.remove('open');
     s_companyName = ''; s_companyId = null; s_country = null; s_userId = null; s_dbName = null;
+    s_userRole = null; s_branchId = null;
     s3_allData = { branches: [], systems: [] };
     localStorage.removeItem('bion_client_token');
     localStorage.removeItem('bion_client_user');
@@ -3371,10 +3374,11 @@ function wzAddAnother() {
 const _origRenderS4 = typeof renderS4Systems !== 'undefined' ? renderS4Systems : null;
 function showS4AddBtn(branchId, branchName) {
   const btn = document.getElementById('s4AddSystemBtn');
-  if(btn) {
-    btn.style.display = 'block';
-    btn.onclick = () => openWizard('system', branchId, branchName);
-  }
+  if(!btn) return;
+  const canAdd = s_userRole === 'company_admin' ||
+    (s_userRole === 'branch_manager' && String(s_branchId) === String(branchId));
+  btn.style.display = canAdd ? 'block' : 'none';
+  if(canAdd) btn.onclick = () => openWizard('system', branchId, branchName);
 }
 </script>
 
@@ -3803,6 +3807,8 @@ let s_country     = null;
 let s_userId      = null;
 let s_userEmail   = '';
 let s_dbName      = null; // Azure client database name
+let s_userRole    = null; // 'company_admin' | 'branch_manager' | 'company_user'
+let s_branchId    = null; // assigned branch for branch_manager, null for others
 let s3_tab        = 'all';
 let s3_allData    = { branches: [], systems: [] };
 
@@ -4372,9 +4378,9 @@ async function showS5(systemId) {
       </div>
       <div class="${bodyClass}" style="border-left:4px solid ${color}40;">
         <div class="s5-fields-grid" id="${editId}-grid">${rows.join('')}</div>
-        <div class="s5-section-edit-row">
+        ${s_userRole !== 'company_user' ? `<div class="s5-section-edit-row">
           <button class="s5-sec-edit-btn" onclick="enterEditMode('${editId}','${tableKey||''}','${recordId||''}','${label}')">Edit section</button>
-        </div>
+        </div>` : ''}
       </div>
     </div>`;
   }
