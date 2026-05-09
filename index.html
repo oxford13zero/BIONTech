@@ -962,6 +962,15 @@
     </div>
 
     <nav class="menu">
+
+      <button class="btn-login" id="portalBtn" onclick="showS1()" style="display:none;">
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+          <path d="M2 6.5L8 2l6 4.5V14a1 1 0 01-1 1H3a1 1 0 01-1-1V6.5z" stroke="#F4C38B" stroke-width="1.4" stroke-linejoin="round"/>
+          <path d="M6 15V9h4v6" stroke="#F4C38B" stroke-width="1.4" stroke-linejoin="round"/>
+        </svg>
+        Go to portal
+      </button>
+      
       <div class="admin-wrap" id="clientWrap">
         <button class="btn-login" id="clientBtn" onclick="handleClientBtnClick(event)">
           <svg width="14" height="14" viewBox="0 0 12 12" fill="none">
@@ -2050,6 +2059,8 @@ applyLang(currentLang);
     s_dbName      = user.dbName;
     s_userRole    = user.role      || 'company_user';
     s_branchId    = user.branch_id || null;
+    const portalBtnAz = document.getElementById('portalBtn');
+    if(portalBtnAz) portalBtnAz.style.display = 'inline-flex';
     setupS1(user.email, user.companyName);
     showScreen('screenS1');
     const addBtn = document.getElementById('s1AddBranchBtn');
@@ -2075,7 +2086,9 @@ applyLang(currentLang);
     s_country     = country;
     s_userId      = userId;
     s_userEmail   = email;
-    s_dbName      = null; // Supabase mode
+    s_dbName      = null; // Supabase mode.
+    const portalBtnSb = document.getElementById('portalBtn');
+    if(portalBtnSb) portalBtnSb.style.display = 'inline-flex';
     setupS1(email, companyName);
     showScreen('screenS1');
     console.log('profile role:', profile?.role, 'profile:', JSON.stringify(profile));
@@ -2095,6 +2108,8 @@ applyLang(currentLang);
     document.getElementById('clientDropdown').classList.remove('open');
     s_companyName = ''; s_companyId = null; s_country = null; s_userId = null; s_dbName = null;
     s_userRole = null; s_branchId = null;
+    const portalBtnOut = document.getElementById('portalBtn');
+    if(portalBtnOut) portalBtnOut.style.display = 'none';
     s3_allData = { branches: [], systems: [] };
     localStorage.removeItem('bion_client_token');
     localStorage.removeItem('bion_client_user');
