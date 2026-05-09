@@ -2217,39 +2217,49 @@ applyLang(currentLang);
     }
   }
 
+
+  
   async function handleLogin(){
     const lang = (typeof currentLang !== 'undefined') ? currentLang : 'en';
     const email    = document.getElementById('loginEmail').value.trim();
     const password = document.getElementById('loginPassword').value;
     if(!email || !password){ showError('login', lang === 'es' ? 'Por favor completa todos los campos.' : 'Please fill in all fields.'); return; }
     setLoading('loginSubmit', true);
+    console.log('=== LOGIN DEBUG ===');
+    console.log('Email:', email);
+    console.log('Password length:', password.length);
 
     try {
+      console.log('Step 1: Calling /api/client-login...');
       const res = await fetch('/api/client-login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password })
       });
+      console.log('Step 2: Response status:', res.status);
       const data = await res.json();
+      console.log('Step 3: Response data:', JSON.stringify(data));
       setLoading('loginSubmit', false);
+
       if (!res.ok) {
-        // Azure failed — fallback to Supabase
+        console.log('Step 4: Azure failed, trying Supabase...');
         const { data: sbData, error: sbError } = await sb.auth.signInWithPassword({ email, password });
-        if (sbError) { showError('login', sbError.message); return; }
+        if (sbError) { console.log('Supabase also failed:', sbError.message); showError('login', sbError.message); return; }
+        console.log('Step 5: Supabase succeeded');
         showSuccess('login', lang === 'es' ? '¡Acceso correcto!' : 'Login successful!');
         setClientLoggedIn(sbData.user.email, sbData.user.id);
         setTimeout(() => closeModal('loginModal'), 1000);
         return;
       }
-      // Azure login successful
+      console.log('Step 4: Azure succeeded! Token received:', !!data.token);
       localStorage.setItem('bion_client_token', data.token);
       localStorage.setItem('bion_client_user', JSON.stringify(data.user));
       showSuccess('login', lang === 'es' ? '¡Acceso correcto!' : 'Login successful!');
       setClientLoggedInAzure(data.user);
       setTimeout(() => closeModal('loginModal'), 1000);
     } catch(err) {
+      console.log('Step ERROR:', err.message);
       setLoading('loginSubmit', false);
-      // Network error — fallback to Supabase
       const { data: sbData, error: sbError } = await sb.auth.signInWithPassword({ email, password });
       if (sbError) { showError('login', sbError.message); return; }
       showSuccess('login', lang === 'es' ? '¡Acceso correcto!' : 'Login successful!');
@@ -2258,6 +2268,13 @@ applyLang(currentLang);
     }
   }
 
+
+
+
+
+
+
+  
   async function handleAdminLogin(){
     console.log('handleAdminLogin fired');
     const email    = document.getElementById('adminEmail').value.trim();
