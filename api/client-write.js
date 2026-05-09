@@ -35,6 +35,8 @@ module.exports = async function handler(req, res) {
   try { decoded = verifyToken(req); }
   catch (e) { return res.status(401).json({ error: 'Invalid token' }); }
 
+  const { role, branch_id: tokenBranchId } = decoded;
+
   const pool = getClientPool(decoded.dbName);
   const { action } = req.query;
   const body = req.body;
@@ -42,6 +44,8 @@ module.exports = async function handler(req, res) {
   try {
     // ── Insert branch ─────────────────────────────────────────
     if (action === 'insert_branch') {
+      if (role !== 'company_admin') return res.status(403).json({ error: 'Only company admins can create branches' });
+
       const result = await pool.query(
         `INSERT INTO branches (company_id, name, address, country, status)
          VALUES ($1, $2, $3, $4, 'active') RETURNING id`,
@@ -52,6 +56,9 @@ module.exports = async function handler(req, res) {
 
     // ── Insert AI system ──────────────────────────────────────
     if (action === 'insert_system') {
+      if (role === 'company_user') return res.status(403).json({ error: 'Read-only access' });
+      if (role === 'branch_manager' && String(body.branch_id) !== String(tokenBranchId)) return res.status(403).json({ error: 'You can only add systems to your assigned branch' });
+
       const result = await pool.query(
         `INSERT INTO ai_systems (
           company_id, branch_id, system_code, name, inventory_group,
@@ -73,6 +80,12 @@ module.exports = async function handler(req, res) {
 
     // ── Update AI system ──────────────────────────────────────
     if (action === 'update_system') {
+      if (role === 'company_user') return res.status(403).json({ error: 'Read-only access' });
+      if (role === 'branch_manager') {
+        const check = await pool.query('SELECT branch_id FROM ai_systems WHERE id = $1', [body.system_id]);
+        if (String(check.rows[0]?.branch_id) !== String(tokenBranchId)) return res.status(403).json({ error: 'You can only edit systems in your assigned branch' });
+      }
+
       const { system_id, payload } = body;
       const keys = Object.keys(payload);
       const values = Object.values(payload);
@@ -86,13 +99,19 @@ module.exports = async function handler(req, res) {
 
     // ── Upsert section ────────────────────────────────────────
     if (action === 'upsert_section') {
-      const { table, system_id, payload } = body;
+      if (role === 'company_user') return res.status(403).json({ error: 'Read-only access' });
+      if (role === 'branch_manager') {
+        const check = await pool.query('SELECT branch_id FROM ai_systems WHERE id = $1', [body.system_id]);
+        if (String(check.rows[0]?.branch_id) !== String(tokenBranchId)) return res.status(403).json({ error: 'You can only edit systems in your assigned branch' });
+      }
+
       const allowedTables = [
         'sec_functional', 'sec_regulatory', 'sec_data_engineering',
         'sec_performance', 'sec_risk_operational', 'sec_risk_decision',
         'sec_risk_strategic', 'sec_risk_human_use', 'sec_compliance_docs',
         'risk_assessments', 'human_supervision'
       ];
+      const { table, system_id, payload } = body;
       if (!allowedTables.includes(table)) {
         return res.status(400).json({ error: 'Invalid table' });
       }
@@ -112,6 +131,8 @@ module.exports = async function handler(req, res) {
 
     // ── Delete system ─────────────────────────────────────────
     if (action === 'delete_system') {
+      if (role !== 'company_admin') return res.status(403).json({ error: 'Only company admins can delete systems' });
+
       await pool.query(
         `UPDATE ai_systems SET status = 'inactive', updated_at = NOW() WHERE id = $1`,
         [body.system_id]
@@ -121,13 +142,20 @@ module.exports = async function handler(req, res) {
 
     // ── Update section (edit mode in S5) ──────────────────────
     if (action === 'update_section') {
-      const { table, record_id, system_id, payload } = body;
+      if (role === 'company_user') return res.status(403).json({ error: 'Read-only access' });
+      if (role === 'branch_manager') {
+        const sysId = body.table === 'ai_systems' ? (body.record_id || body.system_id) : body.system_id;
+        const check = await pool.query('SELECT branch_id FROM ai_systems WHERE id = $1', [sysId]);
+        if (String(check.rows[0]?.branch_id) !== String(tokenBranchId)) return res.status(403).json({ error: 'You can only edit systems in your assigned branch' });
+      }
+
       const allowedTables = [
         'ai_systems', 'sec_functional', 'sec_regulatory', 'sec_data_engineering',
         'sec_performance', 'sec_risk_operational', 'sec_risk_decision',
         'sec_risk_strategic', 'sec_risk_human_use', 'sec_compliance_docs',
         'risk_assessments', 'human_supervision', 'incidents', 'system_integrations'
       ];
+      const { table, record_id, system_id, payload } = body;
       if (!allowedTables.includes(table)) {
         return res.status(400).json({ error: 'Invalid table' });
       }
