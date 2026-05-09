@@ -2106,6 +2106,19 @@ applyLang(currentLang);
     });
   }
 
+  document.addEventListener('visibilitychange', function() {
+  if(document.visibilityState === 'hidden' && clientLoggedIn) {
+    // schedule a check — if they come back the check is cancelled
+    window._leaveTimer = setTimeout(function() {
+      setClientLoggedOut();
+      setAdminLoggedOut();
+    }, 3000); // 3 seconds away = session closed
+  }
+  if(document.visibilityState === 'visible') {
+    clearTimeout(window._leaveTimer);
+  }
+});
+  
   async function handleClientLogout(){
     await sb.auth.signOut().catch(() => {});
     setClientLoggedOut();
@@ -3831,10 +3844,34 @@ function showScreen(id) {
     if(el) el.style.display = 'none';
   });
   const target = document.getElementById(id);
-  if(target) target.style.display = id === 'screenS1' || id === 'screenS3' ? 'block' : 'block';
+  if(target) target.style.display = 'block';
   window.scrollTo({ top: 0, behavior: 'auto' });
+  if(id !== 'home') history.pushState({ screen: id }, '', '');
 }
 
+  window.addEventListener('popstate', function(e) {
+  const screen = e.state?.screen;
+  if(screen && clientLoggedIn) {
+    // restore the screen without pushing a new history entry
+    ['screenS1','screenS3','screenS4','screenS5','clientDashboard','home'].forEach(sid => {
+      const el = document.getElementById(sid);
+      if(el) el.style.display = 'none';
+    });
+    const target = document.getElementById(screen);
+    if(target) target.style.display = 'block';
+    window.scrollTo({ top: 0, behavior: 'auto' });
+  } else {
+    // no state or not logged in — go to home
+    ['screenS1','screenS3','screenS4','screenS5','clientDashboard'].forEach(sid => {
+      const el = document.getElementById(sid);
+      if(el) el.style.display = 'none';
+    });
+    document.getElementById('home').style.display = 'block';
+  }
+});
+
+
+  
 function showS1() {
   showScreen('screenS1');
 }
