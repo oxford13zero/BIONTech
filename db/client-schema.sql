@@ -59,6 +59,13 @@ CREATE TABLE IF NOT EXISTS ai_systems (
   annex_iii_applicable        BOOLEAN DEFAULT false,
   ce_marking_required         BOOLEAN DEFAULT false,
   risk_score_total            NUMERIC(4,2),
+  responsible_area            TEXT,
+autonomy_level                INTEGER,
+eu_ai_act_risk_category       TEXT,
+environment                   TEXT,
+infrastructure_provider       TEXT,
+shadow_ai_label               TEXT,
+risk_score_total              NUMERIC,
   created_at                  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at                  TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
