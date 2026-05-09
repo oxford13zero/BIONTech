@@ -4502,8 +4502,8 @@ async function showS5(systemId) {
       field('Approved use policy', comp?.approved_use_policy, 'approved_use_policy'),
       field('Board informed', comp?.board_informed, 'board_informed'),
       field('Market regulator disclosure', comp?.market_regulator_disclosure, 'market_regulator_disclosure'),
-      field('Next contract renewal', comp?.next_contract_renewal, 'next_contract_renewal'),
-    ])}
+   field('Next contract renewal', comp?.next_contract_renewal, 'next_contract_renewal'),
+    ], false, 'sec_compliance_docs', comp?.id)}
     ${section('M2 — Risk assessment', '#7F77DD', [
       field('Assessment code', riskAss?.assessment_code, 'assessment_code'),
       field('Methodology', riskAss?.methodology, 'methodology'),
