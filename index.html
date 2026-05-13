@@ -2035,6 +2035,18 @@ applyLang(currentLang);
     handleClientBtnClick({ stopPropagation: function(){} });
   }
 
+// \u2500\u2500 S1 / S3 session state \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+  let s_companyName = '';
+  let s_companyId   = null;
+  let s_country     = null;
+  let s_userId      = null;
+  let s_userEmail   = '';
+  let s_dbName      = null; // Azure client database name
+  let s_userRole    = null; // 'company_admin' | 'branch_manager' | 'company_user'
+  let s_branchId    = null; // assigned branch for branch_manager, null for others
+  let s3_tab        = 'all';
+  let s3_allData    = { branches: [], systems: [] };
+
   async function setClientLoggedInAzure(user) {
     clientLoggedIn = true;
     document.getElementById('clientDropdownEmail').textContent = user.email;
@@ -3859,16 +3871,7 @@ function showS4AddBtn(branchId, branchName) {
 
 <script>
 // ── S1 / S3 state ────────────────────────────────────────────
-let s_companyName = '';
-let s_companyId   = null;
-let s_country     = null;
-let s_userId      = null;
-let s_userEmail   = '';
-let s_dbName      = null; // Azure client database name
-let s_userRole    = null; // 'company_admin' | 'branch_manager' | 'company_user'
-let s_branchId    = null; // assigned branch for branch_manager, null for others
-let s3_tab        = 'all';
-let s3_allData    = { branches: [], systems: [] };
+// session variables moved to top of auth script block
 
 // ── Screen routing ───────────────────────────────────────────
 function showScreen(id) {
