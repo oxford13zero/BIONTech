@@ -130,7 +130,8 @@ module.exports = async function handler(req, res) {
 
     // ── Legislation alerts ────────────────────────────────────
     if (type === 'alerts') {
-      const result = await pool.query(
+      const masterPool = getClientPool(process.env.AZURE_MASTER_DB_NAME || 'postgres');
+      const result = await masterPool.query(
         `SELECT * FROM legislation_alerts
          WHERE country = $1 AND active = true
          ORDER BY published_at DESC LIMIT 3`,
