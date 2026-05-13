@@ -3,6 +3,22 @@ const jwt = require('jsonwebtoken');
 
 const clientPools = {};
 
+let _masterPool = null;
+function getMasterPool() {
+  if (!_masterPool) {
+    _masterPool = new Pool({
+      host:     process.env.AZURE_MASTER_DB_HOST,
+      port:     5432,
+      database: process.env.AZURE_MASTER_DB_NAME || 'postgres',
+      user:     process.env.AZURE_MASTER_DB_USER,
+      password: process.env.AZURE_MASTER_DB_PASSWORD,
+      ssl:      { rejectUnauthorized: false },
+      max: 3
+    });
+  }
+  return _masterPool;
+}
+
 function getClientPool(dbName) {
   if (!clientPools[dbName]) {
     clientPools[dbName] = new Pool({
@@ -130,8 +146,7 @@ module.exports = async function handler(req, res) {
 
     // ── Legislation alerts ────────────────────────────────────
     if (type === 'alerts') {
-      const masterPool = getClientPool(process.env.AZURE_MASTER_DB_NAME || 'postgres');
-      const result = await masterPool.query(
+      const result = await getMasterPool().query(
         `SELECT * FROM legislation_alerts
          WHERE country = $1 AND active = true
          ORDER BY published_at DESC LIMIT 3`,
