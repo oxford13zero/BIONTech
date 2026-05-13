@@ -3286,6 +3286,7 @@ function val(id) {
 
 async function wzNext() {
   const step = wz.steps[wz.currentStep];
+  const token = localStorage.getItem('bion_client_token');
 
   if(step.key === 'branch') {
     const name = val('wzBranchName');
@@ -3294,18 +3295,24 @@ async function wzNext() {
     wz.data.branchName    = name;
     wz.data.branchAddress = val('wzBranchAddress');
     wz.data.branchCountry = val('wzBranchCountry');
-    const { data, error } = await sb.from('branches').insert({
-      company_id: s_companyId,
-      name,
-      address: wz.data.branchAddress,
-      country: wz.data.branchCountry || 'Chile',
-      status: 'active'
-    }).select('id').single();
-    if(error){ setSaveStatus('error','Error: '+error.message); return; }
-    wz.branchId   = data.id;
-    wz.branchName = name;
-    setSaveStatus('saved','✓ Branch saved');
-    loadBranches(s_companyId);
+    try {
+      const res = await fetch('/api/client-write?action=insert_branch', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+        body: JSON.stringify({
+          name,
+          address: wz.data.branchAddress,
+          country: wz.data.branchCountry || 'Chile'
+        })
+      });
+      const result = await res.json();
+      if(!res.ok) { setSaveStatus('error', result.error || 'Error saving branch'); return; }
+      wz.branchId   = result.id;
+      wz.branchName = name;
+      setSaveStatus('saved','✓ Branch saved');
+      s3_allData = { branches: [], systems: [] };
+      if(s_companyId) loadS3Data();
+    } catch(err) { setSaveStatus('error', 'Network error: ' + err.message); return; }
 
   } else if(step.key === 'secA') {
     const name = val('wzSysName'), code = val('wzSysCode');
@@ -3323,29 +3330,42 @@ async function wzNext() {
       platform: val('wzSysPlatform'),
     };
     wz.inventoryGroup = wz.data.inventory_group;
-    const payload = {
-      company_id: s_companyId, branch_id: wz.branchId,
-      system_code: wz.data.system_code, name: wz.data.name,
-      inventory_group: wz.data.inventory_group, vendor: wz.data.vendor,
-      version: wz.data.version, deploy_date: wz.data.deploy_date,
-      responsible_person: wz.data.responsible_person,
-      operational_location: wz.data.operational_location,
-      country: wz.data.country || 'Chile',
-      risk_level: wz.data.risk_level,
-      compliance_status: 'Sin evaluar',
-      next_review_date: wz.data.next_review_date,
-      platform: wz.data.platform,
-      status: 'active'
-    };
-    let result;
-    if(wz.systemId) {
-      result = await sb.from('ai_systems').update(payload).eq('id', wz.systemId).select('id').single();
-    } else {
-      result = await sb.from('ai_systems').insert(payload).select('id').single();
-    }
-    if(result.error){ setSaveStatus('error','Error: '+result.error.message); return; }
-    wz.systemId = result.data.id;
-    setSaveStatus('saved','✓ System saved');
+    const action = wz.systemId ? 'update_system' : 'insert_system';
+    const payload = wz.systemId
+      ? { system_id: wz.systemId, payload: {
+          system_code: wz.data.system_code, name: wz.data.name,
+          inventory_group: wz.data.inventory_group, vendor: wz.data.vendor,
+          version: wz.data.version, deploy_date: wz.data.deploy_date,
+          responsible_person: wz.data.responsible_person,
+          operational_location: wz.data.operational_location,
+          country: wz.data.country || 'Chile',
+          risk_level: wz.data.risk_level,
+          next_review_date: wz.data.next_review_date,
+          platform: wz.data.platform
+        }}
+      : {
+          branch_id: wz.branchId,
+          system_code: wz.data.system_code, name: wz.data.name,
+          inventory_group: wz.data.inventory_group, vendor: wz.data.vendor,
+          version: wz.data.version, deploy_date: wz.data.deploy_date,
+          responsible_person: wz.data.responsible_person,
+          operational_location: wz.data.operational_location,
+          country: wz.data.country || 'Chile',
+          risk_level: wz.data.risk_level,
+          next_review_date: wz.data.next_review_date,
+          platform: wz.data.platform
+        };
+    try {
+      const res = await fetch('/api/client-write?action=' + action, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+        body: JSON.stringify(payload)
+      });
+      const result = await res.json();
+      if(!res.ok) { setSaveStatus('error', result.error || 'Error saving system'); return; }
+      if(!wz.systemId) wz.systemId = result.id;
+      setSaveStatus('saved','✓ System saved');
+    } catch(err) { setSaveStatus('error', 'Network error: ' + err.message); return; }
 
   } else if(['secB','secC','secD','secE','secF','secG'].includes(step.key)) {
     await wzSaveOptionalSection(step.key);
@@ -3368,7 +3388,7 @@ async function wzSaveOptionalSection(key) {
   }
   const table = tableMap[key];
   const allInputs = document.querySelectorAll('#wzBody input, #wzBody select, #wzBody textarea');
-  const payload = { system_id: wz.systemId };
+  const payload = {};
   allInputs.forEach(el => {
     if(el.id) {
       const col = el.id.replace(/^wzB_|^wzC_|^wzD_|^wzE_|^wzF_|^wzG_/,'');
@@ -3376,9 +3396,17 @@ async function wzSaveOptionalSection(key) {
       if(v) payload[col] = v;
     }
   });
-  const { error } = await sb.from(table).upsert(payload, { onConflict:'system_id' });
-  if(error) { setSaveStatus('error','Error: '+error.message); }
-  else { setSaveStatus('saved','✓ Section saved'); }
+  const token = localStorage.getItem('bion_client_token');
+  try {
+    const res = await fetch('/api/client-write?action=upsert_section', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+      body: JSON.stringify({ table, system_id: wz.systemId, payload })
+    });
+    const result = await res.json();
+    if(!res.ok) { setSaveStatus('error', result.error || 'Error saving section'); }
+    else { setSaveStatus('saved','✓ Section saved'); }
+  } catch(err) { setSaveStatus('error', 'Network error: ' + err.message); }
 }
 
 function wzSkip() {
