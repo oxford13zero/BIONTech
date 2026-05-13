@@ -2110,7 +2110,8 @@ applyLang(currentLang);
     });
   }
 
-  document.addEventListener('visibilitychange', function() {
+  /* las siguientes lineas comentadas activan el auto logout en 7 segundos  */
+  /* document.addEventListener('visibilitychange', function() {
   if(document.visibilityState === 'hidden' && clientLoggedIn) {
     // schedule a check — if they come back the check is cancelled
     window._leaveTimer = setTimeout(function() {
@@ -2121,7 +2122,7 @@ applyLang(currentLang);
   if(document.visibilityState === 'visible') {
     clearTimeout(window._leaveTimer);
   }
-});
+}); */
   
   async function handleClientLogout(){
     await sb.auth.signOut().catch(() => {});
