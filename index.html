@@ -3148,6 +3148,15 @@ function renderWzStep() {
           <label class="wz-label">Platform</label>
           <input class="wz-input" id="wzSysPlatform" placeholder="e.g. AWS SageMaker" value="${wz.data.platform||''}">
         </div>
+        <div class="wz-field">
+          <label class="wz-label">Deployment status <span class="wz-info-icon" title="EU AI Act distingue obligaciones según etapa del ciclo de vida: producción, piloto o retirado.">i</span></label>
+          <select class="wz-select" id="wzSysDeploymentStatus">
+            <option value="">-- Select --</option>
+            <option ${(wz.data.deployment_status||'')==='Producción'?'selected':''}>Producción</option>
+            <option ${wz.data.deployment_status==='Piloto'?'selected':''}>Piloto</option>
+            <option ${wz.data.deployment_status==='Retirado'?'selected':''}>Retirado</option>
+          </select>
+        </div>
       </div>`;
 
   } else if(step.key === 'secB') {
@@ -3160,6 +3169,7 @@ function renderWzStep() {
       {id:'wzB_who_acts_on_output', label:'Who acts on output', type:'input', ph:'e.g. Shift supervisor'},
       {id:'wzB_impact_if_fails', label:'Impact if fails', type:'textarea'},
       {id:'wzB_can_cause_physical_harm', label:'Can cause physical harm', type:'select', opts:['Si','No','No disponible']},
+      {id:'wzB_foreseeable_misuse', label:'Foreseeable misuse', type:'textarea', tooltip:'EU AI Act Art. 9 lo exige. Describe cómo el sistema podría ser mal utilizado de forma razonable.'},
     ]);
 
   } else if(step.key === 'secC') {
@@ -3173,6 +3183,8 @@ function renderWzStep() {
       {id:'wzC_nist_alignment', label:'NIST alignment', type:'select', opts:['None','Partial','Complete']},
       {id:'wzC_oecd_alignment', label:'OECD alignment', type:'select', opts:['None','Partial','Complete']},
       {id:'wzC_iso42001_alignment', label:'ISO 42001 alignment', type:'select', opts:['None','Partial','Complete']},
+      {id:'wzC_eu_ai_act_article', label:'EU AI Act article reference', type:'input', ph:'e.g. Art. 6, 10, 13', tooltip:'No basta el nivel de riesgo. Se requiere el artículo específico aplicable al sistema.'},
+      {id:'wzC_gpai_flag', label:'GPAI flag', type:'select', opts:['Si','No'], tooltip:'Si el modelo subyacente es de propósito general (como Copilot), EU AI Act Art. 51-52 activa obligaciones adicionales.'},
     ]);
 
   } else if(step.key === 'secD') {
@@ -3185,6 +3197,7 @@ function renderWzStep() {
       {id:'wzD_retrain_frequency', label:'Retrain frequency', type:'input', ph:'e.g. Semestral'},
       {id:'wzD_data_quality_control', label:'Data quality control', type:'select', opts:['Si','Parcial','No']},
       {id:'wzD_vendor_provides_tech_access', label:'Vendor provides tech access', type:'select', opts:['Si','No','Parcial']},
+      {id:'wzD_data_transfer_location', label:'Data transfer location', type:'input', ph:'e.g. United States, EU', tooltip:'País donde el proveedor procesa o almacena los datos. Crítico cuando los datos están almacenados en el proveedor.'},
     ]);
 
   } else if(step.key === 'secE') {
@@ -3247,6 +3260,7 @@ function renderWzStep() {
       {id:'wzG_technical_docs_exist', label:'Technical docs exist', type:'select', opts:['Si','No','Parcial']},
       {id:'wzG_approved_use_policy', label:'Approved use policy', type:'select', opts:['Si','No']},
       {id:'wzG_next_regulatory_review', label:'Next regulatory review', type:'date'},
+      {id:'wzG_fria_completed', label:'FRIA completed', type:'select', opts:['Si','No','En proceso','No requerido'], tooltip:'EU AI Act Art. 27 exige una Evaluación de Impacto en Derechos Fundamentales (FRIA) para sistemas de alto riesgo.'},
     ]);
 
   } else if(step.key === 'done') {
@@ -3279,7 +3293,7 @@ function wzOptionalForm(title, sub, fields) {
     <div class="wz-grid">
       ${fields.map(f => `
         <div class="wz-field ${f.full===false?'':''}">
-          <label class="wz-label">${f.label}</label>
+          <label class="wz-label">${f.tooltip ? f.label + '<span class="wz-info-icon" title="' + f.tooltip + '">i</span>' : f.label}</label>
           ${f.type==='textarea'
             ? `<textarea class="wz-textarea" id="${f.id}" placeholder="${f.ph||''}"></textarea>`
             : f.type==='select'
@@ -3341,6 +3355,7 @@ async function wzNext() {
       next_review_date: val('wzSysReviewDate'),
       operational_location: val('wzSysLocation'),
       platform: val('wzSysPlatform'),
+      deployment_status: val('wzSysDeploymentStatus') || null,
     };
     wz.inventoryGroup = wz.data.inventory_group;
     const action = wz.systemId ? 'update_system' : 'insert_system';
@@ -4433,15 +4448,18 @@ async function showS5(systemId) {
     sys.country ? `<span class="s5-pill s5-pill-group">${sys.country}</span>` : '',
   ].filter(Boolean).join('');
 
-  function field(label, value, colName) {
+  function field(label, value, colName, tooltip) {
     const v = value !== null && value !== undefined && value !== '' && value !== 'null' ? String(value) : null;
     const warn   = ['No','No disponible','No conforme','Pendiente','No - pendiente','No - pendiente urgente'];
     const ok     = ['Si','Completo','Conforme','Complete'];
     const valClass = !v ? 's5-field-empty'
                    : warn.some(w => v.startsWith(w)) ? 's5-field-warn'
                    : ok.some(o => v.startsWith(o)) ? 's5-field-ok' : 's5-field-val';
+    const lbl = tooltip
+      ? label + '<span class="s5-info-icon" title="' + tooltip + '">i</span>'
+      : label;
     return `<div class="s5-field" data-col="${colName||''}" data-val="${v ? v.replace(/"/g,'&quot;') : ''}">
-      <p class="s5-field-label">${label}</p>
+      <p class="s5-field-label">${lbl}</p>
       <p class="${valClass}">${v || '—'}</p>
     </div>`;
   }
@@ -4516,6 +4534,7 @@ async function showS5(systemId) {
       field('Infrastructure provider', sys.infrastructure_provider, 'infrastructure_provider'),
       field('Shadow AI label', sys.shadow_ai_label, 'shadow_ai_label'),
       field('Risk score total', sys.risk_score_total ? String(sys.risk_score_total) : null, 'risk_score_total'),
+      field('Deployment status', sys.deployment_status, 'deployment_status', 'EU AI Act distingue obligaciones según etapa del ciclo de vida: producción, piloto o retirado.'),
     ], true, 'ai_systems', sys.id)}
     ${section('Section B — Functional description', '#5DCAA5', [
       field('Main function', func?.main_function, 'main_function'),
@@ -4532,6 +4551,7 @@ async function showS5(systemId) {
       field('People in impact area', func?.people_in_impact_area, 'people_in_impact_area'),
       field('Can cause physical harm', func?.can_cause_physical_harm, 'can_cause_physical_harm'),
       field('Feeds public reports', func?.feeds_public_reports, 'feeds_public_reports'),
+      field('Foreseeable misuse', func?.foreseeable_misuse, 'foreseeable_misuse', 'EU AI Act Art. 9 lo exige. Describe cómo el sistema podría ser mal utilizado de forma razonable, distinto al uso previsto.'),
     ], false, 'sec_functional', func?.id)}
     ${section('Section C — Regulatory classification', '#EF9F27', [
       field('Risk level (Chile)', reg?.risk_level_chile, 'risk_level_chile'),
@@ -4548,6 +4568,8 @@ async function showS5(systemId) {
       field('ISO 42001 alignment', reg?.iso42001_alignment, 'iso42001_alignment'),
       field('ISO 42001 principles', reg?.iso42001_principles, 'iso42001_principles'),
       field('Other frameworks', reg?.other_frameworks, 'other_frameworks'),
+      field('EU AI Act article reference', reg?.eu_ai_act_article, 'eu_ai_act_article', 'No basta el nivel de riesgo. Se requiere el artículo específico aplicable al sistema según el EU AI Act.'),
+      field('GPAI flag', reg?.gpai_flag, 'gpai_flag', 'Si el modelo subyacente es de propósito general (como Copilot), EU AI Act Art. 51-52 activa obligaciones adicionales.'),
     ], false, 'sec_regulatory', reg?.id)}
     ${section('Section D — Data & engineering', '#D4537E', [
       field('Model type', dat?.model_type, 'model_type'),
@@ -4566,6 +4588,7 @@ async function showS5(systemId) {
       field('Data stored on provider', dat?.data_stored_on_provider, 'data_stored_on_provider'),
       field('Data processing region', dat?.data_processing_region, 'data_processing_region'),
       field('Data processing agreement', dat?.data_processing_agreement, 'data_processing_agreement'),
+      field('Data transfer location', dat?.data_transfer_location, 'data_transfer_location', 'País donde el proveedor procesa o almacena los datos. Crítico cuando los datos están almacenados en el proveedor.'),
     ], false, 'sec_data_engineering', dat?.id)}
     ${section('Section E — Performance & bias', '#97C459', [
       field('Performance metrics', perf?.performance_metrics, 'performance_metrics'),
@@ -4594,6 +4617,7 @@ async function showS5(systemId) {
       field('Board informed', comp?.board_informed, 'board_informed'),
       field('Market regulator disclosure', comp?.market_regulator_disclosure, 'market_regulator_disclosure'),
    field('Next contract renewal', comp?.next_contract_renewal, 'next_contract_renewal'),
+      field('FRIA completed', comp?.fria_completed, 'fria_completed', 'EU AI Act Art. 27 exige una Evaluación de Impacto en Derechos Fundamentales (FRIA) para sistemas de alto riesgo.'),
     ], false, 'sec_compliance_docs', comp?.id)}
     ${section('M2 — Risk assessment', '#7F77DD', [
       field('Assessment code', riskAss?.assessment_code, 'assessment_code'),
@@ -4805,6 +4829,16 @@ function toggleS5Section(head) {
     border-bottom:0.5px solid #E2E8F0;
   }
   .s5-field:nth-last-child(-n+2):not(:nth-child(odd)~*){ border-bottom:none; }
+  /* Tooltip */
+  .s5-tooltip-wrap { position:relative; display:inline-flex; align-items:center; gap:4px; }
+  .s5-info-icon { width:14px; height:14px; border-radius:50%; background:#2C3F6A; color:#85B7EB; font-size:9px; font-weight:700; display:inline-flex; align-items:center; justify-content:center; cursor:default; flex-shrink:0; font-family:serif; font-style:italic; user-select:none; }
+  .s5-tooltip { display:none; position:absolute; left:20px; top:-4px; width:240px; background:#0F1B33; border:1px solid #2C3F6A; border-radius:8px; padding:8px 10px; font-size:11px; color:#C2CDED; line-height:1.5; z-index:20; pointer-events:none; }
+  .s5-info-icon:hover + .s5-tooltip { display:block; }
+  .wz-tooltip-wrap { position:relative; display:inline-flex; align-items:center; gap:4px; }
+  .wz-info-icon { width:13px; height:13px; border-radius:50%; background:#1B3560; color:#85B7EB; font-size:9px; font-weight:700; display:inline-flex; align-items:center; justify-content:center; cursor:default; flex-shrink:0; font-family:serif; font-style:italic; user-select:none; }
+  .wz-tooltip { display:none; position:absolute; left:18px; top:-4px; width:220px; background:#0F1B33; border:1px solid #2C3F6A; border-radius:8px; padding:7px 10px; font-size:11px; color:#C2CDED; line-height:1.5; z-index:20; pointer-events:none; }
+  .wz-info-icon:hover + .wz-tooltip { display:block; }
+
   .s5-field-label{
     font-size:10px;color:#94A3B8;
     text-transform:uppercase;letter-spacing:.05em;
