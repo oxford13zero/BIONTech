@@ -66,6 +66,7 @@ environment                   TEXT,
 infrastructure_provider       TEXT,
 shadow_ai_label               TEXT,
 risk_score_total              NUMERIC,
+  deployment_status             TEXT,
   created_at                  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at                  TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
@@ -91,6 +92,7 @@ CREATE TABLE IF NOT EXISTS sec_functional (
   people_in_impact_area TEXT,
   affected_processes    TEXT,
   feeds_public_reports  TEXT,
+  foreseeable_misuse    TEXT,
 );
 
 -- Section C — Regulatory
@@ -117,7 +119,9 @@ CREATE TABLE IF NOT EXISTS sec_regulatory (
   eu_ai_act_article6_applicable    BOOLEAN DEFAULT false,
   machinery_directive_applicable   BOOLEAN DEFAULT false,
   affects_cmf_reports              BOOLEAN DEFAULT false,
-  additional_regulations TEXT
+  additional_regulations TEXT,
+  eu_ai_act_article      TEXT,
+  gpai_flag              TEXT
 );
 
 -- Section D — Data Engineering
@@ -142,6 +146,7 @@ CREATE TABLE IF NOT EXISTS sec_data_engineering (
   data_stored_on_provider   TEXT,
   data_processing_region    TEXT,
   data_processing_agreement TEXT,
+  data_transfer_location    TEXT,
 );
 
 -- Section E — Performance
@@ -249,7 +254,8 @@ CREATE TABLE IF NOT EXISTS sec_compliance_docs (
   legal_review_completed       BOOLEAN DEFAULT false,
   board_approval_required      BOOLEAN DEFAULT false,
   log_retention_months         INTEGER DEFAULT 6,
-  log_integrity_method         TEXT
+  log_integrity_method         TEXT,
+  fria_completed               TEXT
 );
 
 -- M2 — Risk Assessments
@@ -325,6 +331,24 @@ CREATE TABLE IF NOT EXISTS system_integrations (
   status              TEXT DEFAULT 'active',
   created_at          TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at          TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- Section H — Accountability & Governance
+CREATE TABLE IF NOT EXISTS sec_accountability (
+  id                       UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  system_id                UUID UNIQUE NOT NULL REFERENCES ai_systems(id) ON DELETE CASCADE,
+  ai_owner_business        TEXT,
+  ai_owner_technical       TEXT,
+  eu_ai_act_role           TEXT CHECK (eu_ai_act_role IN ('Provider','Deployer','Distributor')),
+  approved_by              TEXT,
+  approval_date            DATE,
+  ethics_reviewer          TEXT,
+  data_protection_contact  TEXT,
+  escalation_contact       TEXT,
+  board_informed           TEXT CHECK (board_informed IN ('Si','No','En proceso')),
+  review_cycle             TEXT,
+  created_at               TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at               TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 -- Legislation Alerts
