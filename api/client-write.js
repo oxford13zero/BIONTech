@@ -164,11 +164,29 @@ module.exports = async function handler(req, res) {
       const setClause = keys.map((k, i) => `${k} = $${i + 2}`).join(', ');
       const id = record_id || system_id;
       const idField = table === 'ai_systems' ? 'id' : (record_id && record_id !== 'undefined' && record_id !== 'null' ? 'id' : 'system_id');
-      await pool.query(
+
+
+      
+const updateResult = await pool.query(
         `UPDATE ${table} SET ${setClause}, updated_at = NOW() WHERE ${idField} = $1`,
         [id, ...values]
       );
+      if (updateResult.rowCount === 0 && idField === 'system_id') {
+        // No existing row — insert new record
+        const insertKeys = [...keys, 'system_id'];
+        const insertVals = [...values, system_id];
+        const cols = insertKeys.map(k => `"${k}"`).join(', ');
+        const placeholders = insertKeys.map((_, i) => `$${i + 1}`).join(', ');
+        await pool.query(
+          `INSERT INTO ${table} (${cols}) VALUES (${placeholders})`,
+          insertVals
+        );
+      }
       return res.status(200).json({ success: true });
+
+
+      
+      
     }
 
     return res.status(400).json({ error: 'Unknown action' });
