@@ -3434,7 +3434,7 @@ async function wzSaveOptionalSection(key) {
   const payload = {};
   allInputs.forEach(el => {
     if(el.id) {
-      const col = el.id.replace(/^wzB_|^wzC_|^wzD_|^wzE_|^wzF_|^wzG_/,'');
+      const col = el.id.replace(/^wzB_|^wzC_|^wzD_|^wzE_|^wzF_|^wzG_|^wzH_/,'');
       const v = el.value.trim();
       if(v) payload[col] = v;
     }
