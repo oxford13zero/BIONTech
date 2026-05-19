@@ -163,7 +163,7 @@ module.exports = async function handler(req, res) {
       const values = Object.values(payload);
       const setClause = keys.map((k, i) => `${k} = $${i + 2}`).join(', ');
       const id = record_id || system_id;
-      const idField = table === 'ai_systems' ? 'id' : (record_id ? 'id' : 'system_id');
+      const idField = table === 'ai_systems' ? 'id' : (record_id && record_id !== 'undefined' && record_id !== 'null' ? 'id' : 'system_id');
       await pool.query(
         `UPDATE ${table} SET ${setClause}, updated_at = NOW() WHERE ${idField} = $1`,
         [id, ...values]
