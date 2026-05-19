@@ -2,6 +2,7 @@ const { Pool } = require('pg');
 const jwt = require('jsonwebtoken');
 
 const clientPools = {};
+
 function getClientPool(dbName) {
   if (!clientPools[dbName]) {
     clientPools[dbName] = new Pool({
@@ -65,7 +66,7 @@ module.exports = async function handler(req, res) {
       sys, func, reg, dat, perf,
       riskOp, riskDec, riskStr, riskHu,
       comp, riskAss, superv,
-      incidents, integrations
+      incidents, integrations, acct
     ] = await Promise.all([
       safeQuery(pool, 'SELECT * FROM ai_systems WHERE id = $1', [system_id]),
       safeQuery(pool, 'SELECT * FROM sec_functional WHERE system_id = $1', [system_id]),
@@ -80,7 +81,8 @@ module.exports = async function handler(req, res) {
       safeQuery(pool, 'SELECT * FROM risk_assessments WHERE system_id = $1', [system_id]),
       safeQuery(pool, 'SELECT * FROM human_supervision WHERE system_id = $1', [system_id]),
       safeQueryMany(pool, 'SELECT * FROM incidents WHERE system_id = $1 LIMIT 5', [system_id]),
-      safeQueryMany(pool, 'SELECT * FROM system_integrations WHERE system_id = $1 LIMIT 10', [system_id])
+      safeQueryMany(pool, 'SELECT * FROM system_integrations WHERE system_id = $1 LIMIT 10', [system_id]),
+      safeQuery(pool, 'SELECT * FROM sec_accountability WHERE system_id = $1', [system_id])
     ]);
 
     if (!sys) return res.status(404).json({ error: 'System not found' });
@@ -89,8 +91,9 @@ module.exports = async function handler(req, res) {
       sys, func, reg, dat, perf,
       riskOp, riskDec, riskStr, riskHu,
       comp, riskAss, superv,
-      incidents, integrations
+      incidents, integrations, acct
     });
+
   } catch (err) {
     console.error('client-record error:', err);
     return res.status(500).json({ error: err.message });
