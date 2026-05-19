@@ -2987,6 +2987,7 @@ const WZ_SECTIONS = [
   { key:'secE',    label:'E · Performance',optional:true },
   { key:'secF',    label:'F · Risk',    optional:true  },
   { key:'secG',    label:'G · Compliance',optional:true },
+  { key:'secH',    label:'H · Accountability',optional:true },
   { key:'done',    label:'Done',        optional:false },
 ];
 
@@ -3263,6 +3264,20 @@ function renderWzStep() {
       {id:'wzG_fria_completed', label:'FRIA completed', type:'select', opts:['Si','No','En proceso','No requerido'], tooltip:'EU AI Act Art. 27 exige una Evaluación de Impacto en Derechos Fundamentales (FRIA) para sistemas de alto riesgo.'},
     ]);
 
+  } else if(step.key === 'secH') {
+    body.innerHTML = wzOptionalForm('Section H — Accountability & Governance', 'Ownership, approval, ethics review, and accountability cycle.', [
+      {id:'wzH_ai_owner_business', label:'AI Owner (business)', type:'input', ph:'e.g. Gerente de Operaciones', tooltip:'Responsable de negocio del sistema. Requerido por ISO 42001, NIST.'},
+      {id:'wzH_ai_owner_technical', label:'AI Owner (technical)', type:'input', ph:'e.g. Jefe de TI', tooltip:'Responsable técnico / IT del sistema. Requerido por ISO 42001, NIST.'},
+      {id:'wzH_eu_ai_act_role', label:'EU AI Act Role', type:'select', opts:['Provider','Deployer','Distributor'], tooltip:'Rol de la organización según EU AI Act Art. 3, 26: Provider, Deployer o Distributor.'},
+      {id:'wzH_approved_by', label:'Approved by', type:'input', ph:'e.g. Directorio', tooltip:'Quién autorizó el despliegue del sistema. Requerido por ISO 42001, NIST GOVERN.'},
+      {id:'wzH_approval_date', label:'Approval date', type:'date', tooltip:'Cuándo se autorizó el despliegue. Requerido por ISO 42001 cláusula 7.5.'},
+      {id:'wzH_ethics_reviewer', label:'Ethics reviewer', type:'input', ph:'e.g. Comité de Ética', tooltip:'Quién revisó las implicancias éticas del sistema. Requerido por OECD, ISO 42001.'},
+      {id:'wzH_data_protection_contact', label:'Data protection contact', type:'input', ph:'e.g. DPO / Legal', tooltip:'Responsable ante incidentes de datos. Requerido por RGPD, EU AI Act.'},
+      {id:'wzH_escalation_contact', label:'Escalation contact', type:'input', ph:'e.g. CTO / Gerente de Riesgos', tooltip:'A quién escalar si el sistema falla o causa daño. Requerido por NIST MANAGE, OECD.'},
+      {id:'wzH_board_informed', label:'Board / committee informed', type:'select', opts:['Si','No','En proceso'], tooltip:'Si hay supervisión ejecutiva documentada. Requerido por ISO 42001 cláusula 5.1.'},
+      {id:'wzH_review_cycle', label:'Review cycle', type:'input', ph:'e.g. Anual', tooltip:'Cada cuánto se revisa la accountability del sistema. Requerido por ISO 42001 cláusula 9.'},
+    ]);
+
   } else if(step.key === 'done') {
     nextBtn.style.display = 'none';
     skipBtn.style.display = 'none';
@@ -3395,7 +3410,7 @@ async function wzNext() {
       setSaveStatus('saved','✓ System saved');
     } catch(err) { setSaveStatus('error', 'Network error: ' + err.message); return; }
 
-  } else if(['secB','secC','secD','secE','secF','secG'].includes(step.key)) {
+  } else if(['secB','secC','secD','secE','secF','secG','secH'].includes(step.key)) {
     await wzSaveOptionalSection(step.key);
   }
 
@@ -3407,7 +3422,7 @@ async function wzNext() {
 async function wzSaveOptionalSection(key) {
   if(!wz.systemId) return;
   setSaveStatus('saving','Saving…');
-  const tableMap = { secB:'sec_functional', secC:'sec_regulatory', secD:'sec_data_engineering', secE:'sec_performance', secF:'sec_risk_operational', secG:'sec_compliance_docs' };
+  const tableMap = { secB:'sec_functional', secC:'sec_regulatory', secD:'sec_data_engineering', secE:'sec_performance', secF:'sec_risk_operational', secG:'sec_compliance_docs', secH:'sec_accountability' };
   if(key === 'secF') {
     const g = wz.inventoryGroup;
     if(g===2) tableMap.secF = 'sec_risk_decision';
@@ -4382,7 +4397,7 @@ async function showS5(systemId) {
   document.getElementById('s5Content').innerHTML = '<div style="text-align:center;padding:60px;color:#8899CC;font-size:14px;">Loading full record…</div>';
   showScreen('screenS5');
 
-  let sys, func, reg, dat, perf, riskOp, riskDec, riskStr, riskHu, comp, riskAss, superv, incidents_data, integrations;
+  let sys, func, reg, dat, perf, riskOp, riskDec, riskStr, riskHu, comp, riskAss, superv, acct, incidents_data, integrations;
 
   if (s_dbName) {
     // Azure mode — single API call
@@ -4397,7 +4412,7 @@ async function showS5(systemId) {
     const d = await res.json();
     sys = d.sys; func = d.func; reg = d.reg; dat = d.dat; perf = d.perf;
     riskOp = d.riskOp; riskDec = d.riskDec; riskStr = d.riskStr; riskHu = d.riskHu;
-    comp = d.comp; riskAss = d.riskAss; superv = d.superv;
+    comp = d.comp; riskAss = d.riskAss; superv = d.superv; acct = d.acct || null;
     incidents_data = d.incidents || [];
     integrations   = d.integrations || [];
   } else {
@@ -4418,10 +4433,12 @@ async function showS5(systemId) {
       safe(sb.from('human_supervision').select('*').eq('system_id', systemId).maybeSingle()),
       safe(sb.from('incidents').select('*').eq('system_id', systemId).limit(5)),
       safe(sb.from('system_integrations').select('*').eq('system_id', systemId).limit(10)),
+      safe(sb.from('sec_accountability').select('*').eq('system_id', systemId).maybeSingle()),
     ]);
     sys = sysRes.data; func = funcRes.data; reg = regRes.data; dat = dataRes.data; perf = perfRes.data;
     riskOp = riskOpRes.data; riskDec = riskDecRes.data; riskStr = riskStrRes.data; riskHu = riskHuRes.data;
     comp = compRes.data; riskAss = riskAssRes?.data; superv = supervRes?.data;
+    acct = intRes ? (await Promise.resolve(safe(sb.from('sec_accountability').select('*').eq('system_id', systemId).maybeSingle()))).data : null;
     incidents_data = incRes?.data || [];
     integrations   = intRes?.data || [];
   }
@@ -4619,6 +4636,18 @@ async function showS5(systemId) {
    field('Next contract renewal', comp?.next_contract_renewal, 'next_contract_renewal'),
       field('FRIA completed', comp?.fria_completed, 'fria_completed', 'EU AI Act Art. 27 exige una Evaluación de Impacto en Derechos Fundamentales (FRIA) para sistemas de alto riesgo.'),
     ], false, 'sec_compliance_docs', comp?.id)}
+    ${section('Section H — Accountability & Governance', '#9B72CF', [
+      field('AI Owner (business)', acct?.ai_owner_business, 'ai_owner_business', 'Responsable de negocio del sistema. Requerido por ISO 42001, NIST.'),
+      field('AI Owner (technical)', acct?.ai_owner_technical, 'ai_owner_technical', 'Responsable técnico / IT del sistema. Requerido por ISO 42001, NIST.'),
+      field('EU AI Act Role', acct?.eu_ai_act_role, 'eu_ai_act_role', 'Rol de la organización según EU AI Act Art. 3, 26: Provider, Deployer o Distributor.'),
+      field('Approved by', acct?.approved_by, 'approved_by', 'Quién autorizó el despliegue. Requerido por ISO 42001, NIST GOVERN.'),
+      field('Approval date', acct?.approval_date, 'approval_date', 'Cuándo se autorizó el despliegue. Requerido por ISO 42001 cláusula 7.5.'),
+      field('Ethics reviewer', acct?.ethics_reviewer, 'ethics_reviewer', 'Quién revisó las implicancias éticas. Requerido por OECD, ISO 42001.'),
+      field('Data protection contact', acct?.data_protection_contact, 'data_protection_contact', 'Responsable ante incidentes de datos. Requerido por RGPD, EU AI Act.'),
+      field('Escalation contact', acct?.escalation_contact, 'escalation_contact', 'A quién escalar si el sistema falla o causa daño. Requerido por NIST MANAGE, OECD.'),
+      field('Board / committee informed', acct?.board_informed, 'board_informed', 'Si hay supervisión ejecutiva documentada. Requerido por ISO 42001 cláusula 5.1.'),
+      field('Review cycle', acct?.review_cycle, 'review_cycle', 'Cada cuánto se revisa la accountability. Requerido por ISO 42001 cláusula 9.'),
+    ], false, 'sec_accountability', acct?.id)}
     ${section('M2 — Risk assessment', '#7F77DD', [
       field('Assessment code', riskAss?.assessment_code, 'assessment_code'),
       field('Methodology', riskAss?.methodology, 'methodology'),
