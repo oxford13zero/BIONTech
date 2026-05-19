@@ -109,7 +109,7 @@ module.exports = async function handler(req, res) {
         'sec_functional', 'sec_regulatory', 'sec_data_engineering',
         'sec_performance', 'sec_risk_operational', 'sec_risk_decision',
         'sec_risk_strategic', 'sec_risk_human_use', 'sec_compliance_docs',
-        'risk_assessments', 'human_supervision'
+        'risk_assessments', 'human_supervision','sec_accountability'
       ];
       const { table, system_id, payload } = body;
       if (!allowedTables.includes(table)) {
@@ -153,7 +153,7 @@ module.exports = async function handler(req, res) {
         'ai_systems', 'sec_functional', 'sec_regulatory', 'sec_data_engineering',
         'sec_performance', 'sec_risk_operational', 'sec_risk_decision',
         'sec_risk_strategic', 'sec_risk_human_use', 'sec_compliance_docs',
-        'risk_assessments', 'human_supervision', 'incidents', 'system_integrations'
+        'risk_assessments', 'human_supervision', 'incidents', 'system_integrations','sec_accountability'
       ];
       const { table, record_id, system_id, payload } = body;
       if (!allowedTables.includes(table)) {
