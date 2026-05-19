@@ -1549,12 +1549,19 @@
     <div id="alertRows"></div>
   </div>
 
-  <div class="db-tabs" id="dbTabs">
-    <button class="db-tab active" onclick="switchTab('all',this)">All groups</button>
-    <button class="db-tab" onclick="switchTab('1',this)">Group 1 — Operational</button>
-    <button class="db-tab" onclick="switchTab('2',this)">Group 2 — Analytical</button>
-    <button class="db-tab" onclick="switchTab('3',this)">Group 3 — Geoscience</button>
-    <button class="db-tab" onclick="switchTab('4',this)">Group 4 — General use</button>
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;gap:10px;flex-wrap:wrap;">
+    <div class="db-tabs" id="dbTabs" style="margin-bottom:0;">
+      <button class="db-tab active" onclick="switchTab('all',this)">All groups</button>
+      <button class="db-tab" onclick="switchTab('1',this)">Group 1 — Operational</button>
+      <button class="db-tab" onclick="switchTab('2',this)">Group 2 — Analytical</button>
+      <button class="db-tab" onclick="switchTab('3',this)">Group 3 — Geoscience</button>
+      <button class="db-tab" onclick="switchTab('4',this)">Group 4 — General use</button>
+    </div>
+    <div style="display:flex;gap:6px;flex-shrink:0;">
+      <button style="padding:7px 12px;border-radius:9px;border:1px solid rgba(93,202,165,.5);background:#0D1D35;color:#5DCAA5;font-size:12px;font-weight:600;cursor:pointer;font-family:'Source Sans 3',system-ui,sans-serif;">ISO 42001</button>
+      <button style="padding:7px 12px;border-radius:9px;border:1px solid rgba(133,183,235,.5);background:#0D1D35;color:#85B7EB;font-size:12px;font-weight:600;cursor:pointer;font-family:'Source Sans 3',system-ui,sans-serif;">NIST</button>
+      <button style="padding:7px 12px;border-radius:9px;border:1px solid rgba(244,195,139,.5);background:#0D1D35;color:#F4C38B;font-size:12px;font-weight:600;cursor:pointer;font-family:'Source Sans 3',system-ui,sans-serif;">EU AI Act</button>
+    </div>
   </div>
 
   <div class="metrics-grid">
