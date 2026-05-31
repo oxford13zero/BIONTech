@@ -45,8 +45,7 @@ module.exports = async function handler(req, res) {
         [decoded.companyId]
       ),
       pool.query(
-        `SELECT a.id, a.system_code, a.name, a.inventory_group,
-                a.risk_level, a.compliance_status, b.name as branch_name
+        `SELECT a.id, a.branch_id, a.system_code, a.name, a.inventory_group, a.risk_level, a.compliance_status, b.name as branch_name
          FROM ai_systems a
          LEFT JOIN branches b ON b.id = a.branch_id
          WHERE a.company_id = $1 AND a.status = 'active' ORDER BY a.name`,
