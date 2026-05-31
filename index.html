@@ -4942,11 +4942,17 @@ function toggleS5Section(head) {
 <script>
 let _reportType = '';
 
-function openReportModal(type) {
+async function openReportModal(type) {
   _reportType = type;
   document.getElementById('reportModalTitle').textContent = type + ' Report — Select branch';
   document.getElementById('reportResult').style.display = 'none';
   document.getElementById('reportResultContent').innerHTML = '';
+  document.getElementById('reportBranchList').innerHTML = '<p style="font-size:13px;color:#5A7299;text-align:center;padding:20px 0;">Loading...</p>';
+  document.getElementById('reportModal').style.display = 'flex';
+
+  if (!s3_allData.branches || s3_allData.branches.length === 0) {
+    await loadS3Data();
+  }
 
   const branches = s3_allData.branches || [];
   const list = document.getElementById('reportBranchList');
@@ -4966,9 +4972,6 @@ function openReportModal(type) {
         <span style="color:#5A7299;font-size:16px;">›</span>
       </div>`).join('');
   }
-
-  const modal = document.getElementById('reportModal');
-  modal.style.display = 'flex';
 }
 
 function selectReportBranch(branchId, branchName, el) {
