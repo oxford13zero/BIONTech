@@ -4921,6 +4921,7 @@ function toggleS5Section(head) {
   <div id="s5Content"></div>
 </div>
 </div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/marked/9.1.6/marked.min.js"></script>
 <!-- ── REPORT MODAL ─────────────────────────────────────── -->
 <div id="reportModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:300;align-items:center;justify-content:center;padding:20px;box-sizing:border-box;">
 <div style="background:#111A2C;border:1px solid #2C3F6A;border-radius:16px;width:100%;max-width:520px;max-height:90vh;overflow-y:auto;box-shadow:0 24px 60px rgba(0,0,0,.5);">
@@ -4935,6 +4936,15 @@ function toggleS5Section(head) {
       <p style="font-size:11px;font-weight:700;color:#8899CC;text-transform:uppercase;letter-spacing:.06em;margin:0 0 12px;">Report context</p>
       <div style="display:grid;gap:8px;" id="reportResultContent"></div>
     </div>
+    <div id="reportOutput" style="display:none;margin-top:16px;">
+      <div id="reportLoader" style="display:none;text-align:center;padding:32px 0;">
+        <div style="width:32px;height:32px;border:3px solid #2C3F6A;border-top-color:#F4C38B;border-radius:50%;animation:spin 1s linear infinite;margin:0 auto 14px;"></div>
+        <p style="font-size:13px;color:#8899CC;margin:0;">Generando informe... esto puede tomar hasta 2 minutos.</p>
+      </div>
+      <div id="reportMarkdown" style="display:none;background:#FFFFFF;border-radius:10px;padding:20px;color:#1A202C;font-size:13px;line-height:1.7;"></div>
+      <div id="reportError" style="display:none;background:#4A1515;border-radius:10px;padding:14px;color:#F09595;font-size:13px;"></div>
+    </div>
+    <style>@keyframes spin{to{transform:rotate(360deg)}}</style>
   </div>
 </div>
 </div>
@@ -4974,7 +4984,7 @@ async function openReportModal(type) {
   }
 }
 
-function selectReportBranch(branchId, branchName, el) {
+async function selectReportBranch(branchId, branchName, el) {
   document.querySelectorAll('#reportBranchList > div').forEach(d => {
     d.style.borderColor = '#2C3F6A';
     d.style.background = '#0F1B33';
@@ -4982,9 +4992,7 @@ function selectReportBranch(branchId, branchName, el) {
   el.style.borderColor = 'rgba(244,195,139,.8)';
   el.style.background = '#111F3D';
 
-  const systems = (s3_allData.systems || []).filter(s =>
-    s.branch_id === branchId
-  );
+  const systems = (s3_allData.systems || []).filter(s => s.branch_id === branchId);
 
   const content = document.getElementById('reportResultContent');
   content.innerHTML = `
@@ -5004,8 +5012,8 @@ function selectReportBranch(branchId, branchName, el) {
       <span style="font-size:11px;color:#8899CC;">Branch ID</span>
       <span style="font-size:11px;color:#EAF0FF;font-family:monospace;">${branchId}</span>
     </div>
-    <div style="padding:8px 0;border-bottom:0.5px solid #2C3F6A;">
-      <p style="font-size:11px;color:#8899CC;margin:0 0 8px;">AI System IDs (${systems.length})</p>
+    <div style="padding:8px 0;">
+      <p style="font-size:11px;color:#8899CC;margin:0 0 8px;">AI Systems (${systems.length})</p>
       <div style="display:grid;gap:4px;">
         ${systems.length > 0
           ? systems.map(s => `<div style="display:flex;justify-content:space-between;align-items:center;">
@@ -5016,20 +5024,65 @@ function selectReportBranch(branchId, branchName, el) {
         }
       </div>
     </div>
-    <div style="margin-top:12px;padding:10px;background:#0A1525;border-radius:8px;border:1px solid #1B3560;">
-      <p style="font-size:10px;color:#5A7299;margin:0 0 4px;text-transform:uppercase;letter-spacing:.06em;">POST body (German's endpoint)</p>
-      <pre style="font-size:10px;color:#85B7EB;margin:0;white-space:pre-wrap;word-break:break-all;">${JSON.stringify({
-        cliente: s_companyName?.toLowerCase(),
-        database: s_dbName,
-        company_id: s_companyId,
-        branch_id: branchId,
-        branch_name: branchName,
-        company_name: s_companyName,
-        scope: 'division'
-      }, null, 2)}</pre>
-    </div>
   `;
   document.getElementById('reportResult').style.display = 'block';
+  document.getElementById('reportResult').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+  // ── Call German's endpoint ──
+  const reportOutput  = document.getElementById('reportOutput');
+  const reportLoader  = document.getElementById('reportLoader');
+  const reportMarkdown = document.getElementById('reportMarkdown');
+  const reportError   = document.getElementById('reportError');
+
+  reportOutput.style.display = 'block';
+  reportLoader.style.display = 'block';
+  reportMarkdown.style.display = 'none';
+  reportError.style.display = 'none';
+
+  reportOutput.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+  const body = {
+    cliente:      s_companyName?.toLowerCase(),
+    database:     s_dbName,
+    company_id:   s_companyId,
+    branch_id:    branchId,
+    branch_name:  branchName,
+    company_name: s_companyName,
+    scope:        'division'
+  };
+
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 180000);
+
+    const res = await fetch('https://api.biontcorp.com/api/bion', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+      signal: controller.signal
+    });
+    clearTimeout(timeout);
+
+    const text = await res.text();
+
+    if (!res.ok) {
+      throw new Error('Server error ' + res.status + ': ' + text);
+    }
+
+    reportLoader.style.display = 'none';
+    reportMarkdown.style.display = 'block';
+    reportMarkdown.innerHTML = typeof marked !== 'undefined'
+      ? marked.parse(text)
+      : '<pre style="white-space:pre-wrap;">' + text + '</pre>';
+    reportMarkdown.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+  } catch(err) {
+    reportLoader.style.display = 'none';
+    reportError.style.display = 'block';
+    reportError.textContent = err.name === 'AbortError'
+      ? 'El informe tardó más de 3 minutos. Por favor intenta nuevamente.'
+      : 'Error generando informe: ' + err.message;
+  }
 }
 
 function closeReportModal() {
