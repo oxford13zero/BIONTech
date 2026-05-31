@@ -4980,7 +4980,7 @@ function selectReportBranch(branchId, branchName, el) {
   el.style.background = '#111F3D';
 
   const systems = (s3_allData.systems || []).filter(s =>
-    s.branch_id === branchId || s.branches?.name === branchName
+    s.branch_id === branchId
   );
 
   const content = document.getElementById('reportResultContent');
