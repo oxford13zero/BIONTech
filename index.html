@@ -5041,6 +5041,7 @@ async function selectReportBranch(branchId, branchName, el) {
 
   reportOutput.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 
+const frameworkMap = { 'ISO 42001': 'ISO42001', 'NIST': 'NIST', 'EU AI Act': 'EUAI' };
   const body = {
     cliente:      s_companyName?.toLowerCase(),
     database:     s_dbName,
@@ -5048,7 +5049,8 @@ async function selectReportBranch(branchId, branchName, el) {
     branch_id:    branchId,
     branch_name:  branchName,
     company_name: s_companyName,
-    scope:        'division'
+    scope:        'division',
+    framework:    frameworkMap[_reportType] || _reportType
   };
 
   try {
