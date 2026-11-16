@@ -44,7 +44,9 @@ function verifyToken(req) {
   const auth = req.headers['authorization'];
   if (!auth) throw { status: 401, message: 'No token' };
   const token = auth.split(' ')[1];
-  return jwt.verify(token, process.env.JWT_SECRET);
+  const decoded = jwt.verify(token, process.env.JWT_SECRET);
+  if (decoded.type !== 'client') throw { status: 403, message: 'Invalid token type' };
+  return decoded;
 }
 
 module.exports = async function handler(req, res) {

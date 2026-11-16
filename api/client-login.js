@@ -80,6 +80,7 @@ module.exports = async function handler(req, res) {
     // 4. Generate JWT
     const token = jwt.sign(
       {
+        type:      'client',
         userId:    user.id,
         email:     user.email,
         role:      user.role,

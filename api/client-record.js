@@ -25,7 +25,9 @@ function setCors(res) {
 function verifyToken(req) {
   const auth = req.headers['authorization'];
   if (!auth) throw { status: 401, message: 'No token' };
-  return jwt.verify(auth.split(' ')[1], process.env.JWT_SECRET);
+  const decoded = jwt.verify(auth.split(' ')[1], process.env.JWT_SECRET);
+  if (decoded.type !== 'client') throw { status: 403, message: 'Invalid token type' };
+  return decoded;
 }
 
 async function safeQuery(pool, query, params) {
