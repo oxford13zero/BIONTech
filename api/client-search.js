@@ -1,5 +1,5 @@
 const { Pool } = require('pg');
-const jwt = require('jsonwebtoken');
+const { verifyClient, divisionScope, sendError } = require('./_auth');
 
 const clientPools = {};
 function getClientPool(dbName) {
@@ -21,37 +21,31 @@ function setCors(res) {
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 }
 
-function verifyToken(req) {
-  const auth = req.headers['authorization'];
-  if (!auth) throw { status: 401, message: 'No token' };
-  const decoded = jwt.verify(auth.split(' ')[1], process.env.JWT_SECRET);
-  if (decoded.type !== 'client') throw { status: 403, message: 'Invalid token type' };
-  return decoded;
-}
-
 module.exports = async function handler(req, res) {
   setCors(res);
   if (req.method === 'OPTIONS') return res.status(200).end();
 
-  let decoded;
-  try { decoded = verifyToken(req); }
-  catch (e) { return res.status(401).json({ error: 'Invalid token' }); }
+  let user;
+  try { user = verifyClient(req); }
+  catch (e) { return sendError(res, e); }
 
-  const pool = getClientPool(decoded.dbName);
+  const pool = getClientPool(user.dbName);
+  const scope = divisionScope(user);
+  const params = scope ? [user.companyId, scope] : [user.companyId];
 
   try {
     const [branchRes, systemRes] = await Promise.all([
       pool.query(
         `SELECT id, name, country FROM branches
-         WHERE company_id = $1 AND status = 'active' ORDER BY name`,
-        [decoded.companyId]
+         WHERE company_id = $1 AND status = 'active' ${scope ? 'AND id = $2' : ''} ORDER BY name`,
+        params
       ),
       pool.query(
         `SELECT a.id, a.branch_id, a.system_code, a.name, a.inventory_group, a.risk_level, a.compliance_status, b.name as branch_name
          FROM ai_systems a
          LEFT JOIN branches b ON b.id = a.branch_id
-         WHERE a.company_id = $1 AND a.status = 'active' ORDER BY a.name`,
-        [decoded.companyId]
+         WHERE a.company_id = $1 AND a.status = 'active' ${scope ? 'AND a.branch_id = $2' : ''} ORDER BY a.name`,
+        params
       )
     ]);
 

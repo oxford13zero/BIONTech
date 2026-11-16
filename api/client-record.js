@@ -1,5 +1,5 @@
 const { Pool } = require('pg');
-const jwt = require('jsonwebtoken');
+const { verifyClient, assertSystemInScope, sendError } = require('./_auth');
 
 const clientPools = {};
 
@@ -20,14 +20,6 @@ function setCors(res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-}
-
-function verifyToken(req) {
-  const auth = req.headers['authorization'];
-  if (!auth) throw { status: 401, message: 'No token' };
-  const decoded = jwt.verify(auth.split(' ')[1], process.env.JWT_SECRET);
-  if (decoded.type !== 'client') throw { status: 403, message: 'Invalid token type' };
-  return decoded;
 }
 
 async function safeQuery(pool, query, params) {
@@ -54,16 +46,20 @@ module.exports = async function handler(req, res) {
   setCors(res);
   if (req.method === 'OPTIONS') return res.status(200).end();
 
-  let decoded;
-  try { decoded = verifyToken(req); }
-  catch (e) { return res.status(401).json({ error: 'Invalid token' }); }
+  let user;
+  try { user = verifyClient(req); }
+  catch (e) { return sendError(res, e); }
 
   const { system_id } = req.query;
   if (!system_id) return res.status(400).json({ error: 'system_id required' });
 
-  const pool = getClientPool(decoded.dbName);
+  const pool = getClientPool(user.dbName);
 
   try {
+    // Empresa y división del usuario
+    try { await assertSystemInScope(pool, user, system_id); }
+    catch (e) { return sendError(res, e); }
+
     const [
       sys, func, reg, dat, perf,
       riskOp, riskDec, riskStr, riskHu,
