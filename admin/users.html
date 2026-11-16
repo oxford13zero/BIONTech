@@ -195,9 +195,16 @@
     if (!company) { sel.innerHTML = '<option value="">Select company first…</option>'; return; }
     sel.innerHTML = '<option value="">Loading…</option>';
     const data = await apiFetch(`/api/admin-users?divisions=true&company_id=${company}`);
-    const list = Array.isArray(data) ? data : [];
-    sel.innerHTML = '<option value="">Select division…</option>' +
-      list.map(d => `<option value="${d.id}">${d.name}</option>`).join('');
+    if (!Array.isArray(data)) {
+      // Mostrar el error en vez de una lista vacía
+      sel.innerHTML = '<option value="">Could not load divisions</option>';
+      showAlert('modalAlert', 'Could not load divisions: ' + ((data && data.error) || 'connection error'));
+      return;
+    }
+    hideAlert('modalAlert');
+    const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+    sel.innerHTML = '<option value="">' + (data.length ? 'Select division…' : 'This company has no divisions') + '</option>' +
+      data.map(d => `<option value="${esc(d.id)}">${esc(d.name)}</option>`).join('');
     sel.value = selectedId;
   }
 
