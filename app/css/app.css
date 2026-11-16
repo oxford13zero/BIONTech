@@ -1,0 +1,20 @@
+/* ============================================================
+   BION · Plataforma — estilos base (según mockup)
+   ============================================================ */
+:root{
+  --bg:#192F52; --panel:#1F3D68; --panel2:#1B3560; --deep:#0F1B33; --row:#152A52;
+  --text:#EAF0FF; --muted:#C2CDED; --dim:#8899CC; --border:#2E4E7A; --sand:#F4C38B;
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:"Source Sans 3",system-ui,sans-serif;background:var(--bg);color:var(--text);line-height:1.5}
+:focus-visible{outline:2px solid var(--sand);outline-offset:2px}
+
+/* Página base (paso 1) */
+.placeholder{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:16px;text-align:center}
+.placeholder b{font-size:28px;letter-spacing:.04em}
+.placeholder span{color:var(--dim);font-size:14px}
+
+/* Botón de idioma */
+.lang-btn{border:1px solid var(--border);background:transparent;color:var(--sand);font:inherit;font-size:12px;font-weight:700;
+  padding:4px 10px;border-radius:8px;cursor:pointer}
+.lang-btn:hover{border-color:var(--sand)}
