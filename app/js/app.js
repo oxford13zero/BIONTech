@@ -214,6 +214,7 @@ function viewPage() {
   if (S.route === 'nuevo-sistema') return viewNewSystem();
   if (S.route === 'dashboard') return pageHead() + viewDashboard();
   if (S.route.startsWith('inventario')) return pageHead() + viewInventory();
+  if (S.route === 'divisiones') return pageHead() + viewDivisions();
   return pageHead() + `<div class="card empty">${t('section_soon')}</div>`;
 }
 
@@ -663,6 +664,112 @@ async function createSystem() {
     render();
   }
 }
+
+// ── Divisiones ────────────────────────────────────────────────
+// S.divForm = { id|null, values, error, busy } mientras se crea o edita
+const isSuperEmpresa = () => S.user.role === 'super_empresa';
+
+async function clientWrite(action, body) {
+  const res = await fetch('/api/client-write?action=' + action, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + getToken() },
+    body: JSON.stringify(body)
+  });
+  const data = await res.json().catch(() => ({}));
+  if (res.status === 401) { logout(); throw new Error('unauthorized'); }
+  if (!res.ok) { const e = new Error(data.error || 'HTTP ' + res.status); e.data = data; throw e; }
+  return data;
+}
+
+function divFormHtml() {
+  const f = S.divForm, v = f.values || {};
+  return `<div class="card div-form">
+    <h3>${f.id ? t('edit_division') : t('new_division')}</h3>
+    ${f.error ? `<div class="form-error" role="alert">${esc(f.error)}</div>` : ''}
+    <div class="fields form">
+      <div class="field"><label for="dv_name">${t('f_div_name')} *</label><input class="input" id="dv_name" value="${esc(v.name || '')}"></div>
+      <div class="field"><label for="dv_address">${t('f_address')}</label><input class="input" id="dv_address" value="${esc(v.address || '')}"></div>
+      <div class="field"><label for="dv_country">${t('f_country')}</label><input class="input" id="dv_country" value="${esc(v.country || 'Chile')}"></div>
+    </div>
+    <div class="edit-bar">
+      <button class="btn btn-ghost" onclick="closeDivForm()" ${f.busy ? 'disabled' : ''}>${t('cancel')}</button>
+      <button class="btn btn-primary" onclick="saveDivision()" ${f.busy ? 'disabled' : ''}>${f.busy ? t('saving') : t('save')}</button>
+    </div>
+  </div>`;
+}
+
+function viewDivisions() {
+  if (!S.data) return `<div class="card empty">${t('loading')}</div>`;
+  const admin = isSuperEmpresa();
+  const rows = S.data.branches.map(b => {
+    const list = S.data.systems.filter(s => String(s.branch_id) === String(b.id));
+    const crit = list.filter(s => s.risk_level === 'Critical').length;
+    const high = list.filter(s => s.risk_level === 'High').length;
+    return `<tr class="row" onclick="location.hash='#/inventario?div=${encodeURIComponent(b.id)}'">
+      <td><b>${esc(b.name)}</b>${b.address ? `<small>${esc(b.address)}</small>` : ''}</td>
+      <td>${esc(b.country || '—')}</td>
+      <td>${list.length}</td>
+      <td>${crit ? `<span class="chip l-crit">${crit} ${t('risk_Critical')}</span> ` : ''}${high ? `<span class="chip l-high">${high} ${t('risk_High')}</span>` : ''}${!crit && !high ? '<span class="no-info">—</span>' : ''}</td>
+      ${admin ? `<td class="actions" onclick="event.stopPropagation()">
+        <button class="btn btn-sm" onclick="openDivForm('${esc(b.id)}')" ${S.divForm ? 'disabled' : ''}>${t('edit')}</button>
+        <button class="btn btn-sm btn-danger" onclick="deactivateDivision('${esc(b.id)}')" ${S.divForm ? 'disabled' : ''}>${t('deactivate')}</button>
+      </td>` : ''}
+    </tr>`;
+  }).join('');
+  return `
+    ${admin && !S.divForm ? `<div class="page-actions"><button class="btn btn-primary" onclick="openDivForm()">+ ${t('new_division')}</button></div>` : ''}
+    ${S.divForm ? divFormHtml() : ''}
+    ${S.divMsg ? `<div class="alert">${esc(S.divMsg)}</div>` : ''}
+    <div class="card"><div class="tbl-wrap"><table>
+      <thead><tr><th>${t('division')}</th><th>${t('f_country')}</th><th>${t('nav_systems')}</th><th>${t('high_risk_short')}</th>${admin ? '<th></th>' : ''}</tr></thead>
+      <tbody>${rows || `<tr><td colspan="5" class="empty small">${t('no_divisions')}</td></tr>`}</tbody>
+    </table></div></div>`;
+}
+
+function openDivForm(id) {
+  const b = id ? S.data.branches.find(x => String(x.id) === String(id)) : null;
+  S.divMsg = '';
+  S.divForm = { id: id || null, values: b ? { name: b.name, address: b.address, country: b.country } : {} };
+  render();
+  document.getElementById('dv_name')?.focus();
+}
+
+function closeDivForm() { S.divForm = null; render(); }
+
+async function saveDivision() {
+  const f = S.divForm;
+  f.values = {
+    name: document.getElementById('dv_name').value.trim(),
+    address: document.getElementById('dv_address').value.trim(),
+    country: document.getElementById('dv_country').value.trim()
+  };
+  if (!f.values.name) { f.error = t('required_fields') + ' ' + t('f_div_name'); return render(); }
+  f.busy = true; f.error = ''; render();
+  try {
+    if (f.id) await clientWrite('update_branch', { branch_id: f.id, ...f.values });
+    else await clientWrite('insert_branch', f.values);
+  } catch (e) {
+    f.busy = false; f.error = t('save_error') + ' ' + e.message; return render();
+  }
+  S.divForm = null;
+  loadData();
+}
+
+async function deactivateDivision(id) {
+  const b = S.data.branches.find(x => String(x.id) === String(id));
+  S.divMsg = '';
+  if (!confirm(t('div_deactivate_confirm').replace('{name}', b.name))) return;
+  try {
+    await clientWrite('deactivate_branch', { branch_id: id });
+  } catch (e) {
+    const code = e.data && e.data.code;
+    S.divMsg = code === 'has_systems' ? t('div_has_systems').replace('{n}', e.data.count)
+             : code === 'has_users'   ? t('div_has_users').replace('{n}', e.data.count)
+             : t('save_error') + ' ' + e.message;
+    return render();
+  }
+  loadData();
+}
 function viewShell() {
   const u = S.user;
   return `
@@ -708,6 +815,7 @@ function render() {
 window.addEventListener('hashchange', () => {
   if (!S.user) return;
   if (parseHash().path !== 'nuevo-sistema') S.newSys = null;
+  if (parseHash().path !== 'divisiones') { S.divForm = null; S.divMsg = ''; }
   render(); window.scrollTo(0, 0);
 });
 

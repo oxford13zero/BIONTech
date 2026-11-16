@@ -66,7 +66,7 @@ module.exports = async function handler(req, res) {
       let where = `company_id = $1 AND status = 'active'`;
       if (scope) { params.push(scope); where += ` AND id = $2`; }
       const result = await pool.query(
-        `SELECT id, name, country FROM branches WHERE ${where} ORDER BY name`, params
+        `SELECT id, name, address, country FROM branches WHERE ${where} ORDER BY name`, params
       );
       return res.status(200).json(result.rows);
     }

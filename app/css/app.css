@@ -169,3 +169,8 @@ a.btn{text-decoration:none;display:inline-block}
 .fields.form{padding-top:0}
 .fields.form .input{margin-top:3px;font-size:14px;padding:8px 11px}
 @media(max-width:900px){.page-actions{margin:0 0 12px}}
+
+/* Divisiones */
+.div-form{margin-bottom:14px}
+td.actions{white-space:nowrap;text-align:right}
+td.actions .btn{margin-left:6px}

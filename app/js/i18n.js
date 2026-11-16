@@ -110,7 +110,18 @@ const I18N = {
     f_location:        'Ubicación operacional',
     f_platform:        'Plataforma',
     f_country:         'País',
-    f_next_review:     'Próxima revisión'
+    f_next_review:     'Próxima revisión',
+    // Divisiones
+    new_division:      'Nueva división',
+    edit_division:     'Editar división',
+    f_div_name:        'Nombre de la división',
+    f_address:         'Dirección',
+    high_risk_short:   'Riesgo crítico / alto',
+    edit:              'Editar',
+    deactivate:        'Desactivar',
+    div_deactivate_confirm: '¿Desactivar la división «{name}»?',
+    div_has_systems:   'No se puede desactivar: la división tiene {n} sistema(s) activo(s). Desactívalos o muévelos primero.',
+    div_has_users:     'No se puede desactivar: la división tiene {n} usuario(s) activo(s). Reasígnalos o desactívalos primero.'
   },
   en: {
     app_subtitle:     'AI governance platform',
@@ -219,7 +230,18 @@ const I18N = {
     f_location:        'Operational location',
     f_platform:        'Platform',
     f_country:         'Country',
-    f_next_review:     'Next review date'
+    f_next_review:     'Next review date',
+    // Divisions
+    new_division:      'New division',
+    edit_division:     'Edit division',
+    f_div_name:        'Division name',
+    f_address:         'Address',
+    high_risk_short:   'Critical / high risk',
+    edit:              'Edit',
+    deactivate:        'Deactivate',
+    div_deactivate_confirm: 'Deactivate the division “{name}”?',
+    div_has_systems:   'Cannot deactivate: the division has {n} active system(s). Deactivate or move them first.',
+    div_has_users:     'Cannot deactivate: the division has {n} active user(s). Reassign or deactivate them first.'
   }
 };
 
