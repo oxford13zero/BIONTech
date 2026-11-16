@@ -59,13 +59,6 @@ CREATE TABLE IF NOT EXISTS ai_systems (
   annex_iii_applicable        BOOLEAN DEFAULT false,
   ce_marking_required         BOOLEAN DEFAULT false,
   risk_score_total            NUMERIC(4,2),
-  responsible_area            TEXT,
-autonomy_level                INTEGER,
-eu_ai_act_risk_category       TEXT,
-environment                   TEXT,
-infrastructure_provider       TEXT,
-shadow_ai_label               TEXT,
-risk_score_total              NUMERIC,
   deployment_status             TEXT,
   created_at                  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at                  TIMESTAMPTZ NOT NULL DEFAULT NOW()
@@ -92,7 +85,7 @@ CREATE TABLE IF NOT EXISTS sec_functional (
   people_in_impact_area TEXT,
   affected_processes    TEXT,
   feeds_public_reports  TEXT,
-  foreseeable_misuse    TEXT,
+  foreseeable_misuse    TEXT
 );
 
 -- Section C — Regulatory
@@ -146,7 +139,7 @@ CREATE TABLE IF NOT EXISTS sec_data_engineering (
   data_stored_on_provider   TEXT,
   data_processing_region    TEXT,
   data_processing_agreement TEXT,
-  data_transfer_location    TEXT,
+  data_transfer_location    TEXT
 );
 
 -- Section E — Performance
@@ -170,7 +163,7 @@ CREATE TABLE IF NOT EXISTS sec_performance (
   prediction_outliers_detected BOOLEAN DEFAULT false,
   last_retraining_date        DATE,
   retraining_approval_process TEXT,
-  sensor_monitoring_active    BOOLEAN DEFAULT false,
+  sensor_monitoring_active    BOOLEAN DEFAULT false
 );
 
 -- Section F — Risk (Operational)
@@ -244,7 +237,6 @@ CREATE TABLE IF NOT EXISTS sec_compliance_docs (
   created_at                      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at                      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   docs_accessible_for_audit    TEXT,
-  board_informed               TEXT,
   market_regulator_disclosure  TEXT,
   next_contract_renewal        DATE,
   annex_iv_complete            BOOLEAN DEFAULT false,

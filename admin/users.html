@@ -37,9 +37,9 @@
         </select>
         <select class="admin-select" id="roleFilter" onchange="loadUsers()">
           <option value="">All roles</option>
-          <option value="company_admin">Company Admin</option>
-          <option value="company_user">Company User</option>
-          <option value="branch_manager">Branch Manager</option>
+          <option value="super_empresa">Company Super User</option>
+          <option value="super_division">Division Super User</option>
+          <option value="usuario_division">Division User</option>
         </select>
       </div>
     </div>
@@ -50,13 +50,14 @@
           <th>Email</th>
           <th>Company</th>
           <th>Role</th>
+          <th>Division</th>
           <th>Status</th>
           <th>Created</th>
           <th>Actions</th>
         </tr>
       </thead>
       <tbody id="usersBody">
-        <tr><td colspan="7" class="admin-loading">Loading…</td></tr>
+        <tr><td colspan="8" class="admin-loading">Loading…</td></tr>
       </tbody>
     </table>
   </div>
@@ -84,18 +85,24 @@
     <div class="field-row">
       <div class="field">
         <label>Company *</label>
-        <select id="fCompany">
+        <select id="fCompany" onchange="loadDivisions()">
           <option value="">Select company…</option>
         </select>
       </div>
       <div class="field">
         <label>Role *</label>
-        <select id="fRole">
-          <option value="company_admin">Company Admin</option>
-          <option value="company_user">Company User</option>
-          <option value="branch_manager">Branch Manager</option>
+        <select id="fRole" onchange="toggleDivision()">
+          <option value="super_empresa">Company Super User</option>
+          <option value="super_division">Division Super User</option>
+          <option value="usuario_division">Division User</option>
         </select>
       </div>
+    </div>
+    <div class="field" id="fDivisionWrap">
+      <label>Division *</label>
+      <select id="fDivision">
+        <option value="">Select company first…</option>
+      </select>
     </div>
     <div class="field">
       <label id="passwordLabel">Password * (min 8 characters)</label>
@@ -153,7 +160,7 @@
 
     const tbody = document.getElementById('usersBody');
     if (!data.length) {
-      tbody.innerHTML = '<tr><td colspan="7" class="admin-empty">No users found</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="8" class="admin-empty">No users found</td></tr>';
       return;
     }
     tbody.innerHTML = data.map(u => `
@@ -161,17 +168,43 @@
         <td style="font-weight:600;color:#EAF0FF;">${u.full_name}</td>
         <td style="font-size:12px;">${u.email}</td>
         <td>${u.company_name || '—'}</td>
-        <td><span style="font-size:11px;color:#85B7EB;">${u.role}</span></td>
+        <td><span style="font-size:11px;color:#85B7EB;">${ROLE_LABELS[u.role] || u.role}</span></td>
+        <td style="font-size:12px;">${u.role === 'super_empresa' ? 'All divisions' : (u.division_name || '<span style="color:#ED93B1;">Not assigned</span>')}</td>
         <td>${statusBadge(u.status)}</td>
         <td>${formatDate(u.created_at)}</td>
         <td>
           <div style="display:flex;gap:6px;">
-            <button class="btn btn-secondary btn-sm" onclick="editUser('${u.id}','${u.full_name}','${u.email}','${u.company_id}','${u.role}')">Edit</button>
+            <button class="btn btn-secondary btn-sm" onclick="editUser('${u.id}','${u.full_name}','${u.email}','${u.company_id}','${u.role}','${u.division_id || ''}')">Edit</button>
             ${u.status !== 'inactive' ? `<button class="btn btn-danger btn-sm" onclick="deactivateUser('${u.id}')">Deactivate</button>` : ''}
           </div>
         </td>
       </tr>
     `).join('');
+  }
+
+  const ROLE_LABELS = {
+    super_empresa:    'Company Super User',
+    super_division:   'Division Super User',
+    usuario_division: 'Division User'
+  };
+
+  // Divisiones de la empresa seleccionada
+  async function loadDivisions(selectedId = '') {
+    const company = document.getElementById('fCompany').value;
+    const sel = document.getElementById('fDivision');
+    if (!company) { sel.innerHTML = '<option value="">Select company first…</option>'; return; }
+    sel.innerHTML = '<option value="">Loading…</option>';
+    const data = await apiFetch(`/api/admin-users?divisions=true&company_id=${company}`);
+    const list = Array.isArray(data) ? data : [];
+    sel.innerHTML = '<option value="">Select division…</option>' +
+      list.map(d => `<option value="${d.id}">${d.name}</option>`).join('');
+    sel.value = selectedId;
+  }
+
+  // Super usuario empresa no tiene división
+  function toggleDivision() {
+    const role = document.getElementById('fRole').value;
+    document.getElementById('fDivisionWrap').style.display = role === 'super_empresa' ? 'none' : 'block';
   }
 
   function openModal(userData = null) {
@@ -180,7 +213,7 @@
     document.getElementById('saveBtn').textContent    = userData ? 'Save Changes' : 'Create User';
     document.getElementById('fFullName').value        = userData?.full_name || '';
     document.getElementById('fEmail').value           = userData?.email || '';
-    document.getElementById('fRole').value            = userData?.role || 'company_user';
+    document.getElementById('fRole').value            = userData?.role || 'usuario_division';
     document.getElementById('fPassword').value        = '';
     document.getElementById('passwordLabel').textContent = userData
       ? 'New Password (leave blank to keep current)'
@@ -189,6 +222,10 @@
       ? 'Only fill if you want to change the password'
       : '';
     if (userData?.company_id) document.getElementById('fCompany').value = userData.company_id;
+    // La empresa no se cambia al editar
+    document.getElementById('fCompany').disabled = !!userData;
+    toggleDivision();
+    loadDivisions(userData?.division_id || '');
     document.getElementById('modalAlert').style.display = 'none';
     document.getElementById('userModal').classList.add('open');
   }
@@ -204,9 +241,14 @@
     const company  = document.getElementById('fCompany').value;
     const role     = document.getElementById('fRole').value;
     const password = document.getElementById('fPassword').value;
+    const division = document.getElementById('fDivision').value;
 
     if (!fullName || !email || !company || !role) {
       showAlert('modalAlert', 'All fields except password are required.');
+      return;
+    }
+    if (role !== 'super_empresa' && !division) {
+      showAlert('modalAlert', 'Division is required for this role.');
       return;
     }
     if (!id && !password) {
@@ -218,7 +260,8 @@
     btn.disabled = true;
     btn.textContent = 'Saving…';
 
-    const payload = { full_name: fullName, email, company_id: company, role };
+    const payload = { full_name: fullName, email, company_id: company, role,
+                      division_id: role === 'super_empresa' ? null : division };
     if (password) payload.password = password;
 
     const url    = id ? `/api/admin-users?id=${id}` : '/api/admin-users';
@@ -236,8 +279,8 @@
     loadUsers();
   }
 
-  function editUser(id, name, email, company, role) {
-    openModal({ id, full_name: name, email, company_id: company, role });
+  function editUser(id, name, email, company, role, divisionId) {
+    openModal({ id, full_name: name, email, company_id: company, role, division_id: divisionId || null });
   }
 
   async function deactivateUser(id) {

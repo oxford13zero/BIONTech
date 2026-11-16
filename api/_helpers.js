@@ -38,11 +38,14 @@ function verifyAdmin(req) {
   if (!auth) throw { status: 401, message: 'No token provided' };
   const token = auth.split(' ')[1];
   if (!token) throw { status: 401, message: 'No token provided' };
+  let decoded;
   try {
-    return jwt.verify(token, process.env.JWT_SECRET);
+    decoded = jwt.verify(token, process.env.JWT_SECRET);
   } catch (e) {
     throw { status: 403, message: 'Invalid or expired token' };
   }
+  if (decoded.type !== 'admin') throw { status: 403, message: 'Invalid token type' };
+  return decoded;
 }
 
 // ── CORS headers ──────────────────────────────────────────────

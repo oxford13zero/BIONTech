@@ -42,11 +42,19 @@ CREATE TABLE IF NOT EXISTS users (
   company_id    UUID NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
   full_name     TEXT NOT NULL,
   email         TEXT UNIQUE NOT NULL,
-  role          TEXT NOT NULL DEFAULT 'company_user' CHECK (role IN ('company_admin','company_user','branch_manager')),
+  role          TEXT NOT NULL DEFAULT 'usuario_division'
+                CONSTRAINT users_role_check
+                CHECK (role IN ('super_empresa','super_division','usuario_division')),
+  -- División asignada (id de branches en la BD del cliente). Ver docs/roles-y-accesos.md
+  division_id   UUID,
   password_hash VARCHAR(500) NOT NULL,
   status        TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active','inactive')),
   created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  updated_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  updated_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  CONSTRAINT users_division_check CHECK (
+    (role = 'super_empresa' AND division_id IS NULL) OR
+    (role IN ('super_division','usuario_division') AND division_id IS NOT NULL)
+  )
 );
 
 -- Inventory types table

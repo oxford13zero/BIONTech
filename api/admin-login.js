@@ -45,7 +45,7 @@ module.exports = async function handler(req, res) {
     );
 
     const token = jwt.sign(
-      { adminId: admin.id, email: admin.email, name: admin.full_name },
+      { type: 'admin', adminId: admin.id, email: admin.email, name: admin.full_name },
       process.env.JWT_SECRET,
       { expiresIn: process.env.JWT_EXPIRES_IN || '8h' }
     );

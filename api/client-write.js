@@ -1,5 +1,8 @@
 const { Pool } = require('pg');
-const jwt = require('jsonwebtoken');
+const {
+  ROLES, verifyClient, assertCanEdit, assertSuperEmpresa,
+  assertDivisionInScope, assertSystemInScope, assertSafeColumns, sendError
+} = require('./_auth');
 
 const clientPools = {};
 function getClientPool(dbName) {
@@ -21,43 +24,47 @@ function setCors(res) {
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 }
 
-function verifyToken(req) {
-  const auth = req.headers['authorization'];
-  if (!auth) throw { status: 401, message: 'No token' };
-  return jwt.verify(auth.split(' ')[1], process.env.JWT_SECRET);
-}
+// Tablas de secciones (una fila por sistema)
+const SECTION_TABLES = [
+  'sec_functional', 'sec_regulatory', 'sec_data_engineering',
+  'sec_performance', 'sec_risk_operational', 'sec_risk_decision',
+  'sec_risk_strategic', 'sec_risk_human_use', 'sec_compliance_docs',
+  'risk_assessments', 'human_supervision', 'sec_accountability'
+];
+// Tablas editables en la ficha (S5)
+const EDITABLE_TABLES = ['ai_systems', ...SECTION_TABLES, 'incidents', 'system_integrations'];
+
+const isSet = v => v && v !== 'undefined' && v !== 'null';
 
 module.exports = async function handler(req, res) {
   setCors(res);
   if (req.method === 'OPTIONS') return res.status(200).end();
 
-  let decoded;
-  try { decoded = verifyToken(req); }
-  catch (e) { return res.status(401).json({ error: 'Invalid token' }); }
+  let user;
+  try { user = verifyClient(req); }
+  catch (e) { return sendError(res, e); }
 
-  const { role, branch_id: tokenBranchId } = decoded;
-
-  const pool = getClientPool(decoded.dbName);
+  const pool = getClientPool(user.dbName);
   const { action } = req.query;
-  const body = req.body;
+  const body = req.body || {};
 
   try {
-    // ── Insert branch ─────────────────────────────────────────
+    // ── Insert division (branch) ──────────────────────────────
     if (action === 'insert_branch') {
-      if (role !== 'company_admin') return res.status(403).json({ error: 'Only company admins can create branches' });
-
+      assertSuperEmpresa(user);
+      if (!body.name) return res.status(400).json({ error: 'Name required' });
       const result = await pool.query(
         `INSERT INTO branches (company_id, name, address, country, status)
          VALUES ($1, $2, $3, $4, 'active') RETURNING id`,
-        [decoded.companyId, body.name, body.address, body.country || 'Chile']
+        [user.companyId, body.name, body.address, body.country || 'Chile']
       );
       return res.status(201).json({ id: result.rows[0].id });
     }
 
     // ── Insert AI system ──────────────────────────────────────
     if (action === 'insert_system') {
-      if (role === 'company_user') return res.status(403).json({ error: 'Read-only access' });
-      if (role === 'branch_manager' && String(body.branch_id) !== String(tokenBranchId)) return res.status(403).json({ error: 'You can only add systems to your assigned branch' });
+      assertCanEdit(user);
+      await assertDivisionInScope(pool, user, body.branch_id);
 
       const result = await pool.query(
         `INSERT INTO ai_systems (
@@ -68,7 +75,7 @@ module.exports = async function handler(req, res) {
         ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,'Sin evaluar',$15,'active','Declarado')
         RETURNING id`,
         [
-          decoded.companyId, body.branch_id, body.system_code, body.name,
+          user.companyId, body.branch_id, body.system_code, body.name,
           body.inventory_group, body.vendor, body.version, body.deploy_date,
           body.responsible_person, body.responsible_area, body.operational_location,
           body.platform, body.country || 'Chile', body.risk_level,
@@ -80,59 +87,47 @@ module.exports = async function handler(req, res) {
 
     // ── Update AI system ──────────────────────────────────────
     if (action === 'update_system') {
-      if (role === 'company_user') return res.status(403).json({ error: 'Read-only access' });
-      if (role === 'branch_manager') {
-        const check = await pool.query('SELECT branch_id FROM ai_systems WHERE id = $1', [body.system_id]);
-        if (String(check.rows[0]?.branch_id) !== String(tokenBranchId)) return res.status(403).json({ error: 'You can only edit systems in your assigned branch' });
-      }
-
+      assertCanEdit(user);
       const { system_id, payload } = body;
+      await assertSystemInScope(pool, user, system_id);
+      // Solo super_empresa puede mover un sistema a otra división
+      assertSafeColumns(payload, user.role === ROLES.SUPER_EMPRESA ? ['status'] : ['status', 'branch_id']);
+      if (payload.branch_id) await assertDivisionInScope(pool, user, payload.branch_id);
+
       const keys = Object.keys(payload);
-      const values = Object.values(payload);
       const setClause = keys.map((k, i) => `${k} = $${i + 2}`).join(', ');
       await pool.query(
         `UPDATE ai_systems SET ${setClause}, updated_at = NOW() WHERE id = $1`,
-        [system_id, ...values]
+        [system_id, ...Object.values(payload)]
       );
       return res.status(200).json({ success: true });
     }
 
     // ── Upsert section ────────────────────────────────────────
     if (action === 'upsert_section') {
-      if (role === 'company_user') return res.status(403).json({ error: 'Read-only access' });
-      if (role === 'branch_manager') {
-        const check = await pool.query('SELECT branch_id FROM ai_systems WHERE id = $1', [body.system_id]);
-        if (String(check.rows[0]?.branch_id) !== String(tokenBranchId)) return res.status(403).json({ error: 'You can only edit systems in your assigned branch' });
-      }
-
-      const allowedTables = [
-        'sec_functional', 'sec_regulatory', 'sec_data_engineering',
-        'sec_performance', 'sec_risk_operational', 'sec_risk_decision',
-        'sec_risk_strategic', 'sec_risk_human_use', 'sec_compliance_docs',
-        'risk_assessments', 'human_supervision','sec_accountability'
-      ];
+      assertCanEdit(user);
       const { table, system_id, payload } = body;
-      if (!allowedTables.includes(table)) {
-        return res.status(400).json({ error: 'Invalid table' });
-      }
+      if (!SECTION_TABLES.includes(table)) return res.status(400).json({ error: 'Invalid table' });
+      await assertSystemInScope(pool, user, system_id);
+      assertSafeColumns(payload);
+
       const fullPayload = { system_id, ...payload };
       const keys = Object.keys(fullPayload);
-      const values = Object.values(fullPayload);
       const cols = keys.join(', ');
       const placeholders = keys.map((_, i) => `$${i + 1}`).join(', ');
-      const updates = keys.filter(k => k !== 'system_id').map((k, i) => `${k} = EXCLUDED.${k}`).join(', ');
+      const updates = Object.keys(payload).map(k => `${k} = EXCLUDED.${k}`).join(', ');
       await pool.query(
         `INSERT INTO ${table} (${cols}) VALUES (${placeholders})
          ON CONFLICT (system_id) DO UPDATE SET ${updates}, updated_at = NOW()`,
-        values
+        Object.values(fullPayload)
       );
       return res.status(200).json({ success: true });
     }
 
-    // ── Delete system ─────────────────────────────────────────
+    // ── Delete system (logical) ───────────────────────────────
     if (action === 'delete_system') {
-      if (role !== 'company_admin') return res.status(403).json({ error: 'Only company admins can delete systems' });
-
+      assertCanEdit(user);
+      await assertSystemInScope(pool, user, body.system_id);
       await pool.query(
         `UPDATE ai_systems SET status = 'inactive', updated_at = NOW() WHERE id = $1`,
         [body.system_id]
@@ -142,56 +137,53 @@ module.exports = async function handler(req, res) {
 
     // ── Update section (edit mode in S5) ──────────────────────
     if (action === 'update_section') {
-      if (role === 'company_user') return res.status(403).json({ error: 'Read-only access' });
-      if (role === 'branch_manager') {
-        const sysId = body.table === 'ai_systems' ? (body.record_id || body.system_id) : body.system_id;
-        const check = await pool.query('SELECT branch_id FROM ai_systems WHERE id = $1', [sysId]);
-        if (String(check.rows[0]?.branch_id) !== String(tokenBranchId)) return res.status(403).json({ error: 'You can only edit systems in your assigned branch' });
-      }
-
-      const allowedTables = [
-        'ai_systems', 'sec_functional', 'sec_regulatory', 'sec_data_engineering',
-        'sec_performance', 'sec_risk_operational', 'sec_risk_decision',
-        'sec_risk_strategic', 'sec_risk_human_use', 'sec_compliance_docs',
-        'risk_assessments', 'human_supervision', 'incidents', 'system_integrations','sec_accountability'
-      ];
+      assertCanEdit(user);
       const { table, record_id, system_id, payload } = body;
-      if (!allowedTables.includes(table)) {
-        return res.status(400).json({ error: 'Invalid table' });
-      }
+      if (!EDITABLE_TABLES.includes(table)) return res.status(400).json({ error: 'Invalid table' });
+
+      const sysId = table === 'ai_systems' ? (isSet(record_id) ? record_id : system_id) : system_id;
+      await assertSystemInScope(pool, user, sysId);
+      assertSafeColumns(payload, table === 'ai_systems' ? ['status', 'branch_id'] : []);
+
       const keys = Object.keys(payload);
       const values = Object.values(payload);
       const setClause = keys.map((k, i) => `${k} = $${i + 2}`).join(', ');
-      const id = record_id || system_id;
-      const idField = table === 'ai_systems' ? 'id' : (record_id && record_id !== 'undefined' && record_id !== 'null' ? 'id' : 'system_id');
 
-
-      
-const updateResult = await pool.query(
-        `UPDATE ${table} SET ${setClause}, updated_at = NOW() WHERE ${idField} = $1`,
-        [id, ...values]
-      );
-      if (updateResult.rowCount === 0 && idField === 'system_id') {
-        // No existing row — insert new record
-        const insertKeys = [...keys, 'system_id'];
-        const insertVals = [...values, system_id];
-        const cols = insertKeys.map(k => `"${k}"`).join(', ');
-        const placeholders = insertKeys.map((_, i) => `$${i + 1}`).join(', ');
+      if (table === 'ai_systems') {
         await pool.query(
-          `INSERT INTO ${table} (${cols}) VALUES (${placeholders})`,
-          insertVals
+          `UPDATE ai_systems SET ${setClause}, updated_at = NOW() WHERE id = $1`,
+          [sysId, ...values]
         );
+      } else if (isSet(record_id)) {
+        // El registro debe pertenecer al sistema autorizado
+        await pool.query(
+          `UPDATE ${table} SET ${setClause}, updated_at = NOW()
+           WHERE id = $1 AND system_id = $${keys.length + 2}`,
+          [record_id, ...values, sysId]
+        );
+      } else {
+        const updateResult = await pool.query(
+          `UPDATE ${table} SET ${setClause}, updated_at = NOW() WHERE system_id = $1`,
+          [sysId, ...values]
+        );
+        if (updateResult.rowCount === 0) {
+          // No existe la fila — crearla
+          const insertKeys = [...keys, 'system_id'];
+          const cols = insertKeys.map(k => `"${k}"`).join(', ');
+          const placeholders = insertKeys.map((_, i) => `$${i + 1}`).join(', ');
+          await pool.query(
+            `INSERT INTO ${table} (${cols}) VALUES (${placeholders})`,
+            [...values, sysId]
+          );
+        }
       }
       return res.status(200).json({ success: true });
-
-
-      
-      
     }
 
     return res.status(400).json({ error: 'Unknown action' });
 
   } catch (err) {
+    if (err && err.status) return sendError(res, err);
     console.error('client-write error:', err);
     return res.status(500).json({ error: err.message });
   }

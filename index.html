@@ -2049,8 +2049,15 @@ applyLang(currentLang);
   let s_userId      = null;
   let s_userEmail   = '';
   let s_dbName      = null; // Azure client database name
-  let s_userRole    = null; // 'company_admin' | 'branch_manager' | 'company_user'
-  let s_branchId    = null; // assigned branch for branch_manager, null for others
+  let s_userRole    = null; // 'super_empresa' | 'super_division' | 'usuario_division' (ver docs/roles-y-accesos.md)
+  let s_branchId    = null; // división asignada; null para super_empresa
+
+  // Permisos en pantalla (el servidor también los valida)
+  function isSuperEmpresa() { return s_userRole === 'super_empresa'; }
+  function canEditDivision(divisionId) {
+    return s_userRole === 'super_empresa' ||
+      (s_userRole === 'super_division' && String(s_branchId) === String(divisionId));
+  }
   let s3_tab        = 'all';
   let s3_allData    = { branches: [], systems: [] };
 
@@ -2065,14 +2072,17 @@ applyLang(currentLang);
     s_userId      = user.id;
     s_userEmail   = user.email;
     s_dbName      = user.dbName;
-    s_userRole    = user.role      || 'company_user';
-    s_branchId    = user.branch_id || null;
+    s_userRole    = user.role       || 'usuario_division';
+    s_branchId    = user.divisionId || user.branch_id || null;
     const portalBtnAz = document.getElementById('portalBtn');
     if(portalBtnAz) portalBtnAz.style.display = 'inline-flex';
     setupS1(user.email, user.companyName);
     showScreen('screenS1');
     const addBtn = document.getElementById('s1AddBranchBtn');
-    if(addBtn) addBtn.style.display = s_userRole === 'company_admin' ? 'flex' : 'none';
+    if(addBtn) addBtn.style.display = isSuperEmpresa() ? 'flex' : 'none';
+    // Gestión de usuarios: solo Super usuario empresa
+    const usersBtn = document.getElementById('s1UsersBtn');
+    if(usersBtn) usersBtn.style.display = isSuperEmpresa() ? 'flex' : 'none';
     if(s_companyId) loadS3Data();
   }
 
@@ -2854,12 +2864,24 @@ function renderAttentionPanel(systems) {
     </div>`;
 }
 
-async function deleteSystem(id) {
-  if(!confirm('Delete this AI system and all its section data?')) return;
-  const { error } = await sb.from('ai_systems').delete().eq('id', id);
-  if(error){ alert('Error: ' + error.message); return; }
-  allSystems = allSystems.filter(s => s.id !== id);
-  renderDashboard(allSystems);
+// Desactivar sistema (borrado lógico vía API)
+async function deactivateSystem(id, branchId) {
+  if(!confirm('¿Desactivar este sistema? Dejará de aparecer en el inventario.')) return;
+  const token = localStorage.getItem('bion_client_token');
+  try {
+    const res = await fetch('/api/client-write?action=delete_system', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+      body: JSON.stringify({ system_id: id })
+    });
+    const data = await res.json().catch(() => ({}));
+    if(!res.ok) { alert('Error: ' + (data.error || 'No se pudo desactivar')); return; }
+  } catch(err) { alert('Error de red: ' + err.message); return; }
+  allSystems = (allSystems || []).filter(s => s.id !== id);
+  s3_allData = { branches: [], systems: [] };
+  if(s_companyId) loadS3Data();
+  if(branchId) showS4Branch(branchId, document.getElementById('s4Title').textContent);
+  else showScreen('screenS1');
 }
 
 function openAddWizard() { openWizard('system'); }
@@ -3484,8 +3506,7 @@ const _origRenderS4 = typeof renderS4Systems !== 'undefined' ? renderS4Systems :
 function showS4AddBtn(branchId, branchName) {
   const btn = document.getElementById('s4AddSystemBtn');
   if(!btn) return;
-  const canAdd = s_userRole === 'company_admin' ||
-    (s_userRole === 'branch_manager' && String(s_branchId) === String(branchId));
+  const canAdd = canEditDivision(branchId);
   btn.style.display = canAdd ? 'block' : 'none';
   if(canAdd) btn.onclick = () => openWizard('system', branchId, branchName);
 }
@@ -3713,6 +3734,13 @@ function showS4AddBtn(branchId, branchName) {
     </svg>
     Add new branch
   </button>
+  <button class="s1-dash-btn" id="s1UsersBtn" onclick="openUsersScreen()" style="display:none;margin-top:10px;border-color:rgba(244,195,139,.3);color:var(--muted);">
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+      <circle cx="8" cy="5" r="3" stroke="currentColor" stroke-width="1.3"/>
+      <path d="M2.5 14c.8-2.6 3-4 5.5-4s4.7 1.4 5.5 4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+    </svg>
+    Manage users
+  </button>
   <button class="s1-logout" onclick="handleClientLogout()">Sign out</button>
 </div>
 </div>
@@ -3914,7 +3942,7 @@ function showS4AddBtn(branchId, branchName) {
 
 // ── Screen routing ───────────────────────────────────────────
 function showScreen(id) {
-  ['screenS1','screenS3','screenS4','screenS5','clientDashboard','home'].forEach(sid => {
+  ['screenS1','screenS3','screenS4','screenS5','screenUsers','clientDashboard','home'].forEach(sid => {
     const el = document.getElementById(sid);
     if(el) el.style.display = 'none';
   });
@@ -3928,7 +3956,7 @@ function showScreen(id) {
   const screen = e.state?.screen;
   if(screen && clientLoggedIn) {
     // restore the screen without pushing a new history entry
-    ['screenS1','screenS3','screenS4','screenS5','clientDashboard','home'].forEach(sid => {
+    ['screenS1','screenS3','screenS4','screenS5','screenUsers','clientDashboard','home'].forEach(sid => {
       const el = document.getElementById(sid);
       if(el) el.style.display = 'none';
     });
@@ -4507,7 +4535,7 @@ async function showS5(systemId) {
       </div>
       <div class="${bodyClass}" style="border-left:4px solid ${color}40;">
         <div class="s5-fields-grid" id="${editId}-grid">${rows.join('')}</div>
-        ${s_userRole !== 'company_user' ? `<div class="s5-section-edit-row">
+        ${canEditDivision(sys.branch_id) ? `<div class="s5-section-edit-row">
           <button class="s5-sec-edit-btn" onclick="enterEditMode('${editId}','${tableKey||''}','${recordId||''}','${label}')">Edit section</button>
         </div>` : ''}
       </div>
@@ -4706,6 +4734,11 @@ async function showS5(systemId) {
         field('Offline capable', intg ? (intg.offline_capable ? 'Yes — ' + (intg.offline_buffer_hours||72) + 'h buffer' : 'No') : null, 'offline_capable'),
         field('Priority', intg?.priority, 'priority'),
       ]), false, 'system_integrations', integrations[0]?.id)}
+    ${canEditDivision(sys.branch_id) ? `
+    <div style="display:flex;justify-content:flex-end;margin:24px 0 8px;">
+      <button class="s5-sec-edit-btn" style="color:#DC2626;border-color:rgba(220,38,38,.4);"
+        onclick="deactivateSystem('${sys.id}','${sys.branch_id || ''}')">Desactivar sistema</button>
+    </div>` : ''}
     `;
   } catch(err) {
     console.error('S5 render error:', err);
@@ -5042,24 +5075,22 @@ async function selectReportBranch(branchId, branchName, el) {
   reportOutput.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 
 const frameworkMap = { 'ISO 42001': 'ISO42001', 'NIST': 'NIST', 'EU AI Act': 'EUAI' };
+  // Empresa y BD las agrega el servidor desde el token (api/client-report.js)
   const body = {
-    cliente:      s_companyName?.toLowerCase(),
-    database:     s_dbName,
-    company_id:   s_companyId,
     branch_id:    branchId,
-    branch_name:  branchName,
-    company_name: s_companyName,
-    scope:        'division',
     framework:    frameworkMap[_reportType] || _reportType
   };
 
   try {
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 180000);
+    const timeout = setTimeout(() => controller.abort(), 300000);
 
-    const res = await fetch('https://api.biontcorp.com/api/bion', {
+    const res = await fetch('/api/client-report', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + localStorage.getItem('bion_client_token')
+      },
       body: JSON.stringify(body),
       signal: controller.signal
     });
@@ -5068,7 +5099,9 @@ const frameworkMap = { 'ISO 42001': 'ISO42001', 'NIST': 'NIST', 'EU AI Act': 'EU
     const text = await res.text();
 
     if (!res.ok) {
-      throw new Error('Server error ' + res.status + ': ' + text);
+      let msg = text;
+      try { msg = JSON.parse(text).error || text; } catch(e) {}
+      throw new Error('Server error ' + res.status + ': ' + msg);
     }
 
     reportLoader.style.display = 'none';
@@ -5082,7 +5115,7 @@ const frameworkMap = { 'ISO 42001': 'ISO42001', 'NIST': 'NIST', 'EU AI Act': 'EU
     reportLoader.style.display = 'none';
     reportError.style.display = 'block';
     reportError.textContent = err.name === 'AbortError'
-      ? 'El informe tardó más de 3 minutos. Por favor intenta nuevamente.'
+      ? 'El informe tardó más de 5 minutos. Por favor intenta nuevamente.'
       : 'Error generando informe: ' + err.message;
   }
 }
@@ -5094,5 +5127,204 @@ function closeReportModal() {
 document.addEventListener('keydown', function(e) {
   if(e.key === 'Escape') closeReportModal();
 });
+</script>
+<!-- ── USERS: gestión de usuarios (solo Super usuario empresa) ── -->
+<div id="screenUsers" style="display:none;">
+<style>
+  #screenUsers{ min-height:80vh; background:var(--bg); padding:40px 16px; box-sizing:border-box; }
+  .us-wrap{ max-width:960px; margin:0 auto; }
+  .us-head{ display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; margin-bottom:20px; }
+  .us-title{ font-size:24px; font-weight:800; color:var(--text); margin:0; text-align:left; }
+  .us-sub{ font-size:13px; color:var(--muted); margin:4px 0 0; }
+  .us-btn{ padding:10px 16px; border-radius:10px; border:1px solid var(--border); background:transparent; color:var(--secondary);
+           font-size:13px; font-weight:700; cursor:pointer; font-family:"Source Sans 3",system-ui,sans-serif; }
+  .us-btn:hover{ background:var(--panel); }
+  .us-btn-primary{ background:var(--secondary); color:#192F52; border-color:var(--secondary); }
+  .us-btn-primary:hover{ background:#F7D2A6; }
+  .us-btn-sm{ padding:6px 10px; font-size:12px; }
+  .us-btn-danger{ color:#ED93B1; border-color:rgba(237,147,177,.4); }
+  .us-table-wrap{ background:var(--panel); border:1px solid var(--border); border-radius:14px; overflow-x:auto; }
+  .us-table{ width:100%; border-collapse:collapse; font-size:13px; min-width:640px; }
+  .us-table th{ text-align:left; color:var(--muted); font-weight:600; font-size:11px; text-transform:uppercase; letter-spacing:.04em;
+                padding:12px 14px; border-bottom:1px solid var(--border); }
+  .us-table td{ padding:12px 14px; border-bottom:1px solid var(--border); color:var(--text); vertical-align:middle; }
+  .us-table tr:last-child td{ border-bottom:none; }
+  .us-muted{ color:var(--muted); font-size:12px; }
+  .us-badge{ display:inline-block; padding:2px 8px; border-radius:999px; font-size:11px; font-weight:600; }
+  .us-badge-on{ background:rgba(151,196,89,.15); color:#97C459; }
+  .us-badge-off{ background:rgba(194,205,237,.12); color:var(--muted); }
+  .us-empty{ padding:28px; text-align:center; color:var(--muted); }
+  .us-overlay{ display:none; position:fixed; inset:0; background:rgba(5,12,28,.7); z-index:2000; align-items:center; justify-content:center; padding:16px; }
+  .us-overlay.open{ display:flex; }
+  .us-modal{ width:100%; max-width:440px; background:var(--panel); border:1px solid var(--border); border-radius:16px; padding:24px; box-shadow:var(--shadow); }
+  .us-modal h3{ margin:0 0 16px; color:var(--text); font-size:18px; }
+  .us-field{ margin-bottom:12px; }
+  .us-field label{ display:block; font-size:12px; color:var(--muted); margin-bottom:4px; }
+  .us-field input, .us-field select{ width:100%; box-sizing:border-box; padding:10px 12px; border-radius:10px; border:1px solid var(--border);
+                                     background:var(--bg); color:var(--text); font-size:14px; font-family:inherit; }
+  .us-alert{ display:none; padding:10px 12px; border-radius:10px; background:rgba(237,147,177,.12); color:#ED93B1; font-size:13px; margin-bottom:12px; }
+  .us-actions{ display:flex; gap:8px; justify-content:flex-end; margin-top:16px; }
+</style>
+<div class="us-wrap">
+  <div class="us-head">
+    <div>
+      <button class="us-btn us-btn-sm" onclick="showScreen('screenS1')">← Back</button>
+      <h1 class="us-title" style="margin-top:12px;">Users</h1>
+      <p class="us-sub">Manage division users of your company</p>
+    </div>
+    <button class="us-btn us-btn-primary" onclick="openUserModal()">+ New user</button>
+  </div>
+  <div class="us-table-wrap">
+    <table class="us-table">
+      <thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Division</th><th>Status</th><th></th></tr></thead>
+      <tbody id="usBody"><tr><td colspan="6" class="us-empty">Loading…</td></tr></tbody>
+    </table>
+  </div>
+</div>
+
+<div class="us-overlay" id="usModal">
+  <div class="us-modal">
+    <h3 id="usModalTitle">New user</h3>
+    <div class="us-alert" id="usAlert"></div>
+    <input type="hidden" id="usId">
+    <div class="us-field"><label>Full name *</label><input type="text" id="usName"></div>
+    <div class="us-field"><label>Email *</label><input type="email" id="usEmail"></div>
+    <div class="us-field"><label>Role *</label>
+      <select id="usRole">
+        <option value="usuario_division">Division User (read only)</option>
+        <option value="super_division">Division Super User (read &amp; edit)</option>
+      </select>
+    </div>
+    <div class="us-field"><label>Division *</label><select id="usDivision"></select></div>
+    <div class="us-field"><label id="usPassLabel">Password * (min 8 characters)</label><input type="password" id="usPass"></div>
+    <div class="us-actions">
+      <button class="us-btn" onclick="closeUserModal()">Cancel</button>
+      <button class="us-btn us-btn-primary" id="usSave" onclick="saveUser()">Save</button>
+    </div>
+  </div>
+</div>
+</div>
+
+<script>
+(function(){
+  const ROLE_LABELS = {
+    super_empresa:    'Company Super User',
+    super_division:   'Division Super User',
+    usuario_division: 'Division User'
+  };
+  let usData = { users: [], divisions: [] };
+
+  const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+
+  async function usApi(method, query, body) {
+    const token = localStorage.getItem('bion_client_token');
+    const res = await fetch('/api/client-users' + (query || ''), {
+      method,
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+      body: body ? JSON.stringify(body) : undefined
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error || 'Request failed');
+    return data;
+  }
+
+  async function loadUsers() {
+    const tbody = document.getElementById('usBody');
+    tbody.innerHTML = '<tr><td colspan="6" class="us-empty">Loading…</td></tr>';
+    try {
+      usData = await usApi('GET');
+    } catch (e) {
+      tbody.innerHTML = `<tr><td colspan="6" class="us-empty">Error: ${esc(e.message)}</td></tr>`;
+      return;
+    }
+    if (!usData.users.length) {
+      tbody.innerHTML = '<tr><td colspan="6" class="us-empty">No users yet</td></tr>';
+      return;
+    }
+    tbody.innerHTML = usData.users.map(u => `
+      <tr>
+        <td style="font-weight:600;">${esc(u.full_name)}</td>
+        <td class="us-muted">${esc(u.email)}</td>
+        <td>${esc(ROLE_LABELS[u.role] || u.role)}</td>
+        <td>${u.role === 'super_empresa' ? '<span class="us-muted">All divisions</span>' : esc(u.division_name || '—')}</td>
+        <td><span class="us-badge ${u.status === 'active' ? 'us-badge-on' : 'us-badge-off'}">${esc(u.status)}</span></td>
+        <td style="text-align:right;white-space:nowrap;">
+          ${u.manageable ? `
+            <button class="us-btn us-btn-sm" onclick="openUserModal('${esc(u.id)}')">Edit</button>
+            ${u.status === 'active' ? `<button class="us-btn us-btn-sm us-btn-danger" onclick="deactivateUser('${esc(u.id)}')">Deactivate</button>` : ''}
+          ` : ''}
+        </td>
+      </tr>`).join('');
+  }
+
+  function showAlert(msg) {
+    const el = document.getElementById('usAlert');
+    el.textContent = msg;
+    el.style.display = msg ? 'block' : 'none';
+  }
+
+  window.openUsersScreen = function() {
+    showScreen('screenUsers');
+    loadUsers();
+  };
+
+  window.openUserModal = function(id) {
+    const u = id ? usData.users.find(x => x.id === id) : null;
+    document.getElementById('usId').value = u ? u.id : '';
+    document.getElementById('usModalTitle').textContent = u ? 'Edit user' : 'New user';
+    document.getElementById('usName').value  = u ? u.full_name : '';
+    document.getElementById('usEmail').value = u ? u.email : '';
+    document.getElementById('usRole').value  = u ? u.role : 'usuario_division';
+    document.getElementById('usPass').value  = '';
+    document.getElementById('usPassLabel').textContent = u
+      ? 'New password (leave blank to keep current)'
+      : 'Password * (min 8 characters)';
+    document.getElementById('usDivision').innerHTML =
+      '<option value="">Select division…</option>' +
+      usData.divisions.map(d => `<option value="${esc(d.id)}">${esc(d.name)}</option>`).join('');
+    document.getElementById('usDivision').value = u && u.division_id ? u.division_id : '';
+    showAlert('');
+    document.getElementById('usModal').classList.add('open');
+  };
+
+  window.closeUserModal = function() {
+    document.getElementById('usModal').classList.remove('open');
+  };
+
+  window.saveUser = async function() {
+    const id = document.getElementById('usId').value;
+    const body = {
+      full_name:   document.getElementById('usName').value.trim(),
+      email:       document.getElementById('usEmail').value.trim(),
+      role:        document.getElementById('usRole').value,
+      division_id: document.getElementById('usDivision').value
+    };
+    const pass = document.getElementById('usPass').value;
+    if (!body.full_name || !body.email || !body.division_id) return showAlert('Name, email and division are required.');
+    if (!id && !pass) return showAlert('Password is required for new users.');
+    if (pass && pass.length < 8) return showAlert('Password must be at least 8 characters.');
+    if (pass) body.password = pass;
+
+    const btn = document.getElementById('usSave');
+    btn.disabled = true; btn.textContent = 'Saving…';
+    try {
+      if (id) await usApi('PUT', '?id=' + encodeURIComponent(id), body);
+      else    await usApi('POST', '', body);
+      closeUserModal();
+      loadUsers();
+    } catch (e) {
+      showAlert(e.message);
+    } finally {
+      btn.disabled = false; btn.textContent = 'Save';
+    }
+  };
+
+  window.deactivateUser = async function(id) {
+    if (!confirm('Deactivate this user? They will no longer be able to log in.')) return;
+    try { await usApi('DELETE', '?id=' + encodeURIComponent(id)); }
+    catch (e) { alert('Error: ' + e.message); }
+    loadUsers();
+  };
+})();
 </script>
 </body>

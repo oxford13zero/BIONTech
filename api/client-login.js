@@ -80,10 +80,11 @@ module.exports = async function handler(req, res) {
     // 4. Generate JWT
     const token = jwt.sign(
       {
+        type:      'client',
         userId:    user.id,
         email:     user.email,
         role:      user.role,
-        branch_id: user.branch_id || null,
+        divisionId: user.division_id || null,
         companyId: user.company_id,
         companyName: user.company_name,
         country:   user.country,
@@ -99,7 +100,8 @@ module.exports = async function handler(req, res) {
         id:          user.id,
         email:       user.email,
         role:        user.role,
-        branch_id: user.branch_id || null,
+        divisionId:  user.division_id || null,
+        branch_id:   user.division_id || null, // compatibilidad con la pantalla actual (paso 8)
         companyId:   user.company_id,
         companyName: user.company_name,
         country:     user.country,
