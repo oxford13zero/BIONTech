@@ -5075,24 +5075,22 @@ async function selectReportBranch(branchId, branchName, el) {
   reportOutput.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 
 const frameworkMap = { 'ISO 42001': 'ISO42001', 'NIST': 'NIST', 'EU AI Act': 'EUAI' };
+  // Empresa y BD las agrega el servidor desde el token (api/client-report.js)
   const body = {
-    cliente:      s_companyName?.toLowerCase(),
-    database:     s_dbName,
-    company_id:   s_companyId,
     branch_id:    branchId,
-    branch_name:  branchName,
-    company_name: s_companyName,
-    scope:        'division',
     framework:    frameworkMap[_reportType] || _reportType
   };
 
   try {
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 180000);
+    const timeout = setTimeout(() => controller.abort(), 300000);
 
-    const res = await fetch('https://api.biontcorp.com/api/bion', {
+    const res = await fetch('/api/client-report', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + localStorage.getItem('bion_client_token')
+      },
       body: JSON.stringify(body),
       signal: controller.signal
     });
@@ -5101,7 +5099,9 @@ const frameworkMap = { 'ISO 42001': 'ISO42001', 'NIST': 'NIST', 'EU AI Act': 'EU
     const text = await res.text();
 
     if (!res.ok) {
-      throw new Error('Server error ' + res.status + ': ' + text);
+      let msg = text;
+      try { msg = JSON.parse(text).error || text; } catch(e) {}
+      throw new Error('Server error ' + res.status + ': ' + msg);
     }
 
     reportLoader.style.display = 'none';
@@ -5115,7 +5115,7 @@ const frameworkMap = { 'ISO 42001': 'ISO42001', 'NIST': 'NIST', 'EU AI Act': 'EU
     reportLoader.style.display = 'none';
     reportError.style.display = 'block';
     reportError.textContent = err.name === 'AbortError'
-      ? 'El informe tardó más de 3 minutos. Por favor intenta nuevamente.'
+      ? 'El informe tardó más de 5 minutos. Por favor intenta nuevamente.'
       : 'Error generando informe: ' + err.message;
   }
 }
