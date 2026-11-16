@@ -99,6 +99,7 @@ module.exports = async function handler(req, res) {
       user: {
         id:          user.id,
         email:       user.email,
+        fullName:    user.full_name,
         role:        user.role,
         divisionId:  user.division_id || null,
         branch_id:   user.division_id || null, // compatibilidad con la pantalla actual (paso 8)

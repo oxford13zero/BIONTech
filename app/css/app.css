@@ -18,3 +18,28 @@ body{margin:0;font-family:"Source Sans 3",system-ui,sans-serif;background:var(--
 .lang-btn{border:1px solid var(--border);background:transparent;color:var(--sand);font:inherit;font-size:12px;font-weight:700;
   padding:4px 10px;border-radius:8px;cursor:pointer}
 .lang-btn:hover{border-color:var(--sand)}
+
+/* Botones y formularios */
+.btn{border:1px solid rgba(244,195,139,.6);background:#1A2C52;color:var(--text);font:inherit;font-size:14px;font-weight:700;
+  padding:9px 16px;border-radius:10px;cursor:pointer}
+.btn:hover{background:#203765;border-color:rgba(244,195,139,.95)}
+.btn:disabled{opacity:.6;cursor:default}
+.btn-primary{background:var(--sand);color:#192F52;border-color:var(--sand)}
+.btn-primary:hover{background:#F7D2A6;border-color:#F7D2A6}
+.btn-ghost{border-color:var(--border);color:var(--muted);background:transparent}
+.btn-block{width:100%;margin-top:18px;padding:11px}
+.field-label{display:block;font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--dim);margin:14px 0 5px}
+.input{width:100%;background:var(--row);border:1px solid var(--border);color:var(--text);border-radius:10px;padding:10px 12px;font:inherit;font-size:15px}
+.input:focus{border-color:var(--sand);outline:none}
+.form-error{background:#4A1515;border:1px solid rgba(240,149,149,.4);color:#F09595;border-radius:10px;padding:9px 12px;font-size:13.5px;margin-top:4px}
+
+/* Login */
+.login-page{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px 16px}
+.login-top{position:fixed;top:16px;right:16px}
+.login-card{width:100%;max-width:380px;background:var(--deep);border:1px solid var(--border);border-radius:16px;padding:28px 24px;
+  box-shadow:0 12px 30px rgba(0,0,0,.35)}
+.login-logo{display:block;width:150px;height:auto;margin:0 auto}
+.login-sub{text-align:center;color:var(--dim);font-size:13px;margin:4px 0 18px}
+.login-title{font-size:20px;font-weight:800;margin:0 0 4px}
+.login-back{margin-top:18px;color:var(--dim);font-size:13px;text-decoration:none}
+.login-back:hover{color:var(--text)}
