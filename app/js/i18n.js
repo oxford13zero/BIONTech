@@ -76,7 +76,15 @@ const I18N = {
     sc_unassessed:     'Sin evaluar',
     sc_overdue:        'Revisión vencida',
     inv_none:          'Ningún sistema coincide con estos filtros.',
-    inv_count:         '{n} de {total} sistemas'
+    inv_count:         '{n} de {total} sistemas',
+    // Ficha
+    back_to_list:      'Volver',
+    no_info:           'Sin información',
+    no_records:        'Sin registros.',
+    n_records:         '{n} registros',
+    rec_not_found:     'Sistema no encontrado o fuera de tu acceso.',
+    yes:               'Sí',
+    no:                'No'
   },
   en: {
     app_subtitle:     'AI governance platform',
@@ -151,7 +159,15 @@ const I18N = {
     sc_unassessed:     'Not assessed',
     sc_overdue:        'Review overdue',
     inv_none:          'No systems match these filters.',
-    inv_count:         '{n} of {total} systems'
+    inv_count:         '{n} of {total} systems',
+    // System record
+    back_to_list:      'Back',
+    no_info:           'No information',
+    no_records:        'No records.',
+    n_records:         '{n} records',
+    rec_not_found:     'System not found or outside your access.',
+    yes:               'Yes',
+    no:                'No'
   }
 };
 

@@ -131,3 +131,23 @@ select.input{cursor:pointer}
 .sc.on{border-color:var(--sand);color:var(--sand)}
 .count-note{font-size:12.5px;color:var(--dim);margin:10px 0 0}
 @media(max-width:600px){.toolbar .input{flex:1 1 100%}}
+
+/* Ficha del sistema */
+.back{background:none;border:none;color:var(--muted);font:inherit;font-size:13.5px;cursor:pointer;padding:0;margin-bottom:12px}
+.back:hover{color:var(--text)}
+.head-row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:2px}
+.secs{display:flex;flex-direction:column;gap:8px}
+.sec{background:var(--panel2);border:1px solid var(--border);border-left:4px solid var(--c);border-radius:12px;overflow:hidden}
+.sec-head{width:100%;display:flex;align-items:center;gap:10px;padding:12px 14px;background:none;border:none;color:var(--text);font:inherit;cursor:pointer;text-align:left}
+.sec-head:hover{background:var(--row)}
+.sec-head .dot{width:9px;height:9px;border-radius:50%;background:var(--c);flex:none}
+.sec-name{font-weight:700;font-size:14.5px}
+.sec-count{margin-left:auto;font-size:12px;color:var(--dim)}
+.sec-head .arrow{color:var(--dim);transition:transform .15s}
+.sec.open .sec-head .arrow{transform:rotate(90deg)}
+.sec-body{padding:4px 16px 16px;border-top:1px solid var(--border)}
+.fields{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px 22px;padding-top:12px}
+.field label{font-size:11px;text-transform:uppercase;color:var(--dim);letter-spacing:.05em;display:block;font-weight:700}
+.field div{font-size:13.5px;white-space:pre-wrap;word-break:break-word}
+.no-info{color:var(--dim);font-style:italic}
+.sep{border:none;border-top:1px dashed var(--border);margin:14px 0 0}

@@ -193,6 +193,7 @@ function parseHash() {
 
 function currentRoute() {
   const { path } = parseHash();
+  if (/^sistema\/[\w-]+$/.test(path)) return path;   // ficha de un sistema
   return findItem(menu(), path) ? path : 'dashboard';
 }
 
@@ -208,6 +209,7 @@ function pageHead() {
 }
 
 function viewPage() {
+  if (S.route.startsWith('sistema/')) return viewSystem(S.route.split('/')[1]);
   if (S.route === 'dashboard') return pageHead() + viewDashboard();
   if (S.route.startsWith('inventario')) return pageHead() + viewInventory();
   return pageHead() + `<div class="card empty">${t('section_soon')}</div>`;
@@ -248,7 +250,7 @@ function viewDashboard() {
     .sort((a, b) => LEVELS.indexOf(a.risk_level) - LEVELS.indexOf(b.risk_level))
     .slice(0, 10);
   const attRows = attention.map(s => `
-    <tr class="row" onclick="location.hash='#/inventario?q=${encodeURIComponent(s.system_code)}'">
+    <tr class="row" onclick="openSystem('${esc(s.id)}')">
       <td><b>${esc(s.name)}</b><small>${esc(s.system_code)}</small></td>
       <td>${esc(s.branch_name || '—')}</td>
       <td>${riskChip(s.risk_level)}</td>
@@ -315,7 +317,7 @@ function invTable() {
   const list = invList();
   const total = (S.data?.systems || []).length;
   const rows = list.map(s => `
-    <tr>
+    <tr class="row" onclick="openSystem('${esc(s.id)}')">
       <td><b>${esc(s.name)}</b><small>${esc(s.system_code)}</small></td>
       <td>${esc(s.vendor || '—')}</td>
       <td>${t('group_' + s.inventory_group)}</td>
@@ -350,6 +352,82 @@ function viewInventory() {
     <div class="card" id="invTable">${invTable()}</div>`;
 }
 
+
+// ── Ficha del sistema (solo lectura) ──────────────────────────
+// S.rec = { id, data, error } — datos de /api/client-record
+function openSystem(id) { location.hash = '#/sistema/' + id; }
+
+async function loadRecord(id) {
+  S.rec = { id, data: null, error: null };
+  S.openSec = { A: true };
+  try {
+    S.rec.data = await apiGet('/api/client-record?system_id=' + encodeURIComponent(id));
+  } catch (e) {
+    if (!S.user) return;
+    S.rec.error = /403|404/.test(e.message) ? 'rec_not_found' : 'data_error';
+  }
+  if (S.route === 'sistema/' + id) render();
+}
+
+function fmtValue(v, fmt) {
+  if (v === null || v === undefined || v === '') return null;
+  if (fmt === 'bool' || typeof v === 'boolean') return v === true || v === 'true' ? t('yes') : t('no');
+  if (fmt === 'scale5') return v + ' / 5';
+  if (fmt === 'seconds') return v + ' s';
+  if (fmt === 'pct') return v + ' %';
+  if (fmt === 'usd') return 'USD ' + Number(v).toLocaleString(LANG === 'es' ? 'es-CL' : 'en-US');
+  if (/^\d{4}-\d{2}-\d{2}T/.test(String(v))) return String(v).slice(0, 10);
+  return String(v);
+}
+
+function toggleSection(id) {
+  S.openSec = S.openSec || { A: true };
+  S.openSec[id] = !S.openSec[id];
+  render();
+}
+
+function fieldsHtml(def, row) {
+  return `<div class="fields">${def.fields.map(([col, es, en, fmt]) => {
+    const v = row ? fmtValue(row[col], fmt) : null;
+    return `<div class="field"><label>${esc(LANG === 'es' ? es : en)}</label>
+      <div class="${v === null ? 'no-info' : ''}">${v === null ? t('no_info') : esc(v)}</div></div>`;
+  }).join('')}</div>`;
+}
+
+function sectionHtml(def, d) {
+  const open = (S.openSec || { A: true })[def.id];
+  const rows = def.many ? (d[def.data] || []) : [d[def.data]].filter(Boolean);
+  const filled = rows.reduce((n, r) => n + def.fields.filter(([c]) => r[c] !== null && r[c] !== undefined && r[c] !== '').length, 0);
+  const total = def.many ? def.fields.length * Math.max(rows.length, 1) : def.fields.length;
+  const body = def.many
+    ? (rows.length ? rows.map((r, i) => `${i ? '<hr class="sep">' : ''}${fieldsHtml(def, r)}`).join('') : `<p class="no-info">${t('no_records')}</p>`)
+    : fieldsHtml(def, rows[0]);
+  return `
+    <div class="sec ${open ? 'open' : ''}" style="--c:${def.color}">
+      <button class="sec-head" onclick="toggleSection('${def.id}')" aria-expanded="${!!open}">
+        <span class="dot"></span><span class="sec-name">${esc(def.title[LANG])}</span>
+        <span class="sec-count">${def.many ? t('n_records').replace('{n}', rows.length) : `${filled} / ${total}`}</span>
+        <span class="arrow">›</span>
+      </button>
+      ${open ? `<div class="sec-body">${body}</div>` : ''}
+    </div>`;
+}
+
+function viewSystem(id) {
+  const back = `<button class="back" onclick="history.length > 1 ? history.back() : (location.hash = '#/inventario')">← ${t('back_to_list')}</button>`;
+  if (!S.rec || S.rec.id !== id) { loadRecord(id); return back + `<div class="card empty">${t('loading')}</div>`; }
+  if (S.rec.error) return back + `<div class="card empty">${t(S.rec.error)}</div>`;
+  if (!S.rec.data) return back + `<div class="card empty">${t('loading')}</div>`;
+
+  const d = S.rec.data, sys = d.sys;
+  const branch = (S.data?.branches || []).find(b => String(b.id) === String(sys.branch_id));
+  return `${back}
+    <div class="head-row"><h1>${esc(sys.name)}</h1>${riskChip(sys.risk_level)}
+      ${isUnassessed(sys) ? `<span class="chip c-a">${t('reason_unassessed')}</span>` : `<span class="chip c-g">${esc(sys.compliance_status)}</span>`}
+      ${isOverdue(sys) ? `<span class="chip c-r">${t('reason_overdue')}</span>` : ''}</div>
+    <div class="crumb">${esc([sys.system_code, branch?.name, t('group_' + sys.inventory_group)].filter(Boolean).join(' · '))}</div>
+    <div class="secs">${sectionsFor(sys).map(def => sectionHtml(def, d)).join('')}</div>`;
+}
 function viewShell() {
   const u = S.user;
   return `
