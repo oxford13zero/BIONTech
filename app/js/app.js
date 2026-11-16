@@ -216,6 +216,7 @@ function viewPage() {
   if (S.route.startsWith('inventario')) return pageHead() + viewInventory();
   if (S.route === 'divisiones') return pageHead() + viewDivisions();
   if (S.route.startsWith('reportes')) return pageHead() + viewReports();
+  if (S.route === 'equipo') return pageHead() + viewTeam();
   return pageHead() + `<div class="card empty">${t('section_soon')}</div>`;
 }
 
@@ -893,6 +894,140 @@ function downloadReport() {
   document.body.appendChild(a); a.click(); a.remove();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
+
+// ── Equipo (solo Super usuario empresa) ──────────────────────
+// S.team = { users, divisions, error } · S.teamForm = { id|null, values, error, busy }
+async function teamApi(method, query, body) {
+  const res = await fetch('/api/client-users' + (query || ''), {
+    method,
+    headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + getToken() },
+    body: body ? JSON.stringify(body) : undefined
+  });
+  const data = await res.json().catch(() => ({}));
+  if (res.status === 401) { logout(); throw new Error('unauthorized'); }
+  if (!res.ok) throw new Error(data.error || 'HTTP ' + res.status);
+  return data;
+}
+
+async function loadTeam() {
+  S.team = { loading: true };
+  try {
+    const data = await teamApi('GET');
+    S.team = { users: data.users || [], divisions: data.divisions || [] };
+  } catch (e) {
+    if (!S.user) return;
+    S.team = { error: t('data_error') };
+  }
+  if (S.route === 'equipo') render();
+}
+
+function teamFormHtml() {
+  const f = S.teamForm, v = f.values || {};
+  const divs = S.team.divisions;
+  const opt = (val, label, cur) => `<option value="${esc(val)}" ${String(val) === String(cur) ? 'selected' : ''}>${esc(label)}</option>`;
+  return `<div class="card div-form">
+    <h3>${f.id ? t('edit_user') : t('new_user')}</h3>
+    ${f.error ? `<div class="form-error" role="alert">${esc(f.error)}</div>` : ''}
+    <div class="fields form">
+      <div class="field"><label for="tu_name">${t('f_full_name')} *</label><input class="input" id="tu_name" value="${esc(v.full_name || '')}"></div>
+      <div class="field"><label for="tu_email">${t('login_email')} *</label><input class="input" id="tu_email" type="email" value="${esc(v.email || '')}"></div>
+      <div class="field"><label for="tu_role">${t('f_role')} *</label><select class="input" id="tu_role">
+        ${opt('usuario_division', t('role_usuario_division') + ' · ' + t('role_read_only'), v.role || 'usuario_division')}
+        ${opt('super_division', t('role_super_division') + ' · ' + t('role_read_edit'), v.role)}
+      </select></div>
+      <div class="field"><label for="tu_div">${t('division')} *</label><select class="input" id="tu_div">
+        ${divs.length > 1 ? opt('', '', v.division_id) : ''}${divs.map(d => opt(d.id, d.name, v.division_id ?? (divs.length === 1 ? divs[0].id : ''))).join('')}
+      </select></div>
+      <div class="field"><label for="tu_pass">${f.id ? t('f_new_password') : t('login_password') + ' *'}</label>
+        <input class="input" id="tu_pass" type="password" autocomplete="new-password" placeholder="${t('f_password_hint')}"></div>
+    </div>
+    <div class="edit-bar">
+      <button class="btn btn-ghost" onclick="closeTeamForm()" ${f.busy ? 'disabled' : ''}>${t('cancel')}</button>
+      <button class="btn btn-primary" onclick="saveTeamUser()" ${f.busy ? 'disabled' : ''}>${f.busy ? t('saving') : t('save')}</button>
+    </div>
+  </div>`;
+}
+
+function viewTeam() {
+  if (!S.team) { loadTeam(); return `<div class="card empty">${t('loading')}</div>`; }
+  if (S.team.loading) return `<div class="card empty">${t('loading')}</div>`;
+  if (S.team.error) return `<div class="card empty">${esc(S.team.error)}</div>`;
+  const busy = !!S.teamForm;
+  const rows = S.team.users.map(u => `
+    <tr>
+      <td><b>${esc(u.full_name)}</b><small>${esc(u.email)}</small></td>
+      <td>${t('role_' + u.role)}</td>
+      <td>${u.role === 'super_empresa' ? `<span class="no-info">${t('all_divisions')}</span>` : esc(u.division_name || '—')}</td>
+      <td><span class="chip ${u.status === 'active' ? 'c-g' : 'c-n'}">${t(u.status === 'active' ? 'st_active' : 'st_inactive')}</span></td>
+      <td class="actions">${u.manageable ? (u.status === 'active'
+        ? `<button class="btn btn-sm" onclick="openTeamForm('${esc(u.id)}')" ${busy ? 'disabled' : ''}>${t('edit')}</button>
+           <button class="btn btn-sm btn-danger" onclick="setUserStatus('${esc(u.id)}', 'inactive')" ${busy ? 'disabled' : ''}>${t('deactivate')}</button>`
+        : `<button class="btn btn-sm" onclick="setUserStatus('${esc(u.id)}', 'active')" ${busy ? 'disabled' : ''}>${t('reactivate')}</button>`) : ''}</td>
+    </tr>`).join('');
+  return `
+    ${!S.teamForm ? `<div class="page-actions"><button class="btn btn-primary" onclick="openTeamForm()">+ ${t('new_user')}</button></div>` : ''}
+    ${S.teamForm ? teamFormHtml() : ''}
+    ${S.teamMsg ? `<div class="alert">${esc(S.teamMsg)}</div>` : ''}
+    <div class="card"><div class="tbl-wrap"><table>
+      <thead><tr><th>${t('f_full_name')}</th><th>${t('f_role')}</th><th>${t('division')}</th><th>${t('status')}</th><th></th></tr></thead>
+      <tbody>${rows || `<tr><td colspan="5" class="empty small">${t('no_users')}</td></tr>`}</tbody>
+    </table></div></div>
+    <p class="count-note">${t('team_help')}</p>`;
+}
+
+function openTeamForm(id) {
+  const u = id ? S.team.users.find(x => x.id === id) : null;
+  S.teamMsg = '';
+  S.teamForm = { id: id || null, values: u ? { full_name: u.full_name, email: u.email, role: u.role, division_id: u.division_id } : {} };
+  render();
+  document.getElementById('tu_name')?.focus();
+}
+
+function closeTeamForm() { S.teamForm = null; render(); }
+
+async function saveTeamUser() {
+  const f = S.teamForm;
+  const pass = document.getElementById('tu_pass').value;
+  f.values = {
+    full_name: document.getElementById('tu_name').value.trim(),
+    email: document.getElementById('tu_email').value.trim(),
+    role: document.getElementById('tu_role').value,
+    division_id: document.getElementById('tu_div').value
+  };
+  const missing = [['full_name', 'f_full_name'], ['email', 'login_email'], ['division_id', 'division']]
+    .filter(([k]) => !f.values[k]).map(([, key]) => t(key));
+  if (!f.id && !pass) missing.push(t('login_password'));
+  if (missing.length) { f.error = t('required_fields') + ' ' + missing.join(', '); return render(); }
+  if (pass && pass.length < 8) { f.error = t('password_short'); return render(); }
+
+  const body = { ...f.values };
+  if (pass) body.password = pass;
+  f.busy = true; f.error = ''; render();
+  try {
+    if (f.id) await teamApi('PUT', '?id=' + encodeURIComponent(f.id), body);
+    else await teamApi('POST', '', body);
+  } catch (e) {
+    f.busy = false;
+    f.error = /Email already exists/.test(e.message) ? t('email_exists') : t('save_error') + ' ' + e.message;
+    return render();
+  }
+  S.teamForm = null;
+  loadTeam();
+}
+
+async function setUserStatus(id, status) {
+  const u = S.team.users.find(x => x.id === id);
+  if (status === 'inactive' && !confirm(t('user_deactivate_confirm').replace('{name}', u.full_name))) return;
+  S.teamMsg = '';
+  try {
+    if (status === 'inactive') await teamApi('DELETE', '?id=' + encodeURIComponent(id));
+    else await teamApi('PUT', '?id=' + encodeURIComponent(id), { status: 'active' });
+  } catch (e) {
+    S.teamMsg = t('save_error') + ' ' + e.message;
+    return render();
+  }
+  loadTeam();
+}
 function viewShell() {
   const u = S.user;
   return `
@@ -939,6 +1074,7 @@ window.addEventListener('hashchange', () => {
   if (!S.user) return;
   if (parseHash().path !== 'nuevo-sistema') S.newSys = null;
   if (parseHash().path !== 'divisiones') { S.divForm = null; S.divMsg = ''; }
+  if (parseHash().path !== 'equipo') { S.team = null; S.teamForm = null; S.teamMsg = ''; }
   render(); window.scrollTo(0, 0);
 });
 

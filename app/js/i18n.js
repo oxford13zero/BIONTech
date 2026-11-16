@@ -137,7 +137,24 @@ const I18N = {
     rep_download:      'Descargar (.md)',
     rep_print:         'Imprimir / PDF',
     rep_timeout:       'El informe tardó más de 5 minutos. Intenta nuevamente.',
-    rep_error:         'No se pudo generar el informe:'
+    rep_error:         'No se pudo generar el informe:',
+    // Equipo
+    new_user:          'Nuevo usuario',
+    edit_user:         'Editar usuario',
+    f_full_name:       'Nombre',
+    f_role:            'Rol',
+    f_new_password:    'Nueva contraseña (opcional)',
+    f_password_hint:   'Mínimo 8 caracteres',
+    role_read_only:    'solo lectura',
+    role_read_edit:    'lectura y edición',
+    st_active:         'Activo',
+    st_inactive:       'Inactivo',
+    reactivate:        'Reactivar',
+    no_users:          'No hay usuarios.',
+    password_short:    'La contraseña debe tener al menos 8 caracteres.',
+    email_exists:      'Ya existe un usuario con ese email.',
+    user_deactivate_confirm: '¿Desactivar a {name}? No podrá iniciar sesión.',
+    team_help:         'Puedes crear y gestionar usuarios de división. Los super usuarios de empresa los gestiona BION.'
   },
   en: {
     app_subtitle:     'AI governance platform',
@@ -273,7 +290,24 @@ const I18N = {
     rep_download:      'Download (.md)',
     rep_print:         'Print / PDF',
     rep_timeout:       'The report took more than 5 minutes. Please try again.',
-    rep_error:         'The report could not be generated:'
+    rep_error:         'The report could not be generated:',
+    // Team
+    new_user:          'New user',
+    edit_user:         'Edit user',
+    f_full_name:       'Name',
+    f_role:            'Role',
+    f_new_password:    'New password (optional)',
+    f_password_hint:   'At least 8 characters',
+    role_read_only:    'read only',
+    role_read_edit:    'read & edit',
+    st_active:         'Active',
+    st_inactive:       'Inactive',
+    reactivate:        'Reactivate',
+    no_users:          'No users.',
+    password_short:    'The password must be at least 8 characters.',
+    email_exists:      'A user with that email already exists.',
+    user_deactivate_confirm: 'Deactivate {name}? They will not be able to sign in.',
+    team_help:         'You can create and manage division users. Company super users are managed by BION.'
   }
 };
 
