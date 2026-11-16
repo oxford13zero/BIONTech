@@ -54,8 +54,8 @@ async function provisionAzureDatabase(companyName) {
   };
 }
 
-// ── Run client schema on new database ────────────────────────
-async function runClientSchema(host, dbName, user, password) {
+// ── Run client schema on new database + first division ───────
+async function runClientSchema(host, dbName, user, password, companyId, divisionName, country) {
   const clientPool = new Pool({
     host, port: 5432, database: dbName, user, password,
     ssl: { rejectUnauthorized: false }
@@ -66,6 +66,11 @@ async function runClientSchema(host, dbName, user, password) {
 
   try {
     await clientPool.query(schema);
+    // Toda empresa nace con 1 división (ver docs/roles-y-accesos.md)
+    await clientPool.query(
+      `INSERT INTO branches (company_id, name, country, status) VALUES ($1, $2, $3, 'active')`,
+      [companyId, divisionName, country]
+    );
   } finally {
     await clientPool.end();
   }
@@ -110,7 +115,7 @@ module.exports = async function handler(req, res) {
   }
 
   if (req.method === 'POST') {
-    const { name, industry, country, contact_name, contact_email, contact_phone, contract_status } = req.body;
+    const { name, industry, country, contact_name, contact_email, contact_phone, contract_status, division_name } = req.body;
     if (!name || !industry) return res.status(400).json({ error: 'Name and industry required' });
 
     const insertResult = await pool.query(`
@@ -123,7 +128,8 @@ module.exports = async function handler(req, res) {
 
     try {
       const { host, dbName, user, password } = await provisionAzureDatabase(name);
-      await runClientSchema(host, dbName, user, password);
+      await runClientSchema(host, dbName, user, password, companyId,
+        (division_name && division_name.trim()) || name, country || 'Chile');
       await pool.query(`
         UPDATE companies SET
           azure_db_host = $1, azure_db_name = $2, azure_db_user = $3,

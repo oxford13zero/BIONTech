@@ -123,6 +123,10 @@
       <label>Contact Phone</label>
       <input type="text" id="fContactPhone" placeholder="+56 9 xxxx xxxx">
     </div>
+    <div class="field" id="fDivisionWrap">
+      <label>First Division Name</label>
+      <input type="text" id="fDivisionName" placeholder="Leave empty to use the company name">
+    </div>
 
     <div id="provisioningNote" style="display:none;background:#0C2240;border:1px solid rgba(133,183,235,.35);border-radius:10px;padding:16px 20px;text-align:center;">
   <div style="display:flex;align-items:center;justify-content:center;gap:12px;margin-bottom:8px;">
@@ -214,6 +218,9 @@
     document.getElementById('fContactEmail').value  = clientData?.contact_email || '';
     document.getElementById('fContactPhone').value  = clientData?.contact_phone || '';
     if (clientData?.industry) document.getElementById('fIndustry').value = clientData.industry;
+    // La primera división solo se define al crear la empresa
+    document.getElementById('fDivisionName').value = '';
+    document.getElementById('fDivisionWrap').style.display = clientData ? 'none' : 'block';
     document.getElementById('modalAlert').style.display = 'none';
     document.getElementById('provisioningNote').style.display = 'none';
     document.getElementById('clientModal').classList.add('open');
@@ -261,6 +268,7 @@
       contact_email:    document.getElementById('fContactEmail').value.trim(),
       contact_phone:    document.getElementById('fContactPhone').value.trim()
     };
+    if (!id) payload.division_name = document.getElementById('fDivisionName').value.trim();
 
     const url    = id ? `/api/admin-clients?id=${id}` : '/api/admin-clients';
     const method = id ? 'PUT' : 'POST';
