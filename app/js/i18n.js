@@ -42,7 +42,28 @@ const I18N = {
     app_crumb_root:    'BION',
     section_soon:      'Esta sección se construye en los siguientes pasos.',
     open_menu:         'Abrir menú',
-    data_error:        'No se pudieron cargar los datos. Intenta recargar la página.'
+    data_error:        'No se pudieron cargar los datos. Intenta recargar la página.',
+    loading:           'Cargando…',
+    // Dashboard
+    dash_total:        'Sistemas de IA',
+    dash_high_risk:    'Riesgo crítico o alto',
+    dash_unassessed:   'Sin evaluar',
+    dash_overdue:      'Revisión vencida',
+    dash_map:          'Mapa de riesgo por división',
+    dash_attention:    'Requieren atención',
+    dash_attention_none: 'Ningún sistema requiere atención.',
+    risk_Critical:     'Crítico',
+    risk_High:         'Alto',
+    risk_Medium:       'Medio',
+    risk_Low:          'Bajo',
+    reason_overdue:    'Revisión vencida',
+    reason_unassessed: 'Sin evaluar',
+    division:          'División',
+    system:            'Sistema',
+    risk:              'Riesgo',
+    reason:            'Motivo',
+    total:             'Total',
+    no_divisions:      'No hay divisiones.'
   },
   en: {
     app_subtitle:     'AI governance platform',
@@ -83,7 +104,28 @@ const I18N = {
     app_crumb_root:    'BION',
     section_soon:      'This section is built in the next steps.',
     open_menu:         'Open menu',
-    data_error:        'Data could not be loaded. Try reloading the page.'
+    data_error:        'Data could not be loaded. Try reloading the page.',
+    loading:           'Loading…',
+    // Dashboard
+    dash_total:        'AI systems',
+    dash_high_risk:    'Critical or high risk',
+    dash_unassessed:   'Not assessed',
+    dash_overdue:      'Review overdue',
+    dash_map:          'Risk map by division',
+    dash_attention:    'Need attention',
+    dash_attention_none: 'No systems need attention.',
+    risk_Critical:     'Critical',
+    risk_High:         'High',
+    risk_Medium:       'Medium',
+    risk_Low:          'Low',
+    reason_overdue:    'Review overdue',
+    reason_unassessed: 'Not assessed',
+    division:          'Division',
+    system:            'System',
+    risk:              'Risk',
+    reason:            'Reason',
+    total:             'Total',
+    no_divisions:      'No divisions.'
   }
 };
 

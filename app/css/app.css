@@ -81,3 +81,36 @@ main h1{font-size:24px;margin:0 0 2px;font-weight:800}
   .topbar{display:flex;align-items:center;gap:12px;margin-bottom:16px;color:var(--dim);font-size:13px}
   .menu-btn{border:1px solid var(--border);background:var(--deep);color:var(--text);font-size:18px;border-radius:8px;padding:4px 10px;cursor:pointer}
 }
+
+/* Tablas y chips (según mockup) */
+.card h3{margin:0 0 10px;font-size:15px}
+.tbl-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:13.5px}
+th{text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--dim);padding:8px 10px;border-bottom:1px solid var(--border);white-space:nowrap;font-weight:700}
+td{padding:10px;border-bottom:1px solid rgba(46,78,122,.5);vertical-align:top}
+tbody tr:last-child td{border-bottom:none}
+td small{display:block;color:var(--dim);font-size:11.5px}
+.chip{display:inline-block;font-size:11.5px;font-weight:700;padding:2px 9px;border-radius:999px;white-space:nowrap}
+.l-crit{background:#4A1515;color:#F09595}
+.l-high{background:#3D2500;color:#FAC775}
+.l-med{background:#0C2240;color:#85B7EB}
+.l-low{background:#122010;color:#97C459}
+.c-r{background:#4A1515;color:#F09595}
+.c-a{background:#3D2500;color:#FAC775}
+.c-n{background:var(--row);color:var(--dim)}
+.empty.small{padding:24px 10px}
+
+/* Dashboard */
+.tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px}
+.tile{border:1px solid var(--border);background:var(--panel2);border-radius:10px;padding:10px 14px;font-size:12.5px;color:var(--muted)}
+.tile b{display:block;font-size:26px;color:var(--text);line-height:1.2}
+.dash-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px;align-items:start}
+.map th,.map td{text-align:center}
+.map th.l,.map td.l{text-align:left}
+.map td.n{font-size:17px;font-weight:700;color:var(--dim)}
+.map td.l-crit-t{color:#F09595}
+.map td.l-high-t{color:#FAC775}
+.map td.l-med-t{color:#85B7EB}
+.map td.l-low-t{color:#97C459}
+@media(max-width:1100px){.dash-grid{grid-template-columns:minmax(0,1fr)}}
+@media(max-width:600px){.tiles{grid-template-columns:1fr 1fr}}
