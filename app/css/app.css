@@ -174,3 +174,35 @@ a.btn{text-decoration:none;display:inline-block}
 .div-form{margin-bottom:14px}
 td.actions{white-space:nowrap;text-align:right}
 td.actions .btn{margin-left:6px}
+
+/* Reporting Hub */
+.rep-div{font-weight:700;color:var(--muted);padding:6px 0}
+.rep-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-bottom:14px}
+.rep{cursor:pointer;border:1px solid var(--border);background:var(--panel2);border-radius:12px;padding:14px;text-align:left;color:var(--text);font:inherit}
+.rep:hover{border-color:rgba(244,195,139,.5)}
+.rep.on{border-color:var(--sand);box-shadow:inset 0 0 0 1px var(--sand)}
+.rep:disabled{cursor:default;opacity:.7}
+.rep b{display:block;margin-bottom:2px}
+.rep span{font-size:12.5px;color:var(--dim)}
+.rep-preview{display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap}
+.rep-preview ul{margin:0;padding-left:18px;color:var(--muted);font-size:13.5px}
+.rep-wait{display:flex;align-items:center;gap:14px;margin-top:14px}
+.rep-wait p{margin:2px 0 0;color:var(--dim);font-size:13px}
+.spinner{width:26px;height:26px;border-radius:50%;border:3px solid var(--border);border-top-color:var(--sand);animation:spin 1s linear infinite;flex:none}
+@keyframes spin{to{transform:rotate(360deg)}}
+.rep-actions{margin:14px 0 8px}
+.report-doc{background:#fff;color:#1A202C;border-radius:10px;padding:24px 28px;font-size:14px;line-height:1.6;overflow-x:auto}
+.report-doc h1,.report-doc h2,.report-doc h3{color:#0F1B33;line-height:1.3}
+.report-doc table{border-collapse:collapse;margin:10px 0}
+.report-doc th,.report-doc td{border:1px solid #CBD5E0;padding:6px 10px;color:#1A202C;text-transform:none;letter-spacing:0;font-size:13px}
+.report-doc pre{white-space:pre-wrap}
+@media(max-width:800px){.rep-grid{grid-template-columns:minmax(0,1fr)}}
+
+/* Impresión: solo el informe */
+@media print{
+  body{background:#fff}
+  .side,.topbar,.toolbar,.rep-grid,.rep-preview,.rep-actions,main>h1,main>.crumb,.count-note,.alert{display:none !important}
+  .app{display:block}
+  main{padding:0}
+  .report-doc{padding:0;border-radius:0}
+}

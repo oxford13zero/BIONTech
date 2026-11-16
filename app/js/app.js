@@ -215,6 +215,7 @@ function viewPage() {
   if (S.route === 'dashboard') return pageHead() + viewDashboard();
   if (S.route.startsWith('inventario')) return pageHead() + viewInventory();
   if (S.route === 'divisiones') return pageHead() + viewDivisions();
+  if (S.route.startsWith('reportes')) return pageHead() + viewReports();
   return pageHead() + `<div class="card empty">${t('section_soon')}</div>`;
 }
 
@@ -769,6 +770,128 @@ async function deactivateDivision(id) {
     return render();
   }
   loadData();
+}
+
+// ── Reporting Hub ─────────────────────────────────────────────
+// S.rep = { div, fw, busy, started, text, error } — el informe se genera por división
+const FRAMEWORKS = [
+  { id: 'iso',  api: 'ISO42001', name: 'ISO 42001',  desc: 'rep_iso_desc' },
+  { id: 'nist', api: 'NIST',     name: 'NIST AI RMF', desc: 'rep_nist_desc' },
+  { id: 'eu',   api: 'EUAI',     name: 'EU AI Act',  desc: 'rep_eu_desc' }
+];
+
+function repState() {
+  const branches = S.data?.branches || [];
+  S.rep = S.rep || {};
+  const fwFromRoute = (S.route.match(/^reportes\/(\w+)$/) || [])[1];
+  if (fwFromRoute && fwFromRoute !== S.rep.fw) { S.rep.fw = fwFromRoute; S.rep.text = ''; S.rep.error = ''; }
+  if (!S.rep.fw) S.rep.fw = 'iso';
+  if (!branches.some(b => String(b.id) === String(S.rep.div))) S.rep.div = branches[0]?.id || '';
+  return S.rep;
+}
+
+function setRepDivision(id) { S.rep.div = id; S.rep.text = ''; S.rep.error = ''; render(); }
+function setRepFramework(fw) { location.hash = '#/reportes/' + fw; }
+
+function viewReports() {
+  if (!S.data) return `<div class="card empty">${t('loading')}</div>`;
+  const r = repState();
+  const branches = S.data.branches;
+  if (!branches.length) return `<div class="card empty">${t('no_divisions')}</div>`;
+  const div = branches.find(b => String(b.id) === String(r.div));
+  const fw = FRAMEWORKS.find(f => f.id === r.fw) || FRAMEWORKS[0];
+  const list = S.data.systems.filter(s => String(s.branch_id) === String(r.div));
+  const opt = b => `<option value="${esc(b.id)}" ${String(b.id) === String(r.div) ? 'selected' : ''}>${esc(b.name)}</option>`;
+
+  let result = '';
+  if (r.busy) {
+    const secs = Math.floor((Date.now() - r.started) / 1000);
+    result = `<div class="card rep-wait"><div class="spinner"></div>
+      <div><b>${t('rep_generating')}</b><p>${t('rep_wait_help')} (${secs} s)</p></div></div>`;
+  } else if (r.error) {
+    result = `<div class="form-error" role="alert">${esc(r.error)}</div>`;
+  } else if (r.text) {
+    result = `
+      <div class="edit-bar rep-actions">
+        <button class="btn btn-sm" onclick="downloadReport()">${t('rep_download')}</button>
+        <button class="btn btn-sm" onclick="window.print()">${t('rep_print')}</button>
+      </div>
+      <article class="report-doc">${renderMarkdown(r.text)}</article>`;
+  }
+
+  return `
+    <div class="toolbar">
+      ${branches.length > 1 ? `<select class="input" onchange="setRepDivision(this.value)" ${r.busy ? 'disabled' : ''}>${branches.map(opt).join('')}</select>`
+                            : `<span class="rep-div">${esc(div.name)}</span>`}
+    </div>
+    <div class="rep-grid">${FRAMEWORKS.map(f => `
+      <button class="rep ${f.id === fw.id ? 'on' : ''}" onclick="setRepFramework('${f.id}')" ${r.busy ? 'disabled' : ''}>
+        <b>${t('report')} ${f.name}</b><span>${t(f.desc)}</span></button>`).join('')}
+    </div>
+    <div class="card rep-preview">
+      <div>
+        <h3>${t('report')} ${fw.name} · ${esc(div.name)}</h3>
+        <ul>
+          <li>${t('rep_sys_count').replace('{n}', list.length)}</li>
+          <li>${t('rep_high_count').replace('{n}', list.filter(isHighRisk).length)}</li>
+          <li>${t('rep_unassessed_count').replace('{n}', list.filter(isUnassessed).length)}</li>
+        </ul>
+      </div>
+      <button class="btn btn-primary" onclick="generateReport()" ${r.busy || !list.length ? 'disabled' : ''}>
+        ${r.busy ? t('rep_generating') : t('rep_generate')}</button>
+    </div>
+    ${!list.length ? `<p class="count-note">${t('rep_no_systems')}</p>` : ''}
+    ${result}`;
+}
+
+// Markdown → HTML limpio (DOMPurify evita que el texto ejecute código)
+function renderMarkdown(text) {
+  if (window.marked && window.DOMPurify) return DOMPurify.sanitize(marked.parse(text));
+  return `<pre>${esc(text)}</pre>`;
+}
+
+async function generateReport() {
+  const r = S.rep;
+  const fw = FRAMEWORKS.find(f => f.id === r.fw);
+  r.busy = true; r.error = ''; r.text = ''; r.started = Date.now();
+  render();
+  const tick = setInterval(() => { if (S.route.startsWith('reportes')) render(); }, 1000);
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 300000);
+  try {
+    const res = await fetch('/api/client-report', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + getToken() },
+      body: JSON.stringify({ branch_id: r.div, framework: fw.api }),
+      signal: controller.signal
+    });
+    const text = await res.text();
+    if (res.status === 401) return logout();
+    if (!res.ok) {
+      let msg = text;
+      try { msg = JSON.parse(text).error || text; } catch (e) {}
+      throw new Error(msg);
+    }
+    r.text = text;
+  } catch (err) {
+    r.error = err.name === 'AbortError' ? t('rep_timeout') : t('rep_error') + ' ' + err.message;
+  } finally {
+    clearTimeout(timeout);
+    clearInterval(tick);
+    r.busy = false;
+    if (S.user) render();
+  }
+}
+
+function downloadReport() {
+  const r = S.rep;
+  const fw = FRAMEWORKS.find(f => f.id === r.fw);
+  const div = S.data.branches.find(b => String(b.id) === String(r.div));
+  const name = `BION_${fw.api}_${(div?.name || 'division').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^\w-]+/g, '_')}_${today()}.md`;
+  const url = URL.createObjectURL(new Blob([r.text], { type: 'text/markdown;charset=utf-8' }));
+  const a = Object.assign(document.createElement('a'), { href: url, download: name });
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 function viewShell() {
   const u = S.user;

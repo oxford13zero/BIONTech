@@ -121,7 +121,23 @@ const I18N = {
     deactivate:        'Desactivar',
     div_deactivate_confirm: '¿Desactivar la división «{name}»?',
     div_has_systems:   'No se puede desactivar: la división tiene {n} sistema(s) activo(s). Desactívalos o muévelos primero.',
-    div_has_users:     'No se puede desactivar: la división tiene {n} usuario(s) activo(s). Reasígnalos o desactívalos primero.'
+    div_has_users:     'No se puede desactivar: la división tiene {n} usuario(s) activo(s). Reasígnalos o desactívalos primero.',
+    // Reporting Hub
+    report:            'Informe',
+    rep_iso_desc:      'Sistema de gestión de IA',
+    rep_nist_desc:     'Marco de gestión de riesgos de IA 1.0',
+    rep_eu_desc:       'Reglamento (UE) 2024/1689',
+    rep_sys_count:     '{n} sistemas de IA registrados',
+    rep_high_count:    '{n} de riesgo crítico o alto',
+    rep_unassessed_count: '{n} sin evaluar',
+    rep_generate:      'Generar informe',
+    rep_generating:    'Generando informe…',
+    rep_wait_help:     'Puede tardar varios minutos. No cierres esta página',
+    rep_no_systems:    'Esta división no tiene sistemas registrados.',
+    rep_download:      'Descargar (.md)',
+    rep_print:         'Imprimir / PDF',
+    rep_timeout:       'El informe tardó más de 5 minutos. Intenta nuevamente.',
+    rep_error:         'No se pudo generar el informe:'
   },
   en: {
     app_subtitle:     'AI governance platform',
@@ -241,7 +257,23 @@ const I18N = {
     deactivate:        'Deactivate',
     div_deactivate_confirm: 'Deactivate the division “{name}”?',
     div_has_systems:   'Cannot deactivate: the division has {n} active system(s). Deactivate or move them first.',
-    div_has_users:     'Cannot deactivate: the division has {n} active user(s). Reassign or deactivate them first.'
+    div_has_users:     'Cannot deactivate: the division has {n} active user(s). Reassign or deactivate them first.',
+    // Reporting Hub
+    report:            'Report',
+    rep_iso_desc:      'AI management system',
+    rep_nist_desc:     'AI Risk Management Framework 1.0',
+    rep_eu_desc:       'Regulation (EU) 2024/1689',
+    rep_sys_count:     '{n} AI systems registered',
+    rep_high_count:    '{n} critical or high risk',
+    rep_unassessed_count: '{n} not assessed',
+    rep_generate:      'Generate report',
+    rep_generating:    'Generating report…',
+    rep_wait_help:     'It can take several minutes. Do not close this page',
+    rep_no_systems:    'This division has no registered systems.',
+    rep_download:      'Download (.md)',
+    rep_print:         'Print / PDF',
+    rep_timeout:       'The report took more than 5 minutes. Please try again.',
+    rep_error:         'The report could not be generated:'
   }
 };
 
