@@ -19,12 +19,30 @@ const I18N = {
     login_network:    'Error de conexión. Revisa tu internet e intenta nuevamente.',
     back_to_site:     '← Volver a biontcorp.com',
     // Sesión
-    welcome:          'Bienvenido',
     logout:           'Cerrar sesión',
     role_super_empresa:    'Super usuario empresa',
     role_super_division:   'Super usuario división',
     role_usuario_division: 'Usuario división',
-    coming_soon:      'El menú de la plataforma llega en el siguiente paso.'
+    // Menú
+    nav_dashboard:     'Dashboard',
+    nav_sec_inventory: 'INVENTARIO',
+    nav_systems:       'Sistemas de IA',
+    nav_divisions:     'Divisiones',
+    nav_sec_risk:      'RIESGO Y CUMPLIMIENTO',
+    nav_reporting:     'Reporting Hub',
+    report_iso:        'Informe ISO 42001',
+    report_nist:       'Informe NIST',
+    report_eu:         'Informe EU AI Act',
+    nav_sec_settings:  'CONFIGURACIÓN',
+    nav_team:          'Equipo',
+    group_1:           'Grupo 1 — Operacional',
+    group_2:           'Grupo 2 — Analítica',
+    group_3:           'Grupo 3 — Geociencia',
+    group_4:           'Grupo 4 — Uso general',
+    app_crumb_root:    'BION',
+    section_soon:      'Esta sección se construye en los siguientes pasos.',
+    open_menu:         'Abrir menú',
+    data_error:        'No se pudieron cargar los datos. Intenta recargar la página.'
   },
   en: {
     app_subtitle:     'AI governance platform',
@@ -42,12 +60,30 @@ const I18N = {
     login_network:    'Connection error. Check your internet and try again.',
     back_to_site:     '← Back to biontcorp.com',
     // Session
-    welcome:          'Welcome',
     logout:           'Sign out',
     role_super_empresa:    'Company super user',
     role_super_division:   'Division super user',
     role_usuario_division: 'Division user',
-    coming_soon:      'The platform menu arrives in the next step.'
+    // Menu
+    nav_dashboard:     'Dashboard',
+    nav_sec_inventory: 'INVENTORY',
+    nav_systems:       'AI systems',
+    nav_divisions:     'Divisions',
+    nav_sec_risk:      'RISK & COMPLIANCE',
+    nav_reporting:     'Reporting Hub',
+    report_iso:        'ISO 42001 report',
+    report_nist:       'NIST report',
+    report_eu:         'EU AI Act report',
+    nav_sec_settings:  'SETTINGS',
+    nav_team:          'Team',
+    group_1:           'Group 1 — Operational',
+    group_2:           'Group 2 — Analytical',
+    group_3:           'Group 3 — Geoscience',
+    group_4:           'Group 4 — General use',
+    app_crumb_root:    'BION',
+    section_soon:      'This section is built in the next steps.',
+    open_menu:         'Open menu',
+    data_error:        'Data could not be loaded. Try reloading the page.'
   }
 };
 

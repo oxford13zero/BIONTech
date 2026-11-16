@@ -9,7 +9,9 @@ const USER_KEY  = 'bion_client_user';
 const S = {
   user: null,        // usuario con sesión iniciada
   loginError: '',
-  loginBusy: false
+  loginBusy: false,
+  data: null,        // { branches, systems } visibles para el usuario
+  route: 'dashboard' // sección actual (#/ruta)
 };
 
 const esc = v => String(v ?? '').replace(/[&<>"']/g, c =>
@@ -66,6 +68,7 @@ async function login(e) {
         localStorage.setItem(USER_KEY, JSON.stringify(data.user));
       });
       S.user = data.user;
+      loadData();
     }
   } catch (err) {
     S.loginError = t('login_network');
@@ -77,7 +80,9 @@ async function login(e) {
 function logout() {
   clearSession();
   S.user = null;
+  S.data = null;
   S.loginError = '';
+  history.replaceState(null, '', location.pathname);
   render();
 }
 
@@ -103,25 +108,126 @@ function viewLogin() {
   </div>`;
 }
 
-function viewHome() {
+// ── Datos del cliente ─────────────────────────────────────────
+// Sistemas y divisiones visibles para el usuario (ya filtrados por rol en el servidor)
+async function loadData() {
+  try {
+    const res = await fetch('/api/client-search', { headers: { Authorization: 'Bearer ' + getToken() } });
+    if (res.status === 401) return logout();
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const data = await res.json();
+    S.data = { branches: data.branches || [], systems: data.systems || [] };
+  } catch (e) {
+    console.error('loadData', e);
+    S.data = { branches: [], systems: [], error: true };
+  }
+  render();
+}
+
+// ── Menú ──────────────────────────────────────────────────────
+const GROUPS = [1, 2, 3, 4];
+const countGroup = g => (S.data?.systems || []).filter(s => Number(s.inventory_group) === g).length;
+
+// Cada ítem: id = ruta (#/id), label = clave de texto, count opcional, kids opcional
+function menu() {
+  const items = [
+    { id: 'dashboard', label: 'nav_dashboard' },
+    { sec: 'nav_sec_inventory' },
+    { id: 'inventario', label: 'nav_systems', count: () => (S.data?.systems || []).length,
+      kids: GROUPS.map(g => ({ id: 'inventario/g' + g, label: 'group_' + g, count: () => countGroup(g) })) },
+    { id: 'divisiones', label: 'nav_divisions', count: () => (S.data?.branches || []).length },
+    { sec: 'nav_sec_risk' },
+    { id: 'reportes', label: 'nav_reporting', kids: [
+      { id: 'reportes/iso',  label: 'report_iso' },
+      { id: 'reportes/nist', label: 'report_nist' },
+      { id: 'reportes/eu',   label: 'report_eu' }
+    ] }
+  ];
+  // Configuración: solo Super usuario empresa
+  if (S.user.role === 'super_empresa') {
+    items.push({ sec: 'nav_sec_settings' }, { id: 'equipo', label: 'nav_team' });
+  }
+  return items;
+}
+
+function findItem(items, id) {
+  for (const it of items) {
+    if (it.id === id) return it;
+    if (it.kids) { const r = findItem(it.kids, id); if (r) return r; }
+  }
+  return null;
+}
+
+// Padre de una ruta hija (para la ruta de navegación y abrir submenús)
+function parentOf(id) {
+  return menu().find(it => it.kids && it.kids.some(k => k.id === id)) || null;
+}
+
+function sideHtml(items, depth = 0) {
+  return items.map(it => {
+    if (it.sec) return `<div class="sec-title">${t(it.sec)}</div>`;
+    const active = S.route === it.id;
+    const open = it.kids && (active || it.kids.some(k => k.id === S.route));
+    const count = it.count && S.data ? `<span class="badge">${it.count()}</span>` : '';
+    const caret = it.kids ? `<span class="caret">${open ? '▾' : '▸'}</span>` : `<span class="caret"></span>`;
+    return `<a class="item ${active ? 'active' : ''}" href="#/${it.id}" onclick="closeSide()">${depth ? '' : caret}<span>${t(it.label)}</span>${count}</a>
+      ${it.kids && open ? `<div class="kids">${sideHtml(it.kids, depth + 1)}</div>` : ''}`;
+  }).join('');
+}
+
+// ── Navegación ────────────────────────────────────────────────
+function currentRoute() {
+  const r = (location.hash || '').replace(/^#\/?/, '');
+  return findItem(menu(), r) ? r : 'dashboard';
+}
+
+function openSide()  { document.body.classList.add('side-open'); }
+function closeSide() { document.body.classList.remove('side-open'); }
+
+// ── Vistas de la plataforma ───────────────────────────────────
+function viewPage() {
+  const it = findItem(menu(), S.route);
+  const parent = parentOf(S.route);
+  const crumb = [t('app_crumb_root'), parent && t(parent.label), t(it.label)].filter(Boolean).join(' · ');
+  return `<h1>${t(it.label)}</h1><div class="crumb">${esc(crumb)}</div>
+    <div class="card empty">${t('section_soon')}</div>`;
+}
+
+function viewShell() {
   const u = S.user;
   return `
-  <div class="placeholder">
-    <b>${t('welcome')}, ${esc(u.fullName || u.email)}</b>
-    <span>${esc(u.companyName)}</span>
-    <span>${t('role_' + u.role)}</span>
-    <span>${t('coming_soon')}</span>
-    <div style="display:flex;gap:8px;margin-top:8px;">
-      <button class="lang-btn" onclick="toggleLang()">${t('lang_switch')}</button>
-      <button class="btn btn-ghost" onclick="logout()">${t('logout')}</button>
-    </div>
+  <div class="app">
+    <div class="side-backdrop" onclick="closeSide()"></div>
+    <aside class="side">
+      <div class="brand">
+        <img src="/Logobion99.png" alt="BION">
+        <span>${esc(u.companyName)}</span>
+      </div>
+      <nav>${sideHtml(menu())}</nav>
+      <div class="side-foot">
+        <div class="who"><b>${esc(u.fullName || u.email)}</b><span>${t('role_' + u.role)}</span></div>
+        <div class="foot-actions">
+          <button class="lang-btn" onclick="toggleLang()">${t('lang_switch')}</button>
+          <button class="btn btn-ghost btn-sm" onclick="logout()">${t('logout')}</button>
+        </div>
+      </div>
+    </aside>
+    <main>
+      <div class="topbar">
+        <button class="menu-btn" onclick="openSide()" aria-label="${t('open_menu')}">☰</button>
+        <span>${esc(u.companyName)}</span>
+      </div>
+      ${S.data?.error ? `<div class="alert">${t('data_error')}</div>` : ''}
+      ${viewPage()}
+    </main>
   </div>`;
 }
 
 function render() {
   // Mantener lo escrito en el login al re-renderizar (cambio de idioma, errores)
   const email = document.getElementById('lgEmail')?.value;
-  document.getElementById('root').innerHTML = S.user ? viewHome() : viewLogin();
+  if (S.user) S.route = currentRoute();
+  document.getElementById('root').innerHTML = S.user ? viewShell() : viewLogin();
   if (!S.user) {
     const el = document.getElementById('lgEmail');
     if (email) el.value = email;
@@ -129,6 +235,9 @@ function render() {
   }
 }
 
+window.addEventListener('hashchange', () => { if (S.user) { render(); window.scrollTo(0, 0); } });
+
 setLang(LANG);
 S.user = loadSession();
 render();
+if (S.user) loadData();
