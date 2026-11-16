@@ -26,7 +26,7 @@ const SECTIONS = [
     ['environment', 'Entorno', 'Environment'],
     ['infrastructure_provider', 'Proveedor de infraestructura', 'Infrastructure provider'],
     ['shadow_ai_label', 'Etiqueta Shadow AI', 'Shadow AI label'],
-    ['risk_score_total', 'Puntaje de riesgo total', 'Risk score total'],
+    ['risk_score_total', 'Puntaje de riesgo total', 'Risk score total', 'number'],
     ['deployment_status', 'Estado de despliegue', 'Deployment status']
   ] },
   { id: 'B', data: 'func', table: 'sec_functional', color: '#5DCAA5',
@@ -96,7 +96,7 @@ const SECTIONS = [
     ['bias_type', 'Tipo de sesgo', 'Bias type'],
     ['bias_result', 'Resultado de sesgo', 'Bias result'],
     ['independent_validation', 'Validación independiente', 'Independent validation'],
-    ['incident_count', 'Cantidad de incidentes', 'Incident count'],
+    ['incident_count', 'Cantidad de incidentes', 'Incident count', 'number'],
     ['incident_reporting_process', 'Proceso de reporte de incidentes', 'Incident reporting process']
   ] },
   { id: 'F_op', data: 'riskOp', table: 'sec_risk_operational', color: '#E24B4A',
@@ -223,3 +223,23 @@ function sectionsFor(sys) {
   const riskId = RISK_SECTION_BY_GROUP[Number(sys.inventory_group)];
   return SECTIONS.filter(s => !s.id.startsWith('F_') || s.id === riskId);
 }
+
+// Valores permitidos por la BD (restricciones CHECK) → se editan con lista desplegable
+const FIELD_OPTIONS = {
+  environment:             ['Cloud', 'On-premise', 'Edge', 'Hybrid'],
+  autonomy_level:          ['1', '2', '3', '4', '5'],
+  autonomy_level_approved: ['1', '2', '3', '4', '5'],
+  residual_risk_level:     ['Aceptable', 'Condicional', 'No aceptable'],
+  drift_status:            ['OK', 'Warning', 'Alert'],
+  kill_switch_test_result: ['Aprobado', 'Fallido', 'Pendiente'],
+  eu_ai_act_role:          ['Provider', 'Deployer', 'Distributor'],
+  last_sync_status:        ['OK', 'Warning', 'Error', 'Never'],
+  priority:                ['CRÍTICA', 'ALTA', 'MEDIA', 'BAJA']
+};
+
+// Columnas de tipo fecha
+const DATE_FIELDS = [
+  'deploy_date', 'next_review_date', 'last_retrain_date', 'last_performance_report', 'last_review_date',
+  'next_regulatory_review', 'next_contract_renewal', 'approval_date', 'next_mandatory_review',
+  'kill_switch_last_tested', 'kill_switch_next_test', 'notification_deadline'
+];

@@ -84,7 +84,17 @@ const I18N = {
     n_records:         '{n} registros',
     rec_not_found:     'Sistema no encontrado o fuera de tu acceso.',
     yes:               'Sí',
-    no:                'No'
+    no:                'No',
+    // Edición
+    edit_section:      'Editar sección',
+    save:              'Guardar',
+    saving:            'Guardando…',
+    cancel:            'Cancelar',
+    save_error:        'No se pudo guardar:',
+    deactivate_title:  'Desactivar sistema',
+    deactivate_help:   'El sistema deja de aparecer en el inventario. Sus datos se conservan.',
+    deactivate_btn:    'Desactivar sistema',
+    deactivate_confirm: '¿Desactivar «{name}»? Dejará de aparecer en el inventario.'
   },
   en: {
     app_subtitle:     'AI governance platform',
@@ -167,7 +177,17 @@ const I18N = {
     n_records:         '{n} records',
     rec_not_found:     'System not found or outside your access.',
     yes:               'Yes',
-    no:                'No'
+    no:                'No',
+    // Editing
+    edit_section:      'Edit section',
+    save:              'Save',
+    saving:            'Saving…',
+    cancel:            'Cancel',
+    save_error:        'Could not save:',
+    deactivate_title:  'Deactivate system',
+    deactivate_help:   'The system stops appearing in the inventory. Its data is kept.',
+    deactivate_btn:    'Deactivate system',
+    deactivate_confirm: 'Deactivate “{name}”? It will stop appearing in the inventory.'
   }
 };
 

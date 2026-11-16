@@ -360,6 +360,7 @@ function openSystem(id) { location.hash = '#/sistema/' + id; }
 async function loadRecord(id) {
   S.rec = { id, data: null, error: null };
   S.openSec = { A: true };
+  S.edit = null;
   try {
     S.rec.data = await apiGet('/api/client-record?system_id=' + encodeURIComponent(id));
   } catch (e) {
@@ -386,12 +387,66 @@ function toggleSection(id) {
   render();
 }
 
-function fieldsHtml(def, row) {
+// ── Edición de la ficha ───────────────────────────────────────
+// S.edit = { sec: 'B', idx: 0 } mientras se edita una sección (idx: registro en M6/M7)
+function canEditSystem(sys) {
+  const u = S.user;
+  return u.role === 'super_empresa' ||
+    (u.role === 'super_division' && String(u.divisionId) === String(sys.branch_id));
+}
+
+const NUMBER_FMTS = ['scale5', 'seconds', 'pct', 'usd', 'number'];
+const DATE_RE = /^\d{4}-\d{2}-\d{2}/;
+function controlType(col, fmt, value) {
+  if (FIELD_OPTIONS[col]) return 'select';
+  if (fmt === 'bool') return 'bool';
+  if (NUMBER_FMTS.includes(fmt)) return 'number';
+  if (DATE_FIELDS.includes(col)) return 'date';
+  return 'text';
+}
+
+function inputHtml(col, fmt, raw) {
+  const type = controlType(col, fmt, raw);
+  const val = raw === null || raw === undefined ? '' : String(raw);
+  const attrs = `class="input edit-input" data-col="${col}" data-type="${type}"`;
+  if (type === 'bool') {
+    const cur = raw === true || raw === 'true' ? 'true' : raw === false || raw === 'false' ? 'false' : '';
+    return `<select ${attrs}><option value=""></option>
+      <option value="true" ${cur === 'true' ? 'selected' : ''}>${t('yes')}</option>
+      <option value="false" ${cur === 'false' ? 'selected' : ''}>${t('no')}</option></select>`;
+  }
+  if (type === 'select') {
+    const opts = FIELD_OPTIONS[col];
+    return `<select ${attrs}><option value=""></option>${opts.map(o =>
+      `<option value="${esc(o)}" ${o === val ? 'selected' : ''}>${esc(o)}</option>`).join('')}
+      ${val && !opts.includes(val) ? `<option value="${esc(val)}" selected>${esc(val)}</option>` : ''}</select>`;
+  }
+  if (type === 'number') return `<input ${attrs} type="number" step="any" value="${esc(val)}">`;
+  if (type === 'date') return `<input ${attrs} type="date" value="${esc(DATE_RE.test(val) ? val.slice(0, 10) : '')}">`;
+  return `<textarea ${attrs} rows="${val.length > 80 ? 3 : 1}">${esc(val)}</textarea>`;
+}
+
+function fieldsHtml(def, row, editing) {
   return `<div class="fields">${def.fields.map(([col, es, en, fmt]) => {
+    const label = `<label>${esc(LANG === 'es' ? es : en)}</label>`;
+    if (editing) return `<div class="field">${label}${inputHtml(col, fmt, row ? row[col] : null)}</div>`;
     const v = row ? fmtValue(row[col], fmt) : null;
-    return `<div class="field"><label>${esc(LANG === 'es' ? es : en)}</label>
+    return `<div class="field">${label}
       <div class="${v === null ? 'no-info' : ''}">${v === null ? t('no_info') : esc(v)}</div></div>`;
   }).join('')}</div>`;
+}
+
+function editBar(def, idx) {
+  const e = S.edit;
+  if (e && e.sec === def.id && e.idx === idx) {
+    return `<div class="edit-bar">
+      ${e.error ? `<span class="form-error inline">${esc(e.error)}</span>` : ''}
+      <button class="btn btn-ghost btn-sm" onclick="cancelEdit()" ${e.busy ? 'disabled' : ''}>${t('cancel')}</button>
+      <button class="btn btn-primary btn-sm" onclick="saveEdit()" ${e.busy ? 'disabled' : ''}>${e.busy ? t('saving') : t('save')}</button>
+    </div>`;
+  }
+  if (!canEditSystem(S.rec.data.sys) || S.edit) return '';
+  return `<div class="edit-bar"><button class="btn btn-sm" onclick="startEdit('${def.id}', ${idx})">${t('edit_section')}</button></div>`;
 }
 
 function sectionHtml(def, d) {
@@ -399,9 +454,11 @@ function sectionHtml(def, d) {
   const rows = def.many ? (d[def.data] || []) : [d[def.data]].filter(Boolean);
   const filled = rows.reduce((n, r) => n + def.fields.filter(([c]) => r[c] !== null && r[c] !== undefined && r[c] !== '').length, 0);
   const total = def.many ? def.fields.length * Math.max(rows.length, 1) : def.fields.length;
+  const editing = idx => S.edit && S.edit.sec === def.id && S.edit.idx === idx;
   const body = def.many
-    ? (rows.length ? rows.map((r, i) => `${i ? '<hr class="sep">' : ''}${fieldsHtml(def, r)}`).join('') : `<p class="no-info">${t('no_records')}</p>`)
-    : fieldsHtml(def, rows[0]);
+    ? (rows.length ? rows.map((r, i) => `${i ? '<hr class="sep">' : ''}<div id="ed-${def.id}-${i}">${fieldsHtml(def, r, editing(i))}${editBar(def, i)}</div>`).join('')
+                   : `<p class="no-info">${t('no_records')}</p>`)
+    : `<div id="ed-${def.id}-0">${fieldsHtml(def, rows[0], editing(0))}${editBar(def, 0)}</div>`;
   return `
     <div class="sec ${open ? 'open' : ''}" style="--c:${def.color}">
       <button class="sec-head" onclick="toggleSection('${def.id}')" aria-expanded="${!!open}">
@@ -411,6 +468,82 @@ function sectionHtml(def, d) {
       </button>
       ${open ? `<div class="sec-body">${body}</div>` : ''}
     </div>`;
+}
+
+function startEdit(sec, idx) { S.edit = { sec, idx }; render(); }
+function cancelEdit() { S.edit = null; render(); }
+
+// Valor del control → valor para la BD (vacío = null)
+function inputValue(el) {
+  const v = el.value.trim();
+  if (v === '') return null;
+  if (el.dataset.type === 'bool') return v === 'true';
+  if (el.dataset.type === 'number') return Number(v);
+  return v;
+}
+
+function sameValue(a, b) {
+  const norm = x => x === null || x === undefined || x === '' ? null
+    : (typeof x === 'string' && DATE_RE.test(x)) ? x.slice(0, 10) : String(x);
+  return norm(a) === norm(b);
+}
+
+async function saveEdit() {
+  const e = S.edit, d = S.rec.data, sys = d.sys;
+  const def = SECTIONS.find(x => x.id === e.sec);
+  const row = def.many ? d[def.data][e.idx] : d[def.data];
+  const payload = {};
+  document.querySelectorAll(`#ed-${def.id}-${e.idx} .edit-input`).forEach(el => {
+    const v = inputValue(el);
+    if (!sameValue(v, row ? row[el.dataset.col] : null)) payload[el.dataset.col] = v;
+  });
+  if (!Object.keys(payload).length) return cancelEdit();
+
+  e.busy = true; e.error = ''; render();
+  try {
+    const res = await fetch('/api/client-write?action=update_section', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + getToken() },
+      body: JSON.stringify({
+        table: def.table,
+        system_id: sys.id,
+        record_id: def.many ? row.id : (def.table === 'ai_systems' ? sys.id : undefined),
+        payload
+      })
+    });
+    const data = await res.json().catch(() => ({}));
+    if (res.status === 401) return logout();
+    if (!res.ok) throw new Error(data.error || 'HTTP ' + res.status);
+  } catch (err) {
+    e.busy = false; e.error = t('save_error') + ' ' + err.message; return render();
+  }
+  S.edit = null;
+  const open = S.openSec;
+  await loadRecord(sys.id);
+  S.openSec = open;
+  render();
+  loadData();   // actualizar lista y dashboard
+}
+
+async function deactivateSystem() {
+  const sys = S.rec.data.sys;
+  if (!confirm(t('deactivate_confirm').replace('{name}', sys.name))) return;
+  try {
+    const res = await fetch('/api/client-write?action=delete_system', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + getToken() },
+      body: JSON.stringify({ system_id: sys.id })
+    });
+    const data = await res.json().catch(() => ({}));
+    if (res.status === 401) return logout();
+    if (!res.ok) throw new Error(data.error || 'HTTP ' + res.status);
+  } catch (err) {
+    return alert(t('save_error') + ' ' + err.message);
+  }
+  S.rec = null;
+  S.data = null;
+  location.hash = '#/inventario';
+  loadData();
 }
 
 function viewSystem(id) {
@@ -426,7 +559,11 @@ function viewSystem(id) {
       ${isUnassessed(sys) ? `<span class="chip c-a">${t('reason_unassessed')}</span>` : `<span class="chip c-g">${esc(sys.compliance_status)}</span>`}
       ${isOverdue(sys) ? `<span class="chip c-r">${t('reason_overdue')}</span>` : ''}</div>
     <div class="crumb">${esc([sys.system_code, branch?.name, t('group_' + sys.inventory_group)].filter(Boolean).join(' · '))}</div>
-    <div class="secs">${sectionsFor(sys).map(def => sectionHtml(def, d)).join('')}</div>`;
+    <div class="secs">${sectionsFor(sys).map(def => sectionHtml(def, d)).join('')}</div>
+    ${canEditSystem(sys) ? `<div class="danger-zone">
+      <div><b>${t('deactivate_title')}</b><p>${t('deactivate_help')}</p></div>
+      <button class="btn btn-danger" onclick="deactivateSystem()" ${S.edit ? 'disabled' : ''}>${t('deactivate_btn')}</button>
+    </div>` : ''}`;
 }
 function viewShell() {
   const u = S.user;
