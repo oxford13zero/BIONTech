@@ -63,7 +63,20 @@ const I18N = {
     risk:              'Riesgo',
     reason:            'Motivo',
     total:             'Total',
-    no_divisions:      'No hay divisiones.'
+    no_divisions:      'No hay divisiones.',
+    // Inventario
+    vendor:            'Proveedor',
+    group:             'Grupo',
+    status:            'Estado',
+    inv_search:        'Buscar sistema, código o proveedor',
+    all_divisions:     'Todas las divisiones',
+    all_risks:         'Todos los niveles',
+    all_statuses:      'Todos los estados',
+    sc_high:           'Riesgo crítico o alto',
+    sc_unassessed:     'Sin evaluar',
+    sc_overdue:        'Revisión vencida',
+    inv_none:          'Ningún sistema coincide con estos filtros.',
+    inv_count:         '{n} de {total} sistemas'
   },
   en: {
     app_subtitle:     'AI governance platform',
@@ -125,7 +138,20 @@ const I18N = {
     risk:              'Risk',
     reason:            'Reason',
     total:             'Total',
-    no_divisions:      'No divisions.'
+    no_divisions:      'No divisions.',
+    // Inventory
+    vendor:            'Vendor',
+    group:             'Group',
+    status:            'Status',
+    inv_search:        'Search system, code or vendor',
+    all_divisions:     'All divisions',
+    all_risks:         'All levels',
+    all_statuses:      'All statuses',
+    sc_high:           'Critical or high risk',
+    sc_unassessed:     'Not assessed',
+    sc_overdue:        'Review overdue',
+    inv_none:          'No systems match these filters.',
+    inv_count:         '{n} of {total} systems'
   }
 };
 

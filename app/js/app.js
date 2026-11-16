@@ -185,9 +185,15 @@ function sideHtml(items, depth = 0) {
 }
 
 // ── Navegación ────────────────────────────────────────────────
+function parseHash() {
+  const h = (location.hash || '').replace(/^#\/?/, '');
+  const [path, qs] = h.split('?');
+  return { path, params: Object.fromEntries(new URLSearchParams(qs || '')) };
+}
+
 function currentRoute() {
-  const r = (location.hash || '').replace(/^#\/?/, '');
-  return findItem(menu(), r) ? r : 'dashboard';
+  const { path } = parseHash();
+  return findItem(menu(), path) ? path : 'dashboard';
 }
 
 function openSide()  { document.body.classList.add('side-open'); }
@@ -203,6 +209,7 @@ function pageHead() {
 
 function viewPage() {
   if (S.route === 'dashboard') return pageHead() + viewDashboard();
+  if (S.route.startsWith('inventario')) return pageHead() + viewInventory();
   return pageHead() + `<div class="card empty">${t('section_soon')}</div>`;
 }
 
@@ -220,10 +227,10 @@ function viewDashboard() {
   if (!S.data) return `<div class="card empty">${t('loading')}</div>`;
   const sys = S.data.systems;
   const tiles = [
-    ['dash_total',      sys.length],
-    ['dash_high_risk',  sys.filter(isHighRisk).length],
-    ['dash_unassessed', sys.filter(isUnassessed).length],
-    ['dash_overdue',    sys.filter(isOverdue).length]
+    ['dash_total',      sys.length,                         ''],
+    ['dash_high_risk',  sys.filter(isHighRisk).length,      'high'],
+    ['dash_unassessed', sys.filter(isUnassessed).length,    'unassessed'],
+    ['dash_overdue',    sys.filter(isOverdue).length,       'overdue']
   ];
 
   // Mapa: divisiones × niveles de riesgo
@@ -241,7 +248,7 @@ function viewDashboard() {
     .sort((a, b) => LEVELS.indexOf(a.risk_level) - LEVELS.indexOf(b.risk_level))
     .slice(0, 10);
   const attRows = attention.map(s => `
-    <tr>
+    <tr class="row" onclick="location.hash='#/inventario?q=${encodeURIComponent(s.system_code)}'">
       <td><b>${esc(s.name)}</b><small>${esc(s.system_code)}</small></td>
       <td>${esc(s.branch_name || '—')}</td>
       <td>${riskChip(s.risk_level)}</td>
@@ -250,7 +257,8 @@ function viewDashboard() {
     </tr>`).join('');
 
   return `
-    <div class="tiles">${tiles.map(([k, n]) => `<div class="tile"><b>${n}</b>${t(k)}</div>`).join('')}</div>
+    <div class="tiles">${tiles.map(([k, n, sc]) =>
+      `<a class="tile" href="#/inventario${sc ? '?sc=' + sc : ''}"><b>${n}</b>${t(k)}</a>`).join('')}</div>
     <div class="dash-grid">
       <div class="card">
         <h3>${t('dash_map')}</h3>
@@ -267,6 +275,79 @@ function viewDashboard() {
         : `<div class="empty small">${t('dash_attention_none')}</div>`}
       </div>
     </div>`;
+}
+
+
+// ── Inventario: lista ─────────────────────────────────────────
+// Filtros guardados en la dirección: #/inventario/g1?q=&div=&risk=&status=&sc=
+const SHORTCUTS = { high: isHighRisk, unassessed: isUnassessed, overdue: isOverdue };
+const statusLabel = s => isUnassessed(s) ? t('reason_unassessed') : s.compliance_status;
+
+function invFilters() {
+  const p = parseHash().params;
+  return { q: p.q || '', div: p.div || '', risk: p.risk || '', status: p.status || '', sc: p.sc || '' };
+}
+
+function setInvFilter(key, value) {
+  const f = invFilters();
+  f[key] = value;
+  const qs = new URLSearchParams(Object.entries(f).filter(([, v]) => v)).toString();
+  history.replaceState(null, '', '#/' + S.route + (qs ? '?' + qs : ''));
+  if (key === 'q') document.getElementById('invTable').innerHTML = invTable();  // conservar el foco al escribir
+  else render();
+}
+
+function invList() {
+  const f = invFilters();
+  const g = S.route.match(/^inventario\/g(\d)$/);
+  const q = f.q.toLowerCase();
+  return (S.data?.systems || []).filter(s =>
+    (!g || Number(s.inventory_group) === Number(g[1])) &&
+    (!q || [s.name, s.system_code, s.vendor].join(' ').toLowerCase().includes(q)) &&
+    (!f.div || String(s.branch_id) === f.div) &&
+    (!f.risk || s.risk_level === f.risk) &&
+    (!f.status || statusLabel(s) === f.status) &&
+    (!f.sc || (SHORTCUTS[f.sc] && SHORTCUTS[f.sc](s)))
+  );
+}
+
+function invTable() {
+  const list = invList();
+  const total = (S.data?.systems || []).length;
+  const rows = list.map(s => `
+    <tr>
+      <td><b>${esc(s.name)}</b><small>${esc(s.system_code)}</small></td>
+      <td>${esc(s.vendor || '—')}</td>
+      <td>${t('group_' + s.inventory_group)}</td>
+      <td>${esc(s.branch_name || '—')}</td>
+      <td>${riskChip(s.risk_level)}</td>
+      <td>${isUnassessed(s) ? `<span class="chip c-a">${t('reason_unassessed')}</span>` : `<span class="chip c-g">${esc(s.compliance_status)}</span>`}</td>
+    </tr>`).join('');
+  return `<div class="tbl-wrap"><table>
+      <thead><tr><th>${t('system')}</th><th>${t('vendor')}</th><th>${t('group')}</th><th>${t('division')}</th><th>${t('risk')}</th><th>${t('status')}</th></tr></thead>
+      <tbody>${rows || `<tr><td colspan="6" class="empty small">${t('inv_none')}</td></tr>`}</tbody>
+    </table></div>
+    <p class="count-note">${t('inv_count').replace('{n}', list.length).replace('{total}', total)}</p>`;
+}
+
+function viewInventory() {
+  if (!S.data) return `<div class="card empty">${t('loading')}</div>`;
+  const f = invFilters();
+  const opt = (v, label, cur) => `<option value="${esc(v)}" ${v === cur ? 'selected' : ''}>${esc(label)}</option>`;
+  const statuses = [...new Set(S.data.systems.map(statusLabel).filter(Boolean))].sort();
+  const multiDiv = S.data.branches.length > 1;
+  const chips = Object.keys(SHORTCUTS).map(k =>
+    `<button class="sc ${f.sc === k ? 'on' : ''}" onclick="setInvFilter('sc', '${f.sc === k ? '' : k}')">${t('sc_' + k)}</button>`).join('');
+
+  return `
+    <div class="toolbar">
+      <input class="input search" type="text" placeholder="${t('inv_search')}" value="${esc(f.q)}" oninput="setInvFilter('q', this.value)">
+      ${multiDiv ? `<select class="input" onchange="setInvFilter('div', this.value)">${opt('', t('all_divisions'), f.div)}${S.data.branches.map(b => opt(String(b.id), b.name, f.div)).join('')}</select>` : ''}
+      <select class="input" onchange="setInvFilter('risk', this.value)">${opt('', t('all_risks'), f.risk)}${LEVELS.map(l => opt(l, t('risk_' + l), f.risk)).join('')}</select>
+      <select class="input" onchange="setInvFilter('status', this.value)">${opt('', t('all_statuses'), f.status)}${statuses.map(x => opt(x, x, f.status)).join('')}</select>
+    </div>
+    <div class="shortcuts">${chips}</div>
+    <div class="card" id="invTable">${invTable()}</div>`;
 }
 
 function viewShell() {
