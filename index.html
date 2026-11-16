@@ -2049,8 +2049,15 @@ applyLang(currentLang);
   let s_userId      = null;
   let s_userEmail   = '';
   let s_dbName      = null; // Azure client database name
-  let s_userRole    = null; // 'company_admin' | 'branch_manager' | 'company_user'
-  let s_branchId    = null; // assigned branch for branch_manager, null for others
+  let s_userRole    = null; // 'super_empresa' | 'super_division' | 'usuario_division' (ver docs/roles-y-accesos.md)
+  let s_branchId    = null; // división asignada; null para super_empresa
+
+  // Permisos en pantalla (el servidor también los valida)
+  function isSuperEmpresa() { return s_userRole === 'super_empresa'; }
+  function canEditDivision(divisionId) {
+    return s_userRole === 'super_empresa' ||
+      (s_userRole === 'super_division' && String(s_branchId) === String(divisionId));
+  }
   let s3_tab        = 'all';
   let s3_allData    = { branches: [], systems: [] };
 
@@ -2065,17 +2072,17 @@ applyLang(currentLang);
     s_userId      = user.id;
     s_userEmail   = user.email;
     s_dbName      = user.dbName;
-    s_userRole    = user.role      || 'company_user';
-    s_branchId    = user.branch_id || null;
+    s_userRole    = user.role       || 'usuario_division';
+    s_branchId    = user.divisionId || user.branch_id || null;
     const portalBtnAz = document.getElementById('portalBtn');
     if(portalBtnAz) portalBtnAz.style.display = 'inline-flex';
     setupS1(user.email, user.companyName);
     showScreen('screenS1');
     const addBtn = document.getElementById('s1AddBranchBtn');
-    if(addBtn) addBtn.style.display = s_userRole === 'company_admin' ? 'flex' : 'none';
+    if(addBtn) addBtn.style.display = isSuperEmpresa() ? 'flex' : 'none';
     // Gestión de usuarios: solo Super usuario empresa
     const usersBtn = document.getElementById('s1UsersBtn');
-    if(usersBtn) usersBtn.style.display = s_userRole === 'super_empresa' ? 'flex' : 'none';
+    if(usersBtn) usersBtn.style.display = isSuperEmpresa() ? 'flex' : 'none';
     if(s_companyId) loadS3Data();
   }
 
@@ -2857,12 +2864,24 @@ function renderAttentionPanel(systems) {
     </div>`;
 }
 
-async function deleteSystem(id) {
-  if(!confirm('Delete this AI system and all its section data?')) return;
-  const { error } = await sb.from('ai_systems').delete().eq('id', id);
-  if(error){ alert('Error: ' + error.message); return; }
-  allSystems = allSystems.filter(s => s.id !== id);
-  renderDashboard(allSystems);
+// Desactivar sistema (borrado lógico vía API)
+async function deactivateSystem(id, branchId) {
+  if(!confirm('¿Desactivar este sistema? Dejará de aparecer en el inventario.')) return;
+  const token = localStorage.getItem('bion_client_token');
+  try {
+    const res = await fetch('/api/client-write?action=delete_system', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+      body: JSON.stringify({ system_id: id })
+    });
+    const data = await res.json().catch(() => ({}));
+    if(!res.ok) { alert('Error: ' + (data.error || 'No se pudo desactivar')); return; }
+  } catch(err) { alert('Error de red: ' + err.message); return; }
+  allSystems = (allSystems || []).filter(s => s.id !== id);
+  s3_allData = { branches: [], systems: [] };
+  if(s_companyId) loadS3Data();
+  if(branchId) showS4Branch(branchId, document.getElementById('s4Title').textContent);
+  else showScreen('screenS1');
 }
 
 function openAddWizard() { openWizard('system'); }
@@ -3487,8 +3506,7 @@ const _origRenderS4 = typeof renderS4Systems !== 'undefined' ? renderS4Systems :
 function showS4AddBtn(branchId, branchName) {
   const btn = document.getElementById('s4AddSystemBtn');
   if(!btn) return;
-  const canAdd = s_userRole === 'company_admin' ||
-    (s_userRole === 'branch_manager' && String(s_branchId) === String(branchId));
+  const canAdd = canEditDivision(branchId);
   btn.style.display = canAdd ? 'block' : 'none';
   if(canAdd) btn.onclick = () => openWizard('system', branchId, branchName);
 }
@@ -4517,7 +4535,7 @@ async function showS5(systemId) {
       </div>
       <div class="${bodyClass}" style="border-left:4px solid ${color}40;">
         <div class="s5-fields-grid" id="${editId}-grid">${rows.join('')}</div>
-        ${s_userRole !== 'company_user' ? `<div class="s5-section-edit-row">
+        ${canEditDivision(sys.branch_id) ? `<div class="s5-section-edit-row">
           <button class="s5-sec-edit-btn" onclick="enterEditMode('${editId}','${tableKey||''}','${recordId||''}','${label}')">Edit section</button>
         </div>` : ''}
       </div>
@@ -4716,6 +4734,11 @@ async function showS5(systemId) {
         field('Offline capable', intg ? (intg.offline_capable ? 'Yes — ' + (intg.offline_buffer_hours||72) + 'h buffer' : 'No') : null, 'offline_capable'),
         field('Priority', intg?.priority, 'priority'),
       ]), false, 'system_integrations', integrations[0]?.id)}
+    ${canEditDivision(sys.branch_id) ? `
+    <div style="display:flex;justify-content:flex-end;margin:24px 0 8px;">
+      <button class="s5-sec-edit-btn" style="color:#DC2626;border-color:rgba(220,38,38,.4);"
+        onclick="deactivateSystem('${sys.id}','${sys.branch_id || ''}')">Desactivar sistema</button>
+    </div>` : ''}
     `;
   } catch(err) {
     console.error('S5 render error:', err);
