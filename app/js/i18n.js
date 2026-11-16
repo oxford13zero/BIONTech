@@ -94,7 +94,23 @@ const I18N = {
     deactivate_title:  'Desactivar sistema',
     deactivate_help:   'El sistema deja de aparecer en el inventario. Sus datos se conservan.',
     deactivate_btn:    'Desactivar sistema',
-    deactivate_confirm: '¿Desactivar «{name}»? Dejará de aparecer en el inventario.'
+    deactivate_confirm: '¿Desactivar «{name}»? Dejará de aparecer en el inventario.',
+    // Nuevo sistema
+    new_system:        'Nuevo sistema',
+    new_system_help:   'Completa la identificación. Las demás secciones se completan después en la ficha.',
+    create_system:     'Crear sistema',
+    required_fields:   'Completa los campos obligatorios:',
+    no_divisions_create: 'No hay divisiones donde puedas crear sistemas.',
+    f_name:            'Nombre del sistema',
+    f_code:            'Código',
+    f_version:         'Versión',
+    f_deploy_date:     'Fecha de despliegue',
+    f_responsible:     'Persona responsable',
+    f_area:            'Área responsable',
+    f_location:        'Ubicación operacional',
+    f_platform:        'Plataforma',
+    f_country:         'País',
+    f_next_review:     'Próxima revisión'
   },
   en: {
     app_subtitle:     'AI governance platform',
@@ -187,7 +203,23 @@ const I18N = {
     deactivate_title:  'Deactivate system',
     deactivate_help:   'The system stops appearing in the inventory. Its data is kept.',
     deactivate_btn:    'Deactivate system',
-    deactivate_confirm: 'Deactivate “{name}”? It will stop appearing in the inventory.'
+    deactivate_confirm: 'Deactivate “{name}”? It will stop appearing in the inventory.',
+    // New system
+    new_system:        'New system',
+    new_system_help:   'Fill in the identification. The other sections are completed later in the record.',
+    create_system:     'Create system',
+    required_fields:   'Fill in the required fields:',
+    no_divisions_create: 'There are no divisions where you can create systems.',
+    f_name:            'System name',
+    f_code:            'Code',
+    f_version:         'Version',
+    f_deploy_date:     'Deploy date',
+    f_responsible:     'Responsible person',
+    f_area:            'Responsible area',
+    f_location:        'Operational location',
+    f_platform:        'Platform',
+    f_country:         'Country',
+    f_next_review:     'Next review date'
   }
 };
 

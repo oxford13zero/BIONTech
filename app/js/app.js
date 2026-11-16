@@ -194,6 +194,7 @@ function parseHash() {
 function currentRoute() {
   const { path } = parseHash();
   if (/^sistema\/[\w-]+$/.test(path)) return path;   // ficha de un sistema
+  if (path === 'nuevo-sistema' && canCreateSystem()) return path;
   return findItem(menu(), path) ? path : 'dashboard';
 }
 
@@ -210,6 +211,7 @@ function pageHead() {
 
 function viewPage() {
   if (S.route.startsWith('sistema/')) return viewSystem(S.route.split('/')[1]);
+  if (S.route === 'nuevo-sistema') return viewNewSystem();
   if (S.route === 'dashboard') return pageHead() + viewDashboard();
   if (S.route.startsWith('inventario')) return pageHead() + viewInventory();
   return pageHead() + `<div class="card empty">${t('section_soon')}</div>`;
@@ -341,7 +343,9 @@ function viewInventory() {
   const chips = Object.keys(SHORTCUTS).map(k =>
     `<button class="sc ${f.sc === k ? 'on' : ''}" onclick="setInvFilter('sc', '${f.sc === k ? '' : k}')">${t('sc_' + k)}</button>`).join('');
 
+  const g = S.route.match(/^inventario\/g(\d)$/);
   return `
+    ${canCreateSystem() ? `<div class="page-actions"><a class="btn btn-primary" href="#/nuevo-sistema${g ? '?g=' + g[1] : ''}">+ ${t('new_system')}</a></div>` : ''}
     <div class="toolbar">
       <input class="input search" type="text" placeholder="${t('inv_search')}" value="${esc(f.q)}" oninput="setInvFilter('q', this.value)">
       ${multiDiv ? `<select class="input" onchange="setInvFilter('div', this.value)">${opt('', t('all_divisions'), f.div)}${S.data.branches.map(b => opt(String(b.id), b.name, f.div)).join('')}</select>` : ''}
@@ -565,6 +569,100 @@ function viewSystem(id) {
       <button class="btn btn-danger" onclick="deactivateSystem()" ${S.edit ? 'disabled' : ''}>${t('deactivate_btn')}</button>
     </div>` : ''}`;
 }
+
+// ── Nuevo sistema ─────────────────────────────────────────────
+// Formulario corto con la sección A; el resto se completa en la ficha
+function canCreateSystem() {
+  return S.user && (S.user.role === 'super_empresa' || S.user.role === 'super_division');
+}
+
+// Divisiones donde el usuario puede crear sistemas
+function creatableDivisions() {
+  const all = S.data?.branches || [];
+  return S.user.role === 'super_empresa' ? all : all.filter(b => String(b.id) === String(S.user.divisionId));
+}
+
+const NEW_FIELDS = [
+  // [columna, clave de texto, tipo, obligatorio]
+  ['name', 'f_name', 'text', true],
+  ['system_code', 'f_code', 'text', true],
+  ['inventory_group', 'group', 'group', true],
+  ['branch_id', 'division', 'division', true],
+  ['risk_level', 'risk', 'risk', true],
+  ['vendor', 'vendor', 'text'],
+  ['version', 'f_version', 'text'],
+  ['deploy_date', 'f_deploy_date', 'date'],
+  ['responsible_person', 'f_responsible', 'text'],
+  ['responsible_area', 'f_area', 'text'],
+  ['operational_location', 'f_location', 'text'],
+  ['platform', 'f_platform', 'text'],
+  ['country', 'f_country', 'text'],
+  ['next_review_date', 'f_next_review', 'date']
+];
+
+function viewNewSystem() {
+  if (!S.data) return `<div class="card empty">${t('loading')}</div>`;
+  const divs = creatableDivisions();
+  const ns = S.newSys || {};
+  const preGroup = parseHash().params.g || '';
+  const opt = (v, label, cur) => `<option value="${esc(v)}" ${String(v) === String(cur) ? 'selected' : ''}>${esc(label)}</option>`;
+  const control = ([col, key, type, req]) => {
+    const id = 'ns_' + col;
+    const cur = ns.values?.[col] ?? (col === 'inventory_group' ? preGroup : col === 'country' ? 'Chile' : col === 'branch_id' && divs.length === 1 ? divs[0].id : '');
+    let input;
+    if (type === 'group') input = `<select class="input" id="${id}">${opt('', '', cur)}${[1, 2, 3, 4].map(g => opt(g, t('group_' + g), cur)).join('')}</select>`;
+    else if (type === 'division') input = `<select class="input" id="${id}">${divs.length > 1 ? opt('', '', cur) : ''}${divs.map(b => opt(b.id, b.name, cur)).join('')}</select>`;
+    else if (type === 'risk') input = `<select class="input" id="${id}">${opt('', '', cur)}${LEVELS.map(l => opt(l, t('risk_' + l), cur)).join('')}</select>`;
+    else input = `<input class="input" id="${id}" type="${type}" value="${esc(cur)}">`;
+    return `<div class="field"><label for="${id}">${t(key)}${req ? ' *' : ''}</label>${input}</div>`;
+  };
+
+  return `
+    <button class="back" onclick="history.length > 1 ? history.back() : (location.hash = '#/inventario')">← ${t('back_to_list')}</button>
+    <h1>${t('new_system')}</h1>
+    <div class="crumb">${t('new_system_help')}</div>
+    ${!divs.length ? `<div class="alert">${t('no_divisions_create')}</div>` : `
+    <div class="card">
+      ${ns.error ? `<div class="form-error" role="alert">${esc(ns.error)}</div>` : ''}
+      <div class="fields form">${NEW_FIELDS.map(control).join('')}</div>
+      <div class="edit-bar">
+        <button class="btn btn-ghost" onclick="history.back()" ${ns.busy ? 'disabled' : ''}>${t('cancel')}</button>
+        <button class="btn btn-primary" onclick="createSystem()" ${ns.busy ? 'disabled' : ''}>${ns.busy ? t('saving') : t('create_system')}</button>
+      </div>
+    </div>`}`;
+}
+
+async function createSystem() {
+  const values = {};
+  NEW_FIELDS.forEach(([col]) => { values[col] = document.getElementById('ns_' + col).value.trim(); });
+  S.newSys = { values };
+  const missing = NEW_FIELDS.filter(([col, , , req]) => req && !values[col]);
+  if (missing.length) {
+    S.newSys.error = t('required_fields') + ' ' + missing.map(([, key]) => t(key)).join(', ');
+    return render();
+  }
+  const body = {};
+  Object.entries(values).forEach(([k, v]) => { body[k] = v === '' ? null : v; });
+  body.inventory_group = Number(body.inventory_group);
+
+  S.newSys.busy = true; render();
+  try {
+    const res = await fetch('/api/client-write?action=insert_system', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + getToken() },
+      body: JSON.stringify(body)
+    });
+    const data = await res.json().catch(() => ({}));
+    if (res.status === 401) return logout();
+    if (!res.ok) throw new Error(data.error || 'HTTP ' + res.status);
+    S.newSys = null;
+    location.hash = '#/sistema/' + data.id;
+    loadData();
+  } catch (err) {
+    S.newSys = { values, error: t('save_error') + ' ' + err.message };
+    render();
+  }
+}
 function viewShell() {
   const u = S.user;
   return `
@@ -607,7 +705,11 @@ function render() {
   }
 }
 
-window.addEventListener('hashchange', () => { if (S.user) { render(); window.scrollTo(0, 0); } });
+window.addEventListener('hashchange', () => {
+  if (!S.user) return;
+  if (parseHash().path !== 'nuevo-sistema') S.newSys = null;
+  render(); window.scrollTo(0, 0);
+});
 
 setLang(LANG);
 S.user = loadSession();

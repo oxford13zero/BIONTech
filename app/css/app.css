@@ -162,3 +162,10 @@ textarea.edit-input{resize:vertical;min-height:36px;font-family:inherit}
 .danger-zone{display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;margin-top:20px;
   border:1px solid rgba(240,149,149,.3);border-radius:12px;padding:14px 16px;background:rgba(74,21,21,.25)}
 .danger-zone p{margin:2px 0 0;font-size:12.5px;color:var(--dim)}
+
+/* Nuevo sistema */
+.page-actions{display:flex;justify-content:flex-end;margin:-46px 0 14px}
+a.btn{text-decoration:none;display:inline-block}
+.fields.form{padding-top:0}
+.fields.form .input{margin-top:3px;font-size:14px;padding:8px 11px}
+@media(max-width:900px){.page-actions{margin:0 0 12px}}
