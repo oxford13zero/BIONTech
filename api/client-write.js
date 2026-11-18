@@ -1,4 +1,5 @@
 const { Pool } = require('pg');
+const { getMasterPool } = require('./_helpers');
 const {
   ROLES, verifyClient, assertCanEdit, assertSuperEmpresa,
   assertDivisionInScope, assertSystemInScope, assertSafeColumns, sendError
@@ -59,6 +60,40 @@ module.exports = async function handler(req, res) {
         [user.companyId, body.name, body.address, body.country || 'Chile']
       );
       return res.status(201).json({ id: result.rows[0].id });
+    }
+
+    // ── Update division (branch) ──────────────────────────────
+    if (action === 'update_branch') {
+      assertSuperEmpresa(user);
+      await assertDivisionInScope(pool, user, body.branch_id);
+      if (!body.name || !String(body.name).trim()) return res.status(400).json({ error: 'Name required' });
+      await pool.query(
+        `UPDATE branches SET name = $1, address = $2, country = $3, updated_at = NOW()
+         WHERE id = $4 AND company_id = $5`,
+        [String(body.name).trim(), body.address || null, body.country || 'Chile', body.branch_id, user.companyId]
+      );
+      return res.status(200).json({ success: true });
+    }
+
+    // ── Deactivate division (branch) ──────────────────────────
+    // No se permite si tiene sistemas activos o usuarios activos asignados
+    if (action === 'deactivate_branch') {
+      assertSuperEmpresa(user);
+      await assertDivisionInScope(pool, user, body.branch_id);
+      const sys = await pool.query(
+        `SELECT count(*)::int AS n FROM ai_systems WHERE branch_id = $1 AND status = 'active'`, [body.branch_id]
+      );
+      if (sys.rows[0].n > 0) return res.status(409).json({ error: 'Division has active systems', code: 'has_systems', count: sys.rows[0].n });
+      const users = await getMasterPool().query(
+        `SELECT count(*)::int AS n FROM users WHERE company_id = $1 AND division_id = $2 AND status = 'active'`,
+        [user.companyId, body.branch_id]
+      );
+      if (users.rows[0].n > 0) return res.status(409).json({ error: 'Division has active users', code: 'has_users', count: users.rows[0].n });
+      await pool.query(
+        `UPDATE branches SET status = 'inactive', updated_at = NOW() WHERE id = $1 AND company_id = $2`,
+        [body.branch_id, user.companyId]
+      );
+      return res.status(200).json({ success: true });
     }
 
     // ── Insert AI system ──────────────────────────────────────

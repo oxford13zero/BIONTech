@@ -5,15 +5,17 @@ const bcrypt = require('bcryptjs');
 const ROLES = ['super_empresa', 'super_division', 'usuario_division'];
 const DIVISION_ROLES = ['super_division', 'usuario_division'];
 
-// Pool de la BD del cliente de una empresa
+// Pool de la BD del cliente de una empresa.
+// Usa las mismas credenciales de Vercel que el resto de la plataforma;
+// de la empresa solo se toma el nombre de su base de datos.
 async function companyPool(masterPool, companyId) {
-  const r = await masterPool.query(
-    'SELECT azure_db_host, azure_db_name, azure_db_user, azure_db_password FROM companies WHERE id = $1',
-    [companyId]
-  );
+  const r = await masterPool.query('SELECT azure_db_name FROM companies WHERE id = $1', [companyId]);
   const c = r.rows[0];
   if (!c || !c.azure_db_name) return null;
-  return getClientPool(c.azure_db_host, c.azure_db_name, c.azure_db_user, c.azure_db_password);
+  return getClientPool(
+    process.env.AZURE_MASTER_DB_HOST, c.azure_db_name,
+    process.env.AZURE_MASTER_DB_USER, process.env.AZURE_MASTER_DB_PASSWORD
+  );
 }
 
 async function listDivisions(masterPool, companyId) {
