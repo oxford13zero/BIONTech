@@ -1,6 +1,6 @@
 # Activos, modelos e instancias — Diseño
 
-Estado: **borrador para revisión** (Fase 0). Nada de esto está programado todavía.
+Estado: **aprobado** (Fase 0). Nada de esto está programado todavía.
 
 ## 1. Conceptos
 
@@ -45,7 +45,7 @@ Todas tienen `id`, `company_id`, `created_at`, `updated_at`. Las tablas antiguas
 |---|---|
 | `code` | Código automático (`MOD-001`) |
 | `name`, `vendor` | Nombre y proveedor (obligatorios) |
-| `inventory_group` | Grupo 1–4 (define qué sección F de riesgo usan sus instancias) |
+| `suggested_group` | Grupo 1–4 sugerido; se propone al crear cada instancia |
 | `base_risk_level` | Riesgo base del producto |
 | `black_box` | Sí/No: el proveedor no entrega información |
 | `vendor_questionnaire_sent_at`, `vendor_questionnaire_received` | Cuestionario al proveedor |
@@ -63,6 +63,7 @@ Todas tienen `id`, `company_id`, `created_at`, `updated_at`. Las tablas antiguas
 | `model_id` | Modelo |
 | `asset_id` | Activo (vacío = **"Activo por asignar"**) |
 | `branch_id` | División (la del activo) |
+| `inventory_group` | Grupo 1–4 según el **uso** en este activo (define qué sección F de riesgo aplica). Un mismo modelo puede tener instancias en grupos distintos |
 | `current_version_id`, `installed_at` | Versión instalada hoy y fecha de instalación |
 | `risk_level` | Riesgo en este contexto (parte del riesgo base del modelo; puede subir, no bajar) |
 | `reclassification_pending` | Sí después de un cambio de versión, hasta que se revise el riesgo |
@@ -74,7 +75,7 @@ Todas tienen `id`, `company_id`, `created_at`, `updated_at`. Las tablas antiguas
 `instance_id`, `version_id`, `valid_from`, `valid_to` (vacío = vigente). Con esto se sabe qué versión tenía cada instancia en cualquier fecha.
 
 ### Secciones por instancia (1 fila por instancia, como hoy pero ligadas a la instancia)
-`inst_risk_operational`, `inst_risk_decision`, `inst_risk_strategic`, `inst_risk_human_use` (sección F según el grupo),
+`inst_risk_operational`, `inst_risk_decision`, `inst_risk_strategic`, `inst_risk_human_use` (sección F según el grupo de la instancia),
 `inst_compliance` (G), `inst_accountability` (H), `inst_risk_assessment` (M2), `inst_human_supervision` (M4),
 `inst_integrations` (M7, varias por instancia).
 
@@ -89,7 +90,9 @@ Todas tienen `id`, `company_id`, `created_at`, `updated_at`. Las tablas antiguas
 | `version_id` | **Automático**: versión de la instancia en la fecha del incidente |
 | `occurred_at` | Fecha del incidente |
 | `title`, `description`, `incident_type` | Qué pasó |
-| `severity` | `leve` · `moderado` · `grave` · `critico` |
+| `kind` | `incidente` (el daño ocurrió) · `cuasi_incidente` (pudo ocurrir; "peligro" según OECD) |
+| `severity` | `leve` · `moderado` · `grave` · `critico` (escala interna) |
+| `eu_serious_incident` | Sí/No: "incidente grave" según EU AI Act art. 73. Si es Sí, se exigen los campos de notificación al regulador |
 | `status` | `abierto` · `en_investigacion` · `cerrado` |
 | `root_cause_technical`, `root_cause_organizational`, `lessons_learned` | Análisis |
 | `requires_regulator_notification`, `regulator_authority`, `notification_deadline` | Notificación al regulador |
@@ -132,11 +135,11 @@ Todas tienen `id`, `company_id`, `created_at`, `updated_at`. Las tablas antiguas
 
 ## 5. Reglas automáticas
 
-1. **Al asociar un modelo a un activo** se crea la instancia con: la última versión del modelo, la fecha de hoy (editable) y el riesgo base del modelo.
+1. **Al asociar un modelo a un activo** se crea la instancia con: la última versión del modelo, la fecha de hoy (editable), el riesgo base del modelo y el grupo sugerido del modelo (editable).
 2. **Al registrar una versión** en un modelo, el usuario elige a qué instancias se aplica (todas, por filtro de marca/división/tipo, o a mano). Para cada instancia elegida: se guarda una copia de su ficha, se cierra la versión anterior en el historial, se abre la nueva y se marca **reclasificación pendiente**. Las instancias no elegidas siguen igual.
 3. **"Aplicar a más activos"**: aplica una versión ya registrada a otras instancias, con su propia fecha.
 4. **Al registrar o editar un incidente**, la versión se calcula sola con el historial de la instancia en la fecha del incidente. Si se asigna la instancia más tarde, la versión se recalcula.
-5. **"Copiar de otra instancia"**: copia los campos de uso (columna I y secciones de instancia) a otras instancias del mismo modelo. No copia activo, código, versión, historial ni incidentes.
+5. **"Copiar de otra instancia"**: copia los campos de uso (columna I y secciones de instancia) a otras instancias del mismo modelo, **solo en los campos vacíos** (nunca reemplaza datos existentes). No copia activo, código, versión, historial ni incidentes.
 6. **Al retirar un activo**, sus instancias pasan a "retiradas"; su historial e incidentes se conservan.
 7. **Riesgo de la instancia**: no puede ser menor que el riesgo base del modelo.
 8. **Pendientes** (menú) reúne: fichas con campos pendientes, activos con modelos por identificar o por confirmar, modelos caja negra, instancias con reclasificación pendiente o sin activo, incidentes con modelo por determinar y revisiones vencidas.
@@ -152,8 +155,8 @@ Todas tienen `id`, `company_id`, `created_at`, `updated_at`. Las tablas antiguas
 | Registrar incidentes | ✅ | Fase 5 | Fase 4 (sugerido: sí, solo registrar) |
 | Generar informes | ✅ | ✅ su división | ✅ su división |
 
-## 7. Decisiones abiertas
+## 7. Decisiones tomadas
 
-1. **Copiar de otra instancia**: ¿copia todo (reemplazando) o solo llena los campos vacíos? Sugerido: preguntar al usuario en el momento, con "solo vacíos" por defecto.
-2. **Gravedad de incidentes**: ¿sirve la escala leve / moderado / grave / crítico, o usan otra?
-3. **Grupo 1–4**: hoy se asigna por sistema; en el diseño queda en el modelo. ¿Puede un mismo modelo pertenecer a grupos distintos según dónde se use?
+1. **Copiar de otra instancia**: solo llena los campos vacíos.
+2. **Incidentes**: tres campos — tipo (incidente / cuasi incidente, según OECD), gravedad interna (leve / moderado / grave / crítico) y si es "incidente grave" según EU AI Act art. 73 (activa la notificación al regulador). El NIST AI RMF no fija una escala; pide que cada organización defina la suya.
+3. **Grupo 1–4**: describe el uso, por eso va en la **instancia**. El modelo solo guarda un grupo sugerido.
