@@ -93,3 +93,6 @@ module.exports = async function handler(req, res) {
     return sendError(res, I.dbError(e));
   }
 };
+
+// Reutilizada por api/dashboard.js
+module.exports.pending = pending;

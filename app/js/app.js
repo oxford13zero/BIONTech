@@ -10,7 +10,7 @@ const S = {
   user: null,        // usuario con sesión iniciada
   loginError: '',
   loginBusy: false,
-  data: null,        // { branches, systems } visibles para el usuario
+  data: null,        // { branches } visibles para el usuario
   route: 'dashboard', // sección actual (#/ruta)
   division: 'all',   // división elegida en el selector ('all' = todas)
   nav: null          // conteos del menú: { assets, models, pending }
@@ -128,17 +128,15 @@ async function apiGet(url) {
 
 async function loadData() {
   try {
-    // Sistemas con datos de riesgo y divisiones (el servidor filtra por rol)
-    const [systems, branches] = await Promise.all([
-      apiGet('/api/client-data?type=ai_systems_full'),
-      apiGet('/api/client-data?type=branches')
-    ]);
-    S.data = { branches, systems };
+    // Divisiones visibles para el usuario (el servidor filtra por rol)
+    const branches = await apiGet('/api/client-data?type=branches');
+    S.divStats = null;   // recalcular instalaciones por división
+    S.data = { branches };
     checkDivision();
   } catch (e) {
     if (!S.user) return;
     console.error('loadData', e);
-    S.data = { branches: [], systems: [], error: true };
+    S.data = { branches: [], error: true };
   }
   render();
 }
@@ -218,8 +216,6 @@ async function loadNav() {
 }
 
 // ── Menú ──────────────────────────────────────────────────────
-const GROUPS = [1, 2, 3, 4];
-const countGroup = g => (S.data?.systems || []).filter(s => Number(s.inventory_group) === g).length;
 
 // Cada ítem: id = ruta (#/id), label = clave de texto, count opcional, kids opcional
 function menu() {
@@ -245,8 +241,6 @@ function menu() {
   return items;
 }
 
-// Rutas antiguas (inventario por sistema) que siguen funcionando hasta el paso 3i, fuera del menú
-const LEGACY_ROUTES = ['inventario', 'inventario/g1', 'inventario/g2', 'inventario/g3', 'inventario/g4'];
 
 function findItem(items, id) {
   for (const it of items) {
@@ -284,9 +278,6 @@ function parseHash() {
 
 function currentRoute() {
   const { path } = parseHash();
-  if (/^sistema\/[\w-]+$/.test(path)) return path;   // ficha de un sistema
-  if (path === 'nuevo-sistema' && canCreateSystem()) return path;
-  if (LEGACY_ROUTES.includes(path)) return path;
   if (/^activos\/[\w-]+(\/editar)?$/.test(path)) return path;   // ficha, nuevo y editar activo
   if (/^modelos\/[\w-]+$/.test(path)) return path;                // ficha y nuevo modelo
   if (/^instancias\/[\w-]+$/.test(path)) return path;             // ficha de la instalación
@@ -299,17 +290,14 @@ function closeSide() { document.body.classList.remove('side-open'); }
 
 // ── Vistas de la plataforma ───────────────────────────────────
 function pageHead() {
-  const it = findItem(menu(), S.route) || { label: LEGACY_ROUTES.includes(S.route) ? 'nav_systems' : 'nav_dashboard' };
+  const it = findItem(menu(), S.route) || { label: 'nav_dashboard' };
   const parent = parentOf(S.route);
   const crumb = [t('app_crumb_root'), parent && t(parent.label), t(it.label)].filter(Boolean).join(' · ');
   return `<h1>${t(it.label)}</h1><div class="crumb">${esc(crumb)}</div>`;
 }
 
 function viewPage() {
-  if (S.route.startsWith('sistema/')) return viewSystem(S.route.split('/')[1]);
-  if (S.route === 'nuevo-sistema') return viewNewSystem();
   if (S.route === 'dashboard') return pageHead() + viewDashboard();
-  if (S.route.startsWith('inventario')) return pageHead() + viewInventory();
   if (S.route === 'divisiones') return pageHead() + viewDivisions();
   if (S.route.startsWith('reportes')) return pageHead() + viewReports();
   if (S.route === 'equipo') return pageHead() + viewTeam();
@@ -331,159 +319,74 @@ const LEVEL_CLS = { Critical: 'l-crit', High: 'l-high', Medium: 'l-med', Low: 'l
 const riskChip = l => l ? `<span class="chip ${LEVEL_CLS[l] || 'c-n'}">${t('risk_' + l)}</span>` : `<span class="chip c-n">—</span>`;
 
 const today = () => new Date().toISOString().slice(0, 10);
-const isUnassessed = s => !s.compliance_status || s.compliance_status === 'Sin evaluar';
-const isOverdue = s => !!s.next_review_date && String(s.next_review_date).slice(0, 10) < today();
-const isHighRisk = s => s.risk_level === 'Critical' || s.risk_level === 'High';
+
+async function loadDashboard(key) {
+  S.dash = { key, loading: true };
+  const q = divisionParam() ? '?division=' + encodeURIComponent(divisionParam()) : '';
+  try { S.dash = { key, data: await apiGet('/api/dashboard' + q) }; }
+  catch (e) { if (!S.user) return; S.dash = { key, error: true }; }
+  if (S.route === 'dashboard') render();
+}
 
 function viewDashboard() {
-  if (!S.data) return `<div class="card empty">${t('loading')}</div>`;
-  const inDiv = x => S.division === 'all' || String(x.branch_id ?? x.id) === String(S.division);
-  const sys = S.data.systems.filter(inDiv);
-  const branchesInView = S.data.branches.filter(b => S.division === 'all' || String(b.id) === String(S.division));
+  const key = S.division;
+  if (!S.dash || S.dash.key !== key) loadDashboard(key);
+  const d = S.dash;
+  if (d.loading || (!d.data && !d.error)) return `<div class="card empty">${t('loading')}</div>`;
+  if (d.error) return `<div class="card empty">${t('data_error')}</div>`;
+  const { counts: c, risk_map, attention: at, recent_incidents } = d.data;
+
   const tiles = [
-    ['dash_total',      sys.length,                         ''],
-    ['dash_high_risk',  sys.filter(isHighRisk).length,      'high'],
-    ['dash_unassessed', sys.filter(isUnassessed).length,    'unassessed'],
-    ['dash_overdue',    sys.filter(isOverdue).length,       'overdue']
+    ['dash_assets', c.assets, '#/activos'],
+    ['dash_models', c.models, '#/modelos'],
+    ['dash_high_risk_inst', c.high_risk, '#/modelos'],
+    ['dash_pending', c.pending, '#/pendientes'],
+    ['dash_incidents_12m', c.incidents_12m, '#/incidentes?from=' + new Date(Date.now() - 365 * 864e5).toISOString().slice(0, 10)]
   ];
+  const mapRows = risk_map.map(b => `<tr><td class="l">${esc(b.name)}</td>${LEVELS.map(l =>
+      `<td class="n ${b[l] ? LEVEL_CLS[l] + '-t' : ''}">${b[l] || '·'}</td>`).join('')}<td class="n">${b.total}</td></tr>`).join('');
 
-  // Mapa: divisiones × niveles de riesgo
-  const rows = branchesInView.map(b => {
-    const list = sys.filter(s => String(s.branch_id) === String(b.id));
-    return `<tr><td class="l">${esc(b.name)}</td>${LEVELS.map(l => {
-      const n = list.filter(s => s.risk_level === l).length;
-      return `<td class="n ${n ? LEVEL_CLS[l] + '-t' : ''}">${n || '·'}</td>`;
-    }).join('')}<td class="n">${list.length}</td></tr>`;
-  }).join('');
-
-  // Requieren atención: revisión vencida, o Crítico sin evaluar
-  const attention = sys
-    .filter(s => isOverdue(s) || (s.risk_level === 'Critical' && isUnassessed(s)))
-    .sort((a, b) => LEVELS.indexOf(a.risk_level) - LEVELS.indexOf(b.risk_level))
-    .slice(0, 10);
-  const attRows = attention.map(s => `
-    <tr class="row" onclick="openSystem('${esc(s.id)}')">
-      <td><b>${esc(s.name)}</b><small>${esc(s.system_code)}</small></td>
-      <td>${esc(s.branch_name || '—')}</td>
-      <td>${riskChip(s.risk_level)}</td>
-      <td>${[isOverdue(s) ? `<span class="chip c-r">${t('reason_overdue')}</span>` : '',
-             isUnassessed(s) ? `<span class="chip c-a">${t('reason_unassessed')}</span>` : ''].join(' ')}</td>
-    </tr>`).join('');
+  const attItems = [
+    ...at.serious_open_incidents.map(x => ({ href: '#/incidentes/' + x.id, main: esc(x.title),
+      sub: `${esc(x.occurred_at)} · ${esc(x.asset_code)} · ${t('ist_' + x.status)}`, tag: `<span class="chip ${x.severity === 'critico' ? 'l-crit' : 'l-high'}">${t('sev_' + x.severity)}</span>` })),
+    ...at.reclassification_pending.map(i => ({ href: '#/instancias/' + i.id, main: esc(i.model_name),
+      sub: `${esc(i.asset_code || t('asset_unassigned'))} · ${verLabel(i.version)}`, tag: `<span class="chip c-a">${t('reclass_pending')}</span>` })),
+    ...at.reviews_overdue.map(i => ({ href: '#/instancias/' + i.id, main: esc(i.model_name),
+      sub: `${esc(i.asset_code || t('asset_unassigned'))}`, tag: `<span class="chip c-r">${t('review_was_due').replace('{d}', esc(i.next_review_date))}</span>` }))
+  ];
+  const more = (at.totals.reclassification_pending - at.reclassification_pending.length) + (at.totals.reviews_overdue - at.reviews_overdue.length);
+  const recRows = recent_incidents.map(x => `
+    <tr class="row" onclick="location.hash='#/incidentes/${esc(x.id)}'">
+      <td>${esc(x.occurred_at)}</td><td><b>${esc(x.title)}</b><small>${esc(x.asset_code)}</small></td>
+      <td>${x.model_name ? esc(x.model_name) + `<small>${verLabel(x.version)}</small>` : `<span class="chip c-a">${t('model_undetermined')}</span>`}</td>
+      <td>${sevChip(x.severity)}</td></tr>`).join('');
 
   return `
-    <div class="tiles">${tiles.map(([k, n, sc]) =>
-      `<a class="tile" href="#/inventario${sc ? '?sc=' + sc : ''}"><b>${n}</b>${t(k)}</a>`).join('')}</div>
+    <div class="tiles tiles-5">${tiles.map(([k, n, href]) => `<a class="tile" href="${href}"><b>${n}</b>${t(k)}</a>`).join('')}</div>
     <div class="dash-grid">
       <div class="card">
-        <h3>${t('dash_map')}</h3>
+        <h3>${t('dash_map_inst')}</h3>
         <div class="tbl-wrap"><table class="map">
           <thead><tr><th class="l">${t('division')}</th>${LEVELS.map(l => `<th>${t('risk_' + l)}</th>`).join('')}<th>${t('total')}</th></tr></thead>
-          <tbody>${rows || `<tr><td colspan="6" class="empty">${t('no_divisions')}</td></tr>`}</tbody>
+          <tbody>${mapRows || `<tr><td colspan="6" class="empty">${t('no_divisions')}</td></tr>`}</tbody>
         </table></div>
       </div>
       <div class="card">
         <h3>${t('dash_attention')}</h3>
-        ${attRows ? `<div class="tbl-wrap"><table>
-          <thead><tr><th>${t('system')}</th><th>${t('division')}</th><th>${t('risk')}</th><th>${t('reason')}</th></tr></thead>
-          <tbody>${attRows}</tbody></table></div>`
+        ${attItems.length ? `<div class="pend-list">${attItems.map(x => `
+          <a class="pend-item" href="${x.href}"><span class="pend-main"><b>${x.main}</b><small>${x.sub}</small></span>${x.tag}<span class="arrow">›</span></a>`).join('')}</div>
+          ${more > 0 ? `<p class="count-note"><a href="#/pendientes">${t('dash_more_pending').replace('{n}', more)}</a></p>` : ''}`
         : `<div class="empty small">${t('dash_attention_none')}</div>`}
       </div>
+    </div>
+    <div class="card mt">
+      <h3>${t('dash_recent_incidents')}</h3>
+      ${recRows ? `<div class="tbl-wrap"><table><thead><tr><th>${t('f_date')}</th><th>${t('f_title')}</th><th>${t('model')}</th><th>${t('f_severity')}</th></tr></thead>
+        <tbody>${recRows}</tbody></table></div>` : `<div class="empty small">${t('no_incidents')}</div>`}
     </div>`;
 }
 
-
-// ── Inventario: lista ─────────────────────────────────────────
-// Filtros guardados en la dirección: #/inventario/g1?q=&div=&risk=&status=&sc=
-const SHORTCUTS = { high: isHighRisk, unassessed: isUnassessed, overdue: isOverdue };
-const statusLabel = s => isUnassessed(s) ? t('reason_unassessed') : s.compliance_status;
-
-function invFilters() {
-  const p = parseHash().params;
-  return { q: p.q || '', div: p.div || '', risk: p.risk || '', status: p.status || '', sc: p.sc || '' };
-}
-
-function setInvFilter(key, value) {
-  const f = invFilters();
-  f[key] = value;
-  const qs = new URLSearchParams(Object.entries(f).filter(([, v]) => v)).toString();
-  history.replaceState(null, '', '#/' + S.route + (qs ? '?' + qs : ''));
-  if (key === 'q') document.getElementById('invTable').innerHTML = invTable();  // conservar el foco al escribir
-  else render();
-}
-
-function invList() {
-  const f = invFilters();
-  const g = S.route.match(/^inventario\/g(\d)$/);
-  const q = f.q.toLowerCase();
-  return (S.data?.systems || []).filter(s =>
-    (!g || Number(s.inventory_group) === Number(g[1])) &&
-    (!q || [s.name, s.system_code, s.vendor].join(' ').toLowerCase().includes(q)) &&
-    (!f.div || String(s.branch_id) === f.div) &&
-    (!f.risk || s.risk_level === f.risk) &&
-    (!f.status || statusLabel(s) === f.status) &&
-    (!f.sc || (SHORTCUTS[f.sc] && SHORTCUTS[f.sc](s)))
-  );
-}
-
-function invTable() {
-  const list = invList();
-  const total = (S.data?.systems || []).length;
-  const rows = list.map(s => `
-    <tr class="row" onclick="openSystem('${esc(s.id)}')">
-      <td><b>${esc(s.name)}</b><small>${esc(s.system_code)}</small></td>
-      <td>${esc(s.vendor || '—')}</td>
-      <td>${t('group_' + s.inventory_group)}</td>
-      <td>${esc(s.branch_name || '—')}</td>
-      <td>${riskChip(s.risk_level)}</td>
-      <td>${isUnassessed(s) ? `<span class="chip c-a">${t('reason_unassessed')}</span>` : `<span class="chip c-g">${esc(s.compliance_status)}</span>`}</td>
-    </tr>`).join('');
-  return `<div class="tbl-wrap"><table>
-      <thead><tr><th>${t('system')}</th><th>${t('vendor')}</th><th>${t('group')}</th><th>${t('division')}</th><th>${t('risk')}</th><th>${t('status')}</th></tr></thead>
-      <tbody>${rows || `<tr><td colspan="6" class="empty small">${t('inv_none')}</td></tr>`}</tbody>
-    </table></div>
-    <p class="count-note">${t('inv_count').replace('{n}', list.length).replace('{total}', total)}</p>`;
-}
-
-function viewInventory() {
-  if (!S.data) return `<div class="card empty">${t('loading')}</div>`;
-  const f = invFilters();
-  const opt = (v, label, cur) => `<option value="${esc(v)}" ${v === cur ? 'selected' : ''}>${esc(label)}</option>`;
-  const statuses = [...new Set(S.data.systems.map(statusLabel).filter(Boolean))].sort();
-  const multiDiv = S.data.branches.length > 1;
-  const chips = Object.keys(SHORTCUTS).map(k =>
-    `<button class="sc ${f.sc === k ? 'on' : ''}" onclick="setInvFilter('sc', '${f.sc === k ? '' : k}')">${t('sc_' + k)}</button>`).join('');
-
-  const g = S.route.match(/^inventario\/g(\d)$/);
-  return `
-    ${canCreateSystem() ? `<div class="page-actions"><a class="btn btn-primary" href="#/nuevo-sistema${g ? '?g=' + g[1] : ''}">+ ${t('new_system')}</a></div>` : ''}
-    <div class="toolbar">
-      <input class="input search" type="text" placeholder="${t('inv_search')}" value="${esc(f.q)}" oninput="setInvFilter('q', this.value)">
-      ${multiDiv ? `<select class="input" onchange="setInvFilter('div', this.value)">${opt('', t('all_divisions'), f.div)}${S.data.branches.map(b => opt(String(b.id), b.name, f.div)).join('')}</select>` : ''}
-      <select class="input" onchange="setInvFilter('risk', this.value)">${opt('', t('all_risks'), f.risk)}${LEVELS.map(l => opt(l, t('risk_' + l), f.risk)).join('')}</select>
-      <select class="input" onchange="setInvFilter('status', this.value)">${opt('', t('all_statuses'), f.status)}${statuses.map(x => opt(x, x, f.status)).join('')}</select>
-    </div>
-    <div class="shortcuts">${chips}</div>
-    <div class="card" id="invTable">${invTable()}</div>`;
-}
-
-
-// ── Ficha del sistema (solo lectura) ──────────────────────────
-// S.rec = { id, data, error } — datos de /api/client-record
-function openSystem(id) { location.hash = '#/sistema/' + id; }
-
-async function loadRecord(id) {
-  S.rec = { id, data: null, error: null };
-  S.openSec = { A: true };
-  S.edit = null;
-  try {
-    S.rec.data = await apiGet('/api/client-record?system_id=' + encodeURIComponent(id));
-  } catch (e) {
-    if (!S.user) return;
-    S.rec.error = /403|404/.test(e.message) ? 'rec_not_found' : 'data_error';
-  }
-  if (S.route === 'sistema/' + id) render();
-}
-
+// ── Ayudantes de campos (los usa la ficha de la instalación) ─
 function fmtValue(v, fmt) {
   if (v === null || v === undefined || v === '') return null;
   if (fmt === 'bool' || typeof v === 'boolean') return v === true || v === 'true' ? t('yes') : t('no');
@@ -493,20 +396,6 @@ function fmtValue(v, fmt) {
   if (fmt === 'usd') return 'USD ' + Number(v).toLocaleString(LANG === 'es' ? 'es-CL' : 'en-US');
   if (/^\d{4}-\d{2}-\d{2}T/.test(String(v))) return String(v).slice(0, 10);
   return String(v);
-}
-
-function toggleSection(id) {
-  S.openSec = S.openSec || { A: true };
-  S.openSec[id] = !S.openSec[id];
-  render();
-}
-
-// ── Edición de la ficha ───────────────────────────────────────
-// S.edit = { sec: 'B', idx: 0 } mientras se edita una sección (idx: registro en M6/M7)
-function canEditSystem(sys) {
-  const u = S.user;
-  return u.role === 'super_empresa' ||
-    (u.role === 'super_division' && String(u.divisionId) === String(sys.branch_id));
 }
 
 const NUMBER_FMTS = ['scale5', 'seconds', 'pct', 'usd', 'number'];
@@ -540,53 +429,6 @@ function inputHtml(col, fmt, raw) {
   return `<textarea ${attrs} rows="${val.length > 80 ? 3 : 1}">${esc(val)}</textarea>`;
 }
 
-function fieldsHtml(def, row, editing) {
-  return `<div class="fields">${def.fields.map(([col, es, en, fmt]) => {
-    const label = `<label>${esc(LANG === 'es' ? es : en)}</label>`;
-    if (editing) return `<div class="field">${label}${inputHtml(col, fmt, row ? row[col] : null)}</div>`;
-    const v = row ? fmtValue(row[col], fmt) : null;
-    return `<div class="field">${label}
-      <div class="${v === null ? 'no-info' : ''}">${v === null ? t('no_info') : esc(v)}</div></div>`;
-  }).join('')}</div>`;
-}
-
-function editBar(def, idx) {
-  const e = S.edit;
-  if (e && e.sec === def.id && e.idx === idx) {
-    return `<div class="edit-bar">
-      ${e.error ? `<span class="form-error inline">${esc(e.error)}</span>` : ''}
-      <button class="btn btn-ghost btn-sm" onclick="cancelEdit()" ${e.busy ? 'disabled' : ''}>${t('cancel')}</button>
-      <button class="btn btn-primary btn-sm" onclick="saveEdit()" ${e.busy ? 'disabled' : ''}>${e.busy ? t('saving') : t('save')}</button>
-    </div>`;
-  }
-  if (!canEditSystem(S.rec.data.sys) || S.edit) return '';
-  return `<div class="edit-bar"><button class="btn btn-sm" onclick="startEdit('${def.id}', ${idx})">${t('edit_section')}</button></div>`;
-}
-
-function sectionHtml(def, d) {
-  const open = (S.openSec || { A: true })[def.id];
-  const rows = def.many ? (d[def.data] || []) : [d[def.data]].filter(Boolean);
-  const filled = rows.reduce((n, r) => n + def.fields.filter(([c]) => r[c] !== null && r[c] !== undefined && r[c] !== '').length, 0);
-  const total = def.many ? def.fields.length * Math.max(rows.length, 1) : def.fields.length;
-  const editing = idx => S.edit && S.edit.sec === def.id && S.edit.idx === idx;
-  const body = def.many
-    ? (rows.length ? rows.map((r, i) => `${i ? '<hr class="sep">' : ''}<div id="ed-${def.id}-${i}">${fieldsHtml(def, r, editing(i))}${editBar(def, i)}</div>`).join('')
-                   : `<p class="no-info">${t('no_records')}</p>`)
-    : `<div id="ed-${def.id}-0">${fieldsHtml(def, rows[0], editing(0))}${editBar(def, 0)}</div>`;
-  return `
-    <div class="sec ${open ? 'open' : ''}" style="--c:${def.color}">
-      <button class="sec-head" onclick="toggleSection('${def.id}')" aria-expanded="${!!open}">
-        <span class="dot"></span><span class="sec-name">${esc(def.title[LANG])}</span>
-        <span class="sec-count">${def.many ? t('n_records').replace('{n}', rows.length) : `${filled} / ${total}`}</span>
-        <span class="arrow">›</span>
-      </button>
-      ${open ? `<div class="sec-body">${body}</div>` : ''}
-    </div>`;
-}
-
-function startEdit(sec, idx) { S.edit = { sec, idx }; render(); }
-function cancelEdit() { S.edit = null; render(); }
-
 // Valor del control → valor para la BD (vacío = null)
 function inputValue(el) {
   const v = el.value.trim();
@@ -600,178 +442,6 @@ function sameValue(a, b) {
   const norm = x => x === null || x === undefined || x === '' ? null
     : (typeof x === 'string' && DATE_RE.test(x)) ? x.slice(0, 10) : String(x);
   return norm(a) === norm(b);
-}
-
-async function saveEdit() {
-  const e = S.edit, d = S.rec.data, sys = d.sys;
-  const def = SECTIONS.find(x => x.id === e.sec);
-  const row = def.many ? d[def.data][e.idx] : d[def.data];
-  const payload = {};
-  document.querySelectorAll(`#ed-${def.id}-${e.idx} .edit-input`).forEach(el => {
-    const v = inputValue(el);
-    if (!sameValue(v, row ? row[el.dataset.col] : null)) payload[el.dataset.col] = v;
-  });
-  if (!Object.keys(payload).length) return cancelEdit();
-
-  e.busy = true; e.error = ''; render();
-  try {
-    const res = await fetch('/api/client-write?action=update_section', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + getToken() },
-      body: JSON.stringify({
-        table: def.table,
-        system_id: sys.id,
-        record_id: def.many ? row.id : (def.table === 'ai_systems' ? sys.id : undefined),
-        payload
-      })
-    });
-    const data = await res.json().catch(() => ({}));
-    if (res.status === 401) return logout();
-    if (!res.ok) throw new Error(data.error || 'HTTP ' + res.status);
-  } catch (err) {
-    e.busy = false; e.error = t('save_error') + ' ' + err.message; return render();
-  }
-  S.edit = null;
-  const open = S.openSec;
-  await loadRecord(sys.id);
-  S.openSec = open;
-  render();
-  loadData();   // actualizar lista y dashboard
-}
-
-async function deactivateSystem() {
-  const sys = S.rec.data.sys;
-  if (!confirm(t('deactivate_confirm').replace('{name}', sys.name))) return;
-  try {
-    const res = await fetch('/api/client-write?action=delete_system', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + getToken() },
-      body: JSON.stringify({ system_id: sys.id })
-    });
-    const data = await res.json().catch(() => ({}));
-    if (res.status === 401) return logout();
-    if (!res.ok) throw new Error(data.error || 'HTTP ' + res.status);
-  } catch (err) {
-    return alert(t('save_error') + ' ' + err.message);
-  }
-  S.rec = null;
-  S.data = null;
-  location.hash = '#/inventario';
-  loadData();
-}
-
-function viewSystem(id) {
-  const back = `<button class="back" onclick="history.length > 1 ? history.back() : (location.hash = '#/inventario')">← ${t('back_to_list')}</button>`;
-  if (!S.rec || S.rec.id !== id) { loadRecord(id); return back + `<div class="card empty">${t('loading')}</div>`; }
-  if (S.rec.error) return back + `<div class="card empty">${t(S.rec.error)}</div>`;
-  if (!S.rec.data) return back + `<div class="card empty">${t('loading')}</div>`;
-
-  const d = S.rec.data, sys = d.sys;
-  const branch = (S.data?.branches || []).find(b => String(b.id) === String(sys.branch_id));
-  return `${back}
-    <div class="head-row"><h1>${esc(sys.name)}</h1>${riskChip(sys.risk_level)}
-      ${isUnassessed(sys) ? `<span class="chip c-a">${t('reason_unassessed')}</span>` : `<span class="chip c-g">${esc(sys.compliance_status)}</span>`}
-      ${isOverdue(sys) ? `<span class="chip c-r">${t('reason_overdue')}</span>` : ''}</div>
-    <div class="crumb">${esc([sys.system_code, branch?.name, t('group_' + sys.inventory_group)].filter(Boolean).join(' · '))}</div>
-    <div class="secs">${sectionsFor(sys).map(def => sectionHtml(def, d)).join('')}</div>
-    ${canEditSystem(sys) ? `<div class="danger-zone">
-      <div><b>${t('deactivate_title')}</b><p>${t('deactivate_help')}</p></div>
-      <button class="btn btn-danger" onclick="deactivateSystem()" ${S.edit ? 'disabled' : ''}>${t('deactivate_btn')}</button>
-    </div>` : ''}`;
-}
-
-// ── Nuevo sistema ─────────────────────────────────────────────
-// Formulario corto con la sección A; el resto se completa en la ficha
-function canCreateSystem() {
-  return S.user && (S.user.role === 'super_empresa' || S.user.role === 'super_division');
-}
-
-// Divisiones donde el usuario puede crear sistemas
-function creatableDivisions() {
-  const all = S.data?.branches || [];
-  return S.user.role === 'super_empresa' ? all : all.filter(b => String(b.id) === String(S.user.divisionId));
-}
-
-const NEW_FIELDS = [
-  // [columna, clave de texto, tipo, obligatorio]
-  ['name', 'f_name', 'text', true],
-  ['system_code', 'f_code', 'text', true],
-  ['inventory_group', 'group', 'group', true],
-  ['branch_id', 'division', 'division', true],
-  ['risk_level', 'risk', 'risk', true],
-  ['vendor', 'vendor', 'text'],
-  ['version', 'f_version', 'text'],
-  ['deploy_date', 'f_deploy_date', 'date'],
-  ['responsible_person', 'f_responsible', 'text'],
-  ['responsible_area', 'f_area', 'text'],
-  ['operational_location', 'f_location', 'text'],
-  ['platform', 'f_platform', 'text'],
-  ['country', 'f_country', 'text'],
-  ['next_review_date', 'f_next_review', 'date']
-];
-
-function viewNewSystem() {
-  if (!S.data) return `<div class="card empty">${t('loading')}</div>`;
-  const divs = creatableDivisions();
-  const ns = S.newSys || {};
-  const preGroup = parseHash().params.g || '';
-  const opt = (v, label, cur) => `<option value="${esc(v)}" ${String(v) === String(cur) ? 'selected' : ''}>${esc(label)}</option>`;
-  const control = ([col, key, type, req]) => {
-    const id = 'ns_' + col;
-    const cur = ns.values?.[col] ?? (col === 'inventory_group' ? preGroup : col === 'country' ? 'Chile' : col === 'branch_id' && divs.length === 1 ? divs[0].id : '');
-    let input;
-    if (type === 'group') input = `<select class="input" id="${id}">${opt('', '', cur)}${[1, 2, 3, 4].map(g => opt(g, t('group_' + g), cur)).join('')}</select>`;
-    else if (type === 'division') input = `<select class="input" id="${id}">${divs.length > 1 ? opt('', '', cur) : ''}${divs.map(b => opt(b.id, b.name, cur)).join('')}</select>`;
-    else if (type === 'risk') input = `<select class="input" id="${id}">${opt('', '', cur)}${LEVELS.map(l => opt(l, t('risk_' + l), cur)).join('')}</select>`;
-    else input = `<input class="input" id="${id}" type="${type}" value="${esc(cur)}">`;
-    return `<div class="field"><label for="${id}">${t(key)}${req ? ' *' : ''}</label>${input}</div>`;
-  };
-
-  return `
-    <button class="back" onclick="history.length > 1 ? history.back() : (location.hash = '#/inventario')">← ${t('back_to_list')}</button>
-    <h1>${t('new_system')}</h1>
-    <div class="crumb">${t('new_system_help')}</div>
-    ${!divs.length ? `<div class="alert">${t('no_divisions_create')}</div>` : `
-    <div class="card">
-      ${ns.error ? `<div class="form-error" role="alert">${esc(ns.error)}</div>` : ''}
-      <div class="fields form">${NEW_FIELDS.map(control).join('')}</div>
-      <div class="edit-bar">
-        <button class="btn btn-ghost" onclick="history.back()" ${ns.busy ? 'disabled' : ''}>${t('cancel')}</button>
-        <button class="btn btn-primary" onclick="createSystem()" ${ns.busy ? 'disabled' : ''}>${ns.busy ? t('saving') : t('create_system')}</button>
-      </div>
-    </div>`}`;
-}
-
-async function createSystem() {
-  const values = {};
-  NEW_FIELDS.forEach(([col]) => { values[col] = document.getElementById('ns_' + col).value.trim(); });
-  S.newSys = { values };
-  const missing = NEW_FIELDS.filter(([col, , , req]) => req && !values[col]);
-  if (missing.length) {
-    S.newSys.error = t('required_fields') + ' ' + missing.map(([, key]) => t(key)).join(', ');
-    return render();
-  }
-  const body = {};
-  Object.entries(values).forEach(([k, v]) => { body[k] = v === '' ? null : v; });
-  body.inventory_group = Number(body.inventory_group);
-
-  S.newSys.busy = true; render();
-  try {
-    const res = await fetch('/api/client-write?action=insert_system', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + getToken() },
-      body: JSON.stringify(body)
-    });
-    const data = await res.json().catch(() => ({}));
-    if (res.status === 401) return logout();
-    if (!res.ok) throw new Error(data.error || 'HTTP ' + res.status);
-    S.newSys = null;
-    location.hash = '#/sistema/' + data.id;
-    loadData();
-  } catch (err) {
-    S.newSys = { values, error: t('save_error') + ' ' + err.message };
-    render();
-  }
 }
 
 // ── Divisiones ────────────────────────────────────────────────
@@ -807,17 +477,37 @@ function divFormHtml() {
   </div>`;
 }
 
+// Instalaciones por división (del mapa de riesgo del Dashboard)
+async function loadDivStats() {
+  S.divStats = { loading: true };
+  try {
+    const d = await apiGet('/api/dashboard');
+    S.divStats = { byId: Object.fromEntries(d.risk_map.map(r => [String(r.id), r])) };
+  } catch (e) { if (!S.user) return; S.divStats = { byId: {} }; }
+  if (S.route === 'divisiones') render();
+}
+
+// Abrir los activos de una división (el Super usuario empresa cambia el selector a esa división)
+function goDivision(id) {
+  if (canChooseDivision()) {
+    S.division = String(id);
+    storage(() => localStorage.setItem(DIVISION_KEY, S.division));
+    loadNav();
+  }
+  location.hash = '#/activos';
+}
+
 function viewDivisions() {
   if (!S.data) return `<div class="card empty">${t('loading')}</div>`;
+  if (!S.divStats) loadDivStats();
   const admin = isSuperEmpresa();
   const rows = S.data.branches.map(b => {
-    const list = S.data.systems.filter(s => String(s.branch_id) === String(b.id));
-    const crit = list.filter(s => s.risk_level === 'Critical').length;
-    const high = list.filter(s => s.risk_level === 'High').length;
-    return `<tr class="row" onclick="location.hash='#/inventario?div=${encodeURIComponent(b.id)}'">
+    const st = S.divStats?.byId?.[String(b.id)];
+    const crit = st ? st.Critical : 0, high = st ? st.High : 0;
+    return `<tr class="row" onclick="goDivision('${esc(b.id)}')">
       <td><b>${esc(b.name)}</b>${b.address ? `<small>${esc(b.address)}</small>` : ''}</td>
       <td>${esc(b.country || '—')}</td>
-      <td>${list.length}</td>
+      <td>${st ? st.total : (S.divStats?.loading ? '…' : 0)}</td>
       <td>${crit ? `<span class="chip l-crit">${crit} ${t('risk_Critical')}</span> ` : ''}${high ? `<span class="chip l-high">${high} ${t('risk_High')}</span>` : ''}${!crit && !high ? '<span class="no-info">—</span>' : ''}</td>
       ${admin ? `<td class="actions" onclick="event.stopPropagation()">
         <button class="btn btn-sm" onclick="openDivForm('${esc(b.id)}')" ${S.divForm ? 'disabled' : ''}>${t('edit')}</button>
@@ -830,7 +520,7 @@ function viewDivisions() {
     ${S.divForm ? divFormHtml() : ''}
     ${S.divMsg ? `<div class="alert">${esc(S.divMsg)}</div>` : ''}
     <div class="card"><div class="tbl-wrap"><table>
-      <thead><tr><th>${t('division')}</th><th>${t('f_country')}</th><th>${t('nav_systems')}</th><th>${t('high_risk_short')}</th>${admin ? '<th></th>' : ''}</tr></thead>
+      <thead><tr><th>${t('division')}</th><th>${t('f_country')}</th><th>${t('installations')}</th><th>${t('high_risk_short')}</th>${admin ? '<th></th>' : ''}</tr></thead>
       <tbody>${rows || `<tr><td colspan="5" class="empty small">${t('no_divisions')}</td></tr>`}</tbody>
     </table></div></div>`;
 }
@@ -899,6 +589,13 @@ function repState() {
   return S.rep;
 }
 
+async function loadRepPreview(div) {
+  S.repPreview = { div, loading: true };
+  try { S.repPreview = { div, data: await apiGet('/api/dashboard?division=' + encodeURIComponent(div)) }; }
+  catch (e) { if (!S.user) return; S.repPreview = { div, error: true }; }
+  if (S.route.startsWith('reportes')) render();
+}
+
 function setRepDivision(id) { S.rep.div = id; S.rep.text = ''; S.rep.error = ''; render(); }
 function setRepFramework(fw) { location.hash = '#/reportes/' + fw; }
 
@@ -909,7 +606,9 @@ function viewReports() {
   if (!branches.length) return `<div class="card empty">${t('no_divisions')}</div>`;
   const div = branches.find(b => String(b.id) === String(r.div));
   const fw = FRAMEWORKS.find(f => f.id === r.fw) || FRAMEWORKS[0];
-  const list = S.data.systems.filter(s => String(s.branch_id) === String(r.div));
+  // Vista previa con el inventario nuevo (activos, modelos e instalaciones) de la división del informe
+  if (!S.repPreview || S.repPreview.div !== r.div) loadRepPreview(r.div);
+  const pv = S.repPreview?.data?.counts;
   const opt = b => `<option value="${esc(b.id)}" ${String(b.id) === String(r.div) ? 'selected' : ''}>${esc(b.name)}</option>`;
 
   let result = '';
@@ -940,16 +639,16 @@ function viewReports() {
     <div class="card rep-preview">
       <div>
         <h3>${t('report')} ${fw.name} · ${esc(div.name)}</h3>
-        <ul>
-          <li>${t('rep_sys_count').replace('{n}', list.length)}</li>
-          <li>${t('rep_high_count').replace('{n}', list.filter(isHighRisk).length)}</li>
-          <li>${t('rep_unassessed_count').replace('{n}', list.filter(isUnassessed).length)}</li>
-        </ul>
+        ${pv ? `<ul>
+          <li>${t('rep_inst_count').replace('{n}', pv.installations).replace('{a}', pv.assets)}</li>
+          <li>${t('rep_high_count').replace('{n}', pv.high_risk)}</li>
+          <li>${t('rep_pending_count').replace('{n}', pv.pending)}</li>
+        </ul>` : `<p class="count-note">${t('loading')}</p>`}
       </div>
-      <button class="btn btn-primary" onclick="generateReport()" ${r.busy || !list.length ? 'disabled' : ''}>
+      <button class="btn btn-primary" onclick="generateReport()" ${r.busy ? 'disabled' : ''}>
         ${r.busy ? t('rep_generating') : t('rep_generate')}</button>
     </div>
-    ${!list.length ? `<p class="count-note">${t('rep_no_systems')}</p>` : ''}
+    <div class="alert">${t('rep_legacy_notice')}</div>
     ${result}`;
 }
 
@@ -1189,7 +888,6 @@ function render() {
 
 window.addEventListener('hashchange', () => {
   if (!S.user) return;
-  if (parseHash().path !== 'nuevo-sistema') S.newSys = null;
   if (parseHash().path !== 'divisiones') { S.divForm = null; S.divMsg = ''; }
   if (parseHash().path !== 'equipo') { S.team = null; S.teamForm = null; S.teamMsg = ''; }
   if (!/^activos\/(nuevo|[\w-]+\/editar)$/.test(parseHash().path)) S.assetForm = null;
@@ -1198,7 +896,7 @@ window.addEventListener('hashchange', () => {
   S.instEdit = null; S.instAction = null; S.integForm = null; S.instMsg = '';
   // Las fichas se vuelven a cargar al entrar, para mostrar siempre datos al día
   S.inst = null; S.assetDetail = null; S.modelDetail = null; S.assets = null; S.models = null;
-  S.incDetail = null; S.incidents = null; S.cmp = null; S.pending = null;
+  S.incDetail = null; S.incidents = null; S.cmp = null; S.pending = null; S.dash = null; S.repPreview = null; S.divStats = null;
   if (!/^incidentes\/(nuevo|[\w-]+\/editar)$/.test(parseHash().path)) S.incForm = null;
   S.incMsg = S.incMsgNext || ''; S.incMsgNext = null;
   if (parseHash().path !== 'modelos/nuevo') S.modelNew = null;

@@ -423,7 +423,19 @@ const I18N = {
     review_was_due:    'Vencía el {d}',
     questionnaire_answered: 'Cuestionario respondido',
     questionnaire_waiting: 'Cuestionario sin respuesta desde {d}',
-    questionnaire_not_sent: 'Cuestionario no enviado'
+    questionnaire_not_sent: 'Cuestionario no enviado',
+    // Dashboard nuevo
+    dash_assets:       'Activos',
+    dash_models:       'Modelos de IA en uso',
+    dash_high_risk_inst: 'Instalaciones de riesgo crítico o alto',
+    dash_pending:      'Pendientes',
+    dash_incidents_12m:'Incidentes en los últimos 12 meses',
+    dash_map_inst:     'Mapa de riesgo por división (instalaciones)',
+    dash_recent_incidents: 'Incidentes recientes',
+    dash_more_pending: 'y {n} más en Pendientes →',
+    rep_inst_count:    '{n} instalaciones de IA en {a} activos',
+    rep_pending_count: '{n} pendientes',
+    rep_legacy_notice: 'Aviso: el informe aún se genera con el inventario anterior. Reflejará los activos, modelos e instalaciones cuando se adapte el servicio de reportes.'
   },
   en: {
     app_subtitle:     'AI governance platform',
@@ -845,7 +857,19 @@ const I18N = {
     review_was_due:    'Was due {d}',
     questionnaire_answered: 'Questionnaire answered',
     questionnaire_waiting: 'Questionnaire unanswered since {d}',
-    questionnaire_not_sent: 'Questionnaire not sent'
+    questionnaire_not_sent: 'Questionnaire not sent',
+    // New dashboard
+    dash_assets:       'Assets',
+    dash_models:       'AI models in use',
+    dash_high_risk_inst: 'Critical or high risk installations',
+    dash_pending:      'Pending',
+    dash_incidents_12m:'Incidents in the last 12 months',
+    dash_map_inst:     'Risk map by division (installations)',
+    dash_recent_incidents: 'Recent incidents',
+    dash_more_pending: 'and {n} more in Pending →',
+    rep_inst_count:    '{n} AI installations in {a} assets',
+    rep_pending_count: '{n} pending items',
+    rep_legacy_notice: 'Note: the report is still generated from the previous inventory. It will reflect assets, models and installations once the report service is adapted.'
   }
 };
 

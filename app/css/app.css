@@ -282,3 +282,9 @@ table.cmp td small{display:block}
 .pend-main small{display:block;color:var(--dim);font-size:12px}
 .pend-item .arrow{color:var(--dim)}
 @media(max-width:600px){.pend-item{flex-wrap:wrap}.pend-item .chip{white-space:normal}}
+
+/* Dashboard nuevo */
+.tiles.tiles-5{grid-template-columns:repeat(5,minmax(0,1fr))}
+@media(max-width:1100px){.tiles.tiles-5{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:600px){.tiles.tiles-5{grid-template-columns:1fr 1fr}}
+.count-note a{color:var(--sand);text-decoration:none}
