@@ -264,7 +264,8 @@ function parentOf(id) {
 function sideHtml(items, depth = 0) {
   return items.map(it => {
     if (it.sec) return `<div class="sec-title">${t(it.sec)}</div>`;
-    const active = S.route === it.id;
+    // Activo también en sus subpáginas (ej. activos/<id>), salvo los ítems con submenú
+    const active = S.route === it.id || (!it.kids && S.route.startsWith(it.id + '/'));
     const open = it.kids && (active || it.kids.some(k => k.id === S.route));
     const n = it.count ? it.count() : null;
     const count = n !== null && n !== undefined ? `<span class="badge ${it.alert && n > 0 ? 'badge-alert' : ''}">${n}</span>` : '';
@@ -286,6 +287,7 @@ function currentRoute() {
   if (/^sistema\/[\w-]+$/.test(path)) return path;   // ficha de un sistema
   if (path === 'nuevo-sistema' && canCreateSystem()) return path;
   if (LEGACY_ROUTES.includes(path)) return path;
+  if (/^activos\/[\w-]+(\/editar)?$/.test(path)) return path;   // ficha, nuevo y editar activo
   return findItem(menu(), path) ? path : 'dashboard';
 }
 
@@ -308,6 +310,8 @@ function viewPage() {
   if (S.route === 'divisiones') return pageHead() + viewDivisions();
   if (S.route.startsWith('reportes')) return pageHead() + viewReports();
   if (S.route === 'equipo') return pageHead() + viewTeam();
+  if (S.route === 'activos') return pageHead() + viewAssets();
+  if (S.route.startsWith('activos/')) return viewAssets();
   // Activos, Modelos, Incidentes y Pendientes: se construyen en los pasos 3b a 3h
   return pageHead() + `<div class="card empty">${t('section_soon')}</div>`;
 }
@@ -1158,7 +1162,15 @@ function render() {
   // Mantener lo escrito en el login al re-renderizar (cambio de idioma, errores)
   const email = document.getElementById('lgEmail')?.value;
   if (S.user) S.route = currentRoute();
+  // Conservar el foco y el cursor del campo donde se está escribiendo (ej. búsquedas)
+  const act = document.activeElement;
+  const keep = act && act.id && /^(INPUT|TEXTAREA)$/.test(act.tagName)
+    ? { id: act.id, start: act.selectionStart, end: act.selectionEnd } : null;
   document.getElementById('root').innerHTML = S.user ? viewShell() : viewLogin();
+  if (S.user && keep) {
+    const el = document.getElementById(keep.id);
+    if (el) { el.focus(); try { el.setSelectionRange(keep.start, keep.end); } catch (e) {} }
+  }
   if (!S.user) {
     const el = document.getElementById('lgEmail');
     if (email) el.value = email;
@@ -1171,6 +1183,8 @@ window.addEventListener('hashchange', () => {
   if (parseHash().path !== 'nuevo-sistema') S.newSys = null;
   if (parseHash().path !== 'divisiones') { S.divForm = null; S.divMsg = ''; }
   if (parseHash().path !== 'equipo') { S.team = null; S.teamForm = null; S.teamMsg = ''; }
+  if (!/^activos\/(nuevo|[\w-]+\/editar)$/.test(parseHash().path)) S.assetForm = null;
+  S.retireAsset = false;
   render(); window.scrollTo(0, 0);
 });
 
