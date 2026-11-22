@@ -2,7 +2,10 @@
 // Conexión a la base de datos de cada cliente.
 // Usa las credenciales de Vercel; del token solo se toma el nombre de la base.
 // ============================================================
-const { Pool } = require('pg');
+const { Pool, types } = require('pg');
+
+// Las fechas (tipo DATE) viajan como texto 'AAAA-MM-DD', sin conversión de zona horaria
+types.setTypeParser(1082, v => v);
 
 const clientPools = {};
 function getClientPool(dbName) {
