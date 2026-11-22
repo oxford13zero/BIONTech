@@ -149,7 +149,7 @@ function viewAssetDetail(id) {
 
   const instRows = instances.map(i => `
     <tr>
-      <td><b>${esc(i.model_name)}</b><small>${esc(i.code)} · ${esc(i.vendor)}</small></td>
+      <td><a href="#/modelos/${esc(i.model_id)}"><b>${esc(i.model_name)}</b></a><small>${esc(i.code)} · ${esc(i.vendor)}</small></td>
       <td>${i.current_version ? esc(i.current_version) : '—'}</td>
       <td>${t('group_' + i.inventory_group)}</td>
       <td>${riskChip(i.risk_level)}</td>

@@ -288,6 +288,7 @@ function currentRoute() {
   if (path === 'nuevo-sistema' && canCreateSystem()) return path;
   if (LEGACY_ROUTES.includes(path)) return path;
   if (/^activos\/[\w-]+(\/editar)?$/.test(path)) return path;   // ficha, nuevo y editar activo
+  if (/^modelos\/[\w-]+$/.test(path)) return path;                // ficha y nuevo modelo
   return findItem(menu(), path) ? path : 'dashboard';
 }
 
@@ -312,6 +313,8 @@ function viewPage() {
   if (S.route === 'equipo') return pageHead() + viewTeam();
   if (S.route === 'activos') return pageHead() + viewAssets();
   if (S.route.startsWith('activos/')) return viewAssets();
+  if (S.route === 'modelos') return pageHead() + viewModels();
+  if (S.route.startsWith('modelos/')) return viewModels();
   // Activos, Modelos, Incidentes y Pendientes: se construyen en los pasos 3b a 3h
   return pageHead() + `<div class="card empty">${t('section_soon')}</div>`;
 }
@@ -1185,6 +1188,8 @@ window.addEventListener('hashchange', () => {
   if (parseHash().path !== 'equipo') { S.team = null; S.teamForm = null; S.teamMsg = ''; }
   if (!/^activos\/(nuevo|[\w-]+\/editar)$/.test(parseHash().path)) S.assetForm = null;
   S.retireAsset = false;
+  S.modelEdit = null; S.modelMsg = '';
+  if (parseHash().path !== 'modelos/nuevo') S.modelNew = null;
   render(); window.scrollTo(0, 0);
 });
 

@@ -237,3 +237,14 @@ td.actions .btn{margin-left:6px}
 .new-model{display:grid;grid-template-columns:2fr 1.5fr 1fr 1fr 1.3fr auto;gap:6px;margin-bottom:6px}
 .new-model .input{font-size:13px;padding:7px 9px}
 @media(max-width:900px){.new-model{grid-template-columns:1fr 1fr}}
+
+/* Modelos */
+.sec-head.static{cursor:default}
+.sec-head.static:hover{background:none}
+.st{font-weight:600}
+.st-pend{color:#FAC775}
+.st-no{color:#F09595}
+.state-sel{margin-top:4px;font-size:12px}
+td a{color:var(--text);text-decoration:none}
+td a:hover b{color:var(--sand);text-decoration:underline}
+.radio.wide{grid-column:1 / -1}
