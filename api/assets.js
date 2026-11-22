@@ -2,6 +2,7 @@
 // Activos — /api/assets
 //   GET    /api/assets?division=&type=&manufacturer=&area=&status=&q=   lista
 //   GET    /api/assets?id=                                              detalle
+//   GET    /api/assets?id=&compare=1&from=&to=                          comparación antes / después
 //   POST   /api/assets                                                  crear (con sus modelos)
 //   PUT    /api/assets?id=                                              editar
 //   DELETE /api/assets?id=&date=                                        retirar
@@ -68,6 +69,45 @@ async function detail(db, user, id) {
       WHERE x.asset_id = $1 ORDER BY x.occurred_at DESC`, [asset.id])
   ]);
   return { asset, instances: inst.rows, incidents: inc.rows };
+}
+
+// Comparación "antes y después" de un activo entre dos fechas.
+// Por cada modelo: versión en cada fecha, si cambió, días de operación e incidentes de esa versión,
+// y tasa de incidentes por cada 1.000 días (para comparar períodos de distinto largo).
+async function compare(db, user, id, from, to) {
+  if (!from || !to) throw I.badRequest('Two dates required');
+  I.assertDate(from, 'from'); I.assertDate(to, 'to');
+  if (from >= to) throw I.badRequest('The first date must be before the second');
+  const asset = await loadAsset(db, user, id);
+  const r = await db.query(`
+    SELECT i.id AS instance_id, i.code AS instance_code, i.status, m.name AS model_name, m.vendor, m.black_box,
+           iv.valid_from, iv.valid_to, v.version, v.changes_unknown,
+           (LEAST(coalesce(iv.valid_to, CURRENT_DATE), CURRENT_DATE) - iv.valid_from) AS days,
+           (SELECT count(*)::int FROM ai_incidents x WHERE x.instance_id = i.id
+              AND x.occurred_at >= iv.valid_from AND (iv.valid_to IS NULL OR x.occurred_at < iv.valid_to)) AS incidents
+    FROM ai_instances i JOIN ai_models m ON m.id = i.model_id
+    JOIN instance_versions iv ON iv.instance_id = i.id JOIN model_versions v ON v.id = iv.version_id
+    WHERE i.asset_id = $1 ORDER BY m.name, iv.valid_from`, [asset.id]);
+
+  const period = row => row && {
+    version: row.version, from: row.valid_from, to: row.valid_to, days: row.days, incidents: row.incidents,
+    changes_unknown: row.changes_unknown,
+    rate_per_1000_days: row.days > 0 ? Math.round(row.incidents / row.days * 1000 * 100) / 100 : null
+  };
+  const at = (rows, d) => rows.find(x => String(x.valid_from) <= d && (!x.valid_to || String(x.valid_to) > d));
+
+  const byInstance = {};
+  for (const row of r.rows) (byInstance[row.instance_id] = byInstance[row.instance_id] || []).push(row);
+  const models = Object.values(byInstance).map(rows => {
+    const a = at(rows, from), b = at(rows, to);
+    return {
+      instance_id: rows[0].instance_id, instance_code: rows[0].instance_code, model_name: rows[0].model_name,
+      vendor: rows[0].vendor, black_box: rows[0].black_box, status: rows[0].status,
+      changed: !!(a && b && a.version !== b.version),
+      before: period(a), after: period(b)
+    };
+  });
+  return { asset: { id: asset.id, code: asset.code, name: asset.name }, from, to, models };
 }
 
 function validateAsset(f, creating) {
@@ -173,6 +213,7 @@ module.exports = async function handler(req, res) {
   const { id } = req.query;
 
   try {
+    if (req.method === 'GET' && id && req.query.compare) return res.status(200).json(await compare(pool, user, id, req.query.from, req.query.to));
     if (req.method === 'GET' && id) return res.status(200).json(await detail(pool, user, id));
     if (req.method === 'GET') return res.status(200).json(await list(pool, user, req.query));
     if (req.method === 'POST') return res.status(201).json(await create(pool, user, req.body || {}));
