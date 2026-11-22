@@ -148,8 +148,8 @@ function viewAssetDetail(id) {
   const field = (label, v) => `<div class="field"><label>${label}</label><div class="${v ? '' : 'no-info'}">${v ? esc(v) : t('no_info')}</div></div>`;
 
   const instRows = instances.map(i => `
-    <tr>
-      <td><a href="#/modelos/${esc(i.model_id)}"><b>${esc(i.model_name)}</b></a><small>${esc(i.code)} · ${esc(i.vendor)}</small></td>
+    <tr class="row" onclick="location.hash='#/instancias/${esc(i.id)}'">
+      <td><a href="#/modelos/${esc(i.model_id)}" onclick="event.stopPropagation()"><b>${esc(i.model_name)}</b></a><small>${esc(i.code)} · ${esc(i.vendor)}</small></td>
       <td>${i.current_version ? esc(i.current_version) : '—'}</td>
       <td>${t('group_' + i.inventory_group)}</td>
       <td>${riskChip(i.risk_level)}</td>

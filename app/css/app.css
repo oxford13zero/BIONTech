@@ -248,3 +248,8 @@ td.actions .btn{margin-left:6px}
 td a{color:var(--text);text-decoration:none}
 td a:hover b{color:var(--sand);text-decoration:underline}
 .radio.wide{grid-column:1 / -1}
+
+/* Instalaciones */
+.crumb a{color:var(--muted);text-decoration:none}
+.crumb a:hover{color:var(--sand);text-decoration:underline}
+label.pick.pick-main{cursor:pointer}

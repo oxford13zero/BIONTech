@@ -161,8 +161,8 @@ function viewModelDetail(id) {
       <td>${v.changes_unknown ? `<span class="chip c-a">${t('changes_unknown')}</span> ` : ''}${esc(v.change_notes || '')}</td>
       <td>${v.instances_count}</td></tr>`).join('');
   const instRows = instances.map(i => `
-    <tr>
-      <td>${i.asset_id ? `<a href="#/activos/${esc(i.asset_id)}"><b>${esc(i.asset_code)}</b></a><small>${esc(i.asset_name || '')}</small>`
+    <tr class="row" onclick="location.hash='#/instancias/${esc(i.id)}'">
+      <td>${i.asset_id ? `<a href="#/activos/${esc(i.asset_id)}" onclick="event.stopPropagation()"><b>${esc(i.asset_code)}</b></a><small>${esc(i.asset_name || '')}</small>`
                         : `<span class="chip c-a">${t('asset_unassigned')}</span>`}<small>${esc(i.code)}</small></td>
       <td>${esc(i.branch_name)}</td><td>${esc(i.manufacturer || '—')}</td>
       <td>${esc(i.current_version || '—')}</td><td>${t('group_' + i.inventory_group)}</td><td>${riskChip(i.risk_level)}</td>
