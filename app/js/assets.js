@@ -354,9 +354,10 @@ function viewAssetForm(id) {
       <p class="count-note">${t('pick_models_help')}</p>
       <input class="input search" type="text" placeholder="${t('catalog_search')}" value="${esc(f.search)}" oninput="setCatalogSearch(this.value)">
       <div class="pick-list" id="catalogList">${catalogListHtml()}</div>
-      <h3 class="mt">${t('new_models')}</h3>
+      ${can('model.write') ? `<h3 class="mt">${t('new_models')}</h3>
       ${newRows || `<p class="count-note">${t('new_models_help')}</p>`}
-      <button class="btn btn-sm" onclick="addNewModelRow()">+ ${t('add_new_model')}</button>
+      <button class="btn btn-sm" onclick="addNewModelRow()">+ ${t('add_new_model')}</button>`
+      : `<p class="count-note mt">${t('model_not_in_catalog_help')}</p>`}
     </div>` : ''}
     <div class="edit-bar">
       <button class="btn btn-ghost" onclick="history.back()" ${f.busy ? 'disabled' : ''}>${t('cancel')}</button>

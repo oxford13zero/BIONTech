@@ -24,13 +24,15 @@ async function loadModel(db, user, modelId) {
 }
 
 // Instancias activas del modelo según "¿a qué instancias se aplica?"
-async function selectInstances(db, model, applyTo) {
+// onlyDivision: roles de división, solo instancias de su división
+async function selectInstances(db, model, applyTo, onlyDivision = null) {
   const a = applyTo || { mode: 'none' };
   if (!MODES.includes(a.mode)) throw I.badRequest('Invalid apply_to mode');
   if (a.mode === 'none') return [];
   const params = [model.id];
   const where = [`i.model_id = $1`, `i.status = 'activa'`];
   const add = (sql, v) => { params.push(v); where.push(sql.replace('?', '$' + params.length)); };
+  if (onlyDivision) add('i.branch_id::text = ?', String(onlyDivision));
   if (a.mode === 'filter') {
     if (!a.manufacturer && !a.division && !a.asset_type) throw I.badRequest('Filter requires manufacturer, division or asset type');
     if (a.manufacturer) add('a.manufacturer ILIKE ?', a.manufacturer);
@@ -132,7 +134,7 @@ async function register(pool, user, body) {
 }
 
 async function applyMore(pool, user, versionId, body) {
-  assertCan(user, 'version.write');
+  const scope = assertCan(user, 'version.apply');
   return I.inTransaction(pool, async db => {
     const r = await db.query(
       `SELECT v.* FROM model_versions v JOIN ai_models m ON m.id = v.model_id WHERE v.id::text = $1 AND m.company_id = $2`,
@@ -143,7 +145,7 @@ async function applyMore(pool, user, versionId, body) {
     const installed = body.installed_at || I.today();
     I.assertDate(installed, 'installed_at');
     if (!body.apply_to || body.apply_to.mode === 'none') throw I.badRequest('Select where to apply the version');
-    const targets = await selectInstances(db, model, body.apply_to);
+    const targets = await selectInstances(db, model, body.apply_to, scope === 'division' ? user.divisionId : null);
     if (body.dry_run) return preview(targets);
     if (!targets.length) throw I.badRequest('No instances match');
     return { version_id: version.id, version: version.version, ...(await applyVersion(db, user, version, targets, installed)) };

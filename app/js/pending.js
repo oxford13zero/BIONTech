@@ -15,12 +15,13 @@ async function loadPending(key) {
 
 // Definición de cada grupo: título, ayuda, cómo mostrar cada elemento y a dónde lleva
 function pendingGroups(items) {
+  const modelTag = tag => can('model.write') ? tag : t('managed_by_company');
   const stateTxt = s => s === 'no_entregado' ? `🚫 ${t('st_not_provided')}` : `⏳ ${t('st_pending')}`;
   const fieldItem = f => ({
     href: f.entity === 'modelo' ? '#/modelos/' + f.id : '#/instancias/' + f.id,
     main: `${esc(instLabel(f.field))}`,
     sub: `${f.entity === 'modelo' ? t('model') : t('installation')}: ${esc(f.name || f.code)}${f.name ? ' · ' + esc(f.code) : ''}`,
-    tag: stateTxt(f.state)
+    tag: f.entity === 'modelo' ? modelTag(stateTxt(f.state)) : stateTxt(f.state)
   });
   return [
     { key: 'reclassification_pending', icon: '⚖️', list: items.reclassification_pending.map(i => ({
@@ -37,8 +38,8 @@ function pendingGroups(items) {
         tag: t('review_was_due').replace('{d}', esc(i.next_review_date)) })) },
     { key: 'black_box_models', icon: '⬛', list: items.black_box_models.map(m => ({
         href: '#/modelos/' + m.id, main: esc(m.name), sub: `${esc(m.code)} · ${esc(m.vendor)}`,
-        tag: m.vendor_questionnaire_received ? t('questionnaire_answered')
-          : m.vendor_questionnaire_sent_at ? t('questionnaire_waiting').replace('{d}', esc(m.vendor_questionnaire_sent_at)) : t('questionnaire_not_sent') })) },
+        tag: modelTag(m.vendor_questionnaire_received ? t('questionnaire_answered')
+          : m.vendor_questionnaire_sent_at ? t('questionnaire_waiting').replace('{d}', esc(m.vendor_questionnaire_sent_at)) : t('questionnaire_not_sent')) })) },
     { key: 'fields_pending', icon: '⏳', list: items.fields_pending.map(fieldItem) },
     { key: 'fields_not_provided', icon: '🚫', list: items.fields_not_provided.map(fieldItem) }
   ];

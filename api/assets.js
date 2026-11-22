@@ -9,7 +9,7 @@
 // Diseño: docs/activos-y-modelos.md
 // ============================================================
 const { getClientPool, setCors } = require('./_db');
-const { verifyClient, assertCan, resolveDivision, pickKnownFields, sendError } = require('./_auth');
+const { verifyClient, assertCan, can, assertOwnDivision, resolveDivision, pickKnownFields, sendError } = require('./_auth');
 const I = require('./_inventory');
 
 // Activo visible para el usuario (empresa y división efectiva)
@@ -120,16 +120,19 @@ function validateAsset(f, creating) {
 }
 
 async function create(pool, user, body) {
-  assertCan(user, 'asset.write');
+  const scope = assertCan(user, 'asset.write');
   const f = pickKnownFields(body.asset, I.ASSET_FIELDS);
   validateAsset(f, true);
   f.ai_usage = f.ai_usage || 'usa_ia';
   const models = Array.isArray(body.models) ? body.models : [];
   const newModels = Array.isArray(body.new_models) ? body.new_models : [];
+  // Crear modelos nuevos en el catálogo es solo de quien edita el catálogo
+  if (newModels.length && !can(user, 'model.write')) throw { status: 403, message: 'Only company super users can add models to the catalog' };
   if (f.ai_usage === 'usa_ia' && !models.length && !newModels.length) {
     throw I.badRequest('Select at least one model, or mark the asset as "models to identify"');
   }
 
+  assertOwnDivision(user, scope, f.branch_id);
   return I.inTransaction(pool, async db => {
     await I.assertBranch(db, user.companyId, f.branch_id);
     const cols = ['company_id', ...Object.keys(f)];
@@ -163,7 +166,7 @@ async function create(pool, user, body) {
 }
 
 async function update(pool, user, id, body) {
-  assertCan(user, 'asset.write');
+  const scope = assertCan(user, 'asset.write');
   const f = pickKnownFields(body, I.ASSET_FIELDS);
   if (!Object.keys(f).length) throw I.badRequest('Nothing to update');
   validateAsset(f, false);
@@ -171,7 +174,10 @@ async function update(pool, user, id, body) {
   return I.inTransaction(pool, async db => {
     const asset = await loadAsset(db, user, id);
     if (asset.status === 'retirado') throw I.badRequest('Asset is retired');
-    if ('branch_id' in f) await I.assertBranch(db, user.companyId, f.branch_id);
+    if ('branch_id' in f) {
+      assertOwnDivision(user, scope, f.branch_id);  // un rol de división no mueve activos a otra división
+      await I.assertBranch(db, user.companyId, f.branch_id);
+    }
     const keys = Object.keys(f);
     await db.query(
       `UPDATE assets SET ${keys.map((k, i) => `${k} = $${i + 2}`).join(', ')}, updated_at = NOW() WHERE id = $1`,

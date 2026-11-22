@@ -149,10 +149,13 @@ Todas tienen `id`, `company_id`, `created_at`, `updated_at`. Las tablas antiguas
 | Acción | Super empresa | Super división | Usuario división |
 |---|---|---|---|
 | Ver activos, modelos, instancias, incidentes | Toda la empresa (con selector de división) | Su división | Su división |
-| Crear / editar / retirar activos e instancias | ✅ | Fase 5 | ❌ |
-| Crear / editar modelos (catálogo) | ✅ | Fase 5 (sugerido: crear sí; editar solo si nadie más lo usa) | ❌ |
-| Registrar versiones | ✅ | Fase 5 | ❌ |
-| Registrar incidentes | ✅ | Fase 5 | Fase 4 (sugerido: sí, solo registrar) |
+| Crear / editar / retirar activos e instancias | ✅ | ✅ su división (no mueve activos a otra división) | ❌ |
+| Riesgo de la instancia (no menor al riesgo base) | ✅ | ✅ su división | ❌ |
+| Crear / editar modelos del catálogo, incluido el riesgo base | ✅ | ❌ (si falta un modelo: "modelos por identificar" y avisa al Super empresa) | ❌ |
+| Registrar versiones en el catálogo | ✅ | ❌ (si falta una versión: avisa al Super empresa) | ❌ |
+| Aplicar una versión ya registrada a instancias | ✅ | ✅ solo instancias de su división | ❌ |
+| Registrar incidentes | ✅ | ✅ su división | ✅ su división (quedan abiertos) |
+| Editar y cerrar incidentes | ✅ | ✅ su división | ❌ |
 | Generar informes | ✅ | ✅ su división | ✅ su división |
 
 ## 7. Decisiones tomadas

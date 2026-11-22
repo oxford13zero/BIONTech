@@ -108,16 +108,16 @@ function sendError(res, e) {
 // Ver docs/activos-y-modelos.md, sección 6.
 // Valor por rol: 'company' = toda la empresa, 'division' = solo su división.
 // Si un rol no aparece en una acción, no puede hacerla.
-// Las columnas de super_division y usuario_division se completan en las fases 4 y 5.
 // ============================================================
 const PERMISSIONS = {
   'inventory.view':  { super_empresa: 'company', super_division: 'division', usuario_division: 'division' },
-  'asset.write':     { super_empresa: 'company' },
-  'instance.write':  { super_empresa: 'company' },
-  'model.write':     { super_empresa: 'company' },
-  'version.write':   { super_empresa: 'company' },
+  'asset.write':     { super_empresa: 'company', super_division: 'division' },
+  'instance.write':  { super_empresa: 'company', super_division: 'division' },
+  'model.write':     { super_empresa: 'company' },                                                          // catálogo y riesgo base
+  'version.write':   { super_empresa: 'company' },                                                          // registrar versiones en el catálogo
+  'version.apply':   { super_empresa: 'company', super_division: 'division' },                              // aplicar una versión ya registrada
   'incident.create': { super_empresa: 'company', super_division: 'division', usuario_division: 'division' },  // registrar
-  'incident.write':  { super_empresa: 'company' },                                                          // editar y cerrar
+  'incident.write':  { super_empresa: 'company', super_division: 'division' },                              // editar y cerrar
   'report.generate': { super_empresa: 'company', super_division: 'division', usuario_division: 'division' }
 };
 
@@ -142,6 +142,11 @@ function permissionsFor(role) {
 // División efectiva de una consulta (selector de división de la pantalla).
 // - super_empresa: la pedida, o null = todas las divisiones
 // - otros roles: siempre la suya; pedir otra es 403
+// Roles de división: la división pedida debe ser la propia
+function assertOwnDivision(user, scope, branchId) {
+  if (scope === 'division' && String(branchId) !== String(user.divisionId)) throw authError(403, 'Division outside your access');
+}
+
 async function resolveDivision(pool, user, requested) {
   const wanted = requested && requested !== 'all' ? String(requested) : null;
   if (user.role !== ROLES.SUPER_EMPRESA) {
@@ -168,5 +173,5 @@ function pickKnownFields(payload, allowed) {
 module.exports = {
   ROLES, verifyClient, divisionScope, canEdit, assertCanEdit, assertSuperEmpresa,
   assertDivisionInScope, assertSystemInScope, assertSafeColumns, sendError,
-  PERMISSIONS, can, assertCan, permissionsFor, resolveDivision, pickKnownFields
+  PERMISSIONS, can, assertCan, assertOwnDivision, permissionsFor, resolveDivision, pickKnownFields
 };

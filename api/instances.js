@@ -14,7 +14,7 @@
 // Diseño: docs/activos-y-modelos.md
 // ============================================================
 const { getClientPool, setCors } = require('./_db');
-const { verifyClient, assertCan, pickKnownFields, sendError } = require('./_auth');
+const { verifyClient, assertCan, assertOwnDivision, pickKnownFields, sendError } = require('./_auth');
 const I = require('./_inventory');
 
 const notFound = () => ({ status: 404, message: 'Instance not found' });
@@ -68,7 +68,7 @@ async function detail(db, user, id) {
 }
 
 async function create(pool, user, body) {
-  assertCan(user, 'instance.write');
+  const scope = assertCan(user, 'instance.write');
   return I.inTransaction(pool, async db => {
     let branchId = body.branch_id;
     if (body.asset_id) {
@@ -79,6 +79,7 @@ async function create(pool, user, body) {
     } else {
       await I.assertBranch(db, user.companyId, branchId);
     }
+    assertOwnDivision(user, scope, branchId);
     return I.createInstance(db, {
       companyId: user.companyId, modelId: body.model_id, assetId: body.asset_id || null, branchId,
       installedAt: body.installed_at, group: body.inventory_group, userId: user.userId
@@ -165,13 +166,14 @@ async function integration(pool, user, id, method, integrationId, body) {
 }
 
 async function assign(pool, user, id, body) {
-  assertCan(user, 'instance.write');
+  const scope = assertCan(user, 'instance.write');
   return I.inTransaction(pool, async db => {
     const inst = await loadInstance(db, user, id);
     assertActive(inst);
     const a = await db.query(`SELECT id, branch_id, status FROM assets WHERE id::text = $1 AND company_id = $2`, [String(body.asset_id || ''), user.companyId]);
     if (!a.rows[0]) throw { status: 404, message: 'Asset not found' };
     if (a.rows[0].status !== 'activo') throw I.badRequest('Asset is retired');
+    assertOwnDivision(user, scope, a.rows[0].branch_id);
     await db.query('UPDATE ai_instances SET asset_id = $2, branch_id = $3, updated_at = NOW() WHERE id = $1',
       [inst.id, a.rows[0].id, a.rows[0].branch_id]);
     return { success: true };

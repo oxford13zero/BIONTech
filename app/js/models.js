@@ -156,7 +156,7 @@ function viewModelDetail(id) {
       </div></div>
     </div>`).join('');
 
-  const canVersion = can('version.write') && !retired && !editing;
+  const canVersion = can('version.apply') && !retired && !editing;
   const verRows = versions.map(v => `
     <tr><td><b>${esc(v.version)}</b></td><td>${esc(v.released_at)}</td>
       <td>${v.changes_unknown ? `<span class="chip c-a">${t('changes_unknown')}</span> ` : ''}${esc(v.change_notes || '')}</td>
@@ -214,6 +214,7 @@ function viewModelDetail(id) {
     <h3 class="mt">${t('vendor_sheet')}</h3>
     <div class="secs">${groups}</div>
     <div class="card mt" id="versionsCard"><h3>${t('versions')}</h3>
+      ${can('version.apply') && !can('version.write') && !retired ? `<p class="count-note">${t('new_version_help_division')}</p>` : ''}
       ${S.verForm ? versionFormHtml(instances) : ''}
       ${verRows ? `<div class="tbl-wrap"><table><thead><tr><th>${t('version')}</th><th>${t('released')}</th><th>${t('what_changed')}</th><th>${t('installations')}</th>${canVersion ? '<th></th>' : ''}</tr></thead>
       <tbody>${verRows}</tbody></table></div>` : `<div class="empty small">${t('no_versions')}</div>`}</div>
