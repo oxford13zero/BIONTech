@@ -57,7 +57,8 @@ async function detail(db, user, id) {
     db.query(`
       SELECT i.id, i.code, i.status, i.inventory_group, i.risk_level, i.reclassification_pending, i.installed_at, i.retired_at,
              m.id AS model_id, m.code AS model_code, m.name AS model_name, m.vendor, m.black_box,
-             v.version AS current_version, v.released_at AS version_date
+             v.version AS current_version, v.released_at AS version_date,
+             (SELECT iv.valid_from FROM instance_versions iv WHERE iv.instance_id = i.id AND iv.valid_to IS NULL) AS current_since
       FROM ai_instances i JOIN ai_models m ON m.id = i.model_id
       LEFT JOIN model_versions v ON v.id = i.current_version_id
       WHERE i.asset_id = $1 ORDER BY i.status, m.name`, [asset.id]),

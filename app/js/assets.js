@@ -195,6 +195,8 @@ function viewAssetDetail(id) {
         : `<div class="empty small">${a.ai_usage === 'usa_ia' ? t('no_models_yet') : t('usage_help_' + a.ai_usage)}</div>`}
     </div>
 
+    ${instances.length ? compareCardHtml(a, instances) : ''}
+
     <div class="card mt"><h3>${t('nav_incidents')}</h3>
       ${can('incident.write') && !retired ? `<div class="edit-bar left"><a class="btn btn-sm" href="#/incidentes/nuevo?asset=${esc(a.id)}">+ ${t('new_incident')}</a></div>` : ''}
       ${incRows ? `<div class="tbl-wrap"><table>
@@ -399,4 +401,86 @@ async function saveAsset() {
     f.error = t('save_error') + ' ' + apiErrorText(e.message);
     render();
   }
+}
+
+
+// ── Comparación "antes y después" ─────────────────────────────
+// Fechas en la dirección: #/activos/<id>?from=AAAA-MM-DD&to=AAAA-MM-DD
+const addDays = (d, n) => { const x = new Date(d + 'T00:00:00Z'); x.setUTCDate(x.getUTCDate() + n); return x.toISOString().slice(0, 10); };
+
+// Por defecto: el día anterior al último cambio de versión, y hoy; si nunca hubo cambios, hace un año y hoy
+function compareDefaults(instances) {
+  const changes = instances.filter(i => i.current_since && i.installed_at && String(i.current_since) > String(i.installed_at))
+    .map(i => String(i.current_since)).sort();
+  const last = changes[changes.length - 1];
+  return { from: last ? addDays(last, -1) : addDays(today(), -365), to: today() };
+}
+
+function setCompareDate(key, value) {
+  const p = parseHash().params;
+  p[key] = value;
+  const qs = new URLSearchParams(Object.entries(p).filter(([, v]) => v)).toString();
+  history.replaceState(null, '', '#/' + S.route + (qs ? '?' + qs : ''));
+  render();
+}
+
+async function loadCompare(key, id, from, to) {
+  S.cmp = { key, loading: true };
+  try {
+    S.cmp = { key, data: await apiGet(`/api/assets?id=${encodeURIComponent(id)}&compare=1&from=${from}&to=${to}`) };
+  } catch (e) {
+    if (!S.user) return;
+    S.cmp = { key, error: true };
+  }
+  if (assetRoute()?.id === id) render();
+}
+
+function periodHtml(x) {
+  if (!x) return `<span class="no-info">${t('not_installed_then')}</span>`;
+  const rate = x.rate_per_1000_days === null ? '—' : String(x.rate_per_1000_days).replace('.', LANG === 'es' ? ',' : '.');
+  return `<b>${esc(x.version)}</b>
+    <small>${t('cmp_days').replace('{n}', x.days.toLocaleString(LANG === 'es' ? 'es-CL' : 'en-US'))} · ${t('cmp_incidents').replace('{n}', x.incidents)}</small>
+    <small>${t('cmp_rate').replace('{n}', rate)}</small>`;
+}
+
+function compareResult(m) {
+  if (!m.before && m.after) return `<span class="chip c-n">${t('cmp_installed_after')}</span>`;
+  if (m.before && !m.after) return `<span class="chip c-n">${t('cmp_removed')}</span>`;
+  if (!m.before && !m.after) return `<span class="chip c-n">${t('cmp_not_installed')}</span>`;
+  if (!m.changed) return `<span class="chip c-g">${t('cmp_unchanged')}</span>`;
+  let arrow = '';
+  const a = m.before.rate_per_1000_days, b = m.after.rate_per_1000_days;
+  if (a !== null && b !== null) {
+    if (b > a) arrow = ` <span class="trend up" title="${t('cmp_rate_up')}">↑ ${t('cmp_rate_up')}</span>`;
+    else if (b < a) arrow = ` <span class="trend down" title="${t('cmp_rate_down')}">↓ ${t('cmp_rate_down')}</span>`;
+  }
+  return `<span class="chip c-a">${m.after.changes_unknown ? t('cmp_changed_unknown') : t('cmp_changed')}</span>${arrow}`;
+}
+
+function compareCardHtml(a, instances) {
+  const p = parseHash().params, def = compareDefaults(instances);
+  const from = p.from || def.from, to = p.to || def.to;
+  const key = [a.id, from, to].join('|');
+  let body;
+  if (from >= to) body = `<div class="form-error">${t('cmp_bad_dates')}</div>`;
+  else {
+    if (!S.cmp || S.cmp.key !== key) loadCompare(key, a.id, from, to);
+    const c = S.cmp;
+    if (c.loading || (!c.data && !c.error)) body = `<div class="empty small">${t('loading')}</div>`;
+    else if (c.error) body = `<div class="empty small">${t('data_error')}</div>`;
+    else body = `<div class="tbl-wrap"><table class="cmp">
+      <thead><tr><th>${t('model')}</th><th>${t('cmp_on').replace('{d}', esc(from))}</th><th>${t('cmp_on').replace('{d}', esc(to))}</th><th>${t('cmp_result')}</th></tr></thead>
+      <tbody>${c.data.models.map(m => `<tr>
+        <td><b>${esc(m.model_name)}</b><small>${esc(m.vendor)}${m.black_box ? ' · ' + t('black_box') : ''}</small></td>
+        <td>${periodHtml(m.before)}</td><td>${periodHtml(m.after)}</td><td>${compareResult(m)}</td></tr>`).join('')}</tbody>
+    </table></div>`;
+  }
+  return `<div class="card mt" id="compareCard"><h3>${t('cmp_title')}</h3>
+    <p class="count-note">${t('cmp_help')}</p>
+    <div class="inline-form">
+      <label class="date-filter">${t('cmp_date1')} <input class="input" type="date" id="cmpFrom" value="${esc(from)}" max="${today()}" onchange="setCompareDate('from', this.value)"></label>
+      <label class="date-filter">${t('cmp_date2')} <input class="input" type="date" id="cmpTo" value="${esc(to)}" max="${today()}" onchange="setCompareDate('to', this.value)"></label>
+    </div>
+    <div class="mt">${body}</div>
+    <p class="count-note">${t('cmp_note')}</p></div>`;
 }

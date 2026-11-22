@@ -375,7 +375,28 @@ const I18N = {
     err_instance_asset:'Ese modelo no pertenece al activo elegido.',
     err_future_date:   'La fecha no puede ser futura.',
     saved_version_auto:'Guardado. La versión del modelo se asignó automáticamente según la fecha.',
-    saved_undetermined:'Guardado con el modelo por determinar. Quedará en Pendientes hasta asignarlo.'
+    saved_undetermined:'Guardado con el modelo por determinar. Quedará en Pendientes hasta asignarlo.',
+    // Comparación
+    cmp_title:         'Comparar antes y después',
+    cmp_help:          'Elige dos fechas para ver qué versión tenía cada modelo de este activo, sus días de operación e incidentes.',
+    cmp_date1:         'Antes',
+    cmp_date2:         'Después',
+    cmp_on:            'En {d}',
+    cmp_result:        'Resultado',
+    cmp_days:          '{n} días',
+    cmp_incidents:     '{n} incidentes',
+    cmp_rate:          '{n} por cada 1.000 días',
+    cmp_changed:       'Cambió',
+    cmp_changed_unknown: 'Cambió, sin detalle del proveedor',
+    cmp_unchanged:     'Sin cambios',
+    cmp_installed_after: 'Instalado después',
+    cmp_removed:       'Retirado',
+    cmp_not_installed: 'No instalado',
+    cmp_rate_up:       'más incidentes',
+    cmp_rate_down:     'menos incidentes',
+    cmp_bad_dates:     'La primera fecha debe ser anterior a la segunda.',
+    cmp_note:          'Los días e incidentes son de toda la versión. 0 incidentes en una versión nueva con pocos días de operación no prueba que sea más segura.',
+    not_installed_then:'No instalado'
   },
   en: {
     app_subtitle:     'AI governance platform',
@@ -749,7 +770,28 @@ const I18N = {
     err_instance_asset:'That model does not belong to the selected asset.',
     err_future_date:   'The date cannot be in the future.',
     saved_version_auto:'Saved. The model version was assigned automatically from the date.',
-    saved_undetermined:'Saved with the model to be determined. It stays in Pending until assigned.'
+    saved_undetermined:'Saved with the model to be determined. It stays in Pending until assigned.',
+    // Comparison
+    cmp_title:         'Compare before and after',
+    cmp_help:          'Pick two dates to see which version each model of this asset had, its days of operation and incidents.',
+    cmp_date1:         'Before',
+    cmp_date2:         'After',
+    cmp_on:            'On {d}',
+    cmp_result:        'Result',
+    cmp_days:          '{n} days',
+    cmp_incidents:     '{n} incidents',
+    cmp_rate:          '{n} per 1,000 days',
+    cmp_changed:       'Changed',
+    cmp_changed_unknown: 'Changed, no vendor details',
+    cmp_unchanged:     'No changes',
+    cmp_installed_after: 'Installed later',
+    cmp_removed:       'Removed',
+    cmp_not_installed: 'Not installed',
+    cmp_rate_up:       'more incidents',
+    cmp_rate_down:     'fewer incidents',
+    cmp_bad_dates:     'The first date must be before the second.',
+    cmp_note:          'Days and incidents cover the whole version. 0 incidents in a new version with few days of operation does not prove it is safer.',
+    not_installed_then:'Not installed'
   }
 };
 
