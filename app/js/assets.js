@@ -158,7 +158,7 @@ function viewAssetDetail(id) {
              i.status !== 'activa' ? `<span class="chip c-n">${t('st_retired_f')}</span>` : ''].join(' ')}</td>
     </tr>`).join('');
   const incRows = incidents.map(x => `
-    <tr>
+    <tr class="row" onclick="location.hash='#/incidentes/${esc(x.id)}'">
       <td>${esc(x.occurred_at)}</td>
       <td><b>${esc(x.title)}</b></td>
       <td>${x.model_name ? esc(x.model_name) + (x.version ? ` <small>v${esc(x.version)}</small>` : '') : `<span class="chip c-a">${t('model_undetermined')}</span>`}</td>
@@ -196,6 +196,7 @@ function viewAssetDetail(id) {
     </div>
 
     <div class="card mt"><h3>${t('nav_incidents')}</h3>
+      ${can('incident.write') && !retired ? `<div class="edit-bar left"><a class="btn btn-sm" href="#/incidentes/nuevo?asset=${esc(a.id)}">+ ${t('new_incident')}</a></div>` : ''}
       ${incRows ? `<div class="tbl-wrap"><table>
         <thead><tr><th>${t('f_date')}</th><th>${t('f_title')}</th><th>${t('model')}</th><th>${t('f_severity')}</th><th>${t('status')}</th></tr></thead>
         <tbody>${incRows}</tbody></table></div>` : `<div class="empty small">${t('no_incidents')}</div>`}

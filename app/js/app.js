@@ -290,6 +290,7 @@ function currentRoute() {
   if (/^activos\/[\w-]+(\/editar)?$/.test(path)) return path;   // ficha, nuevo y editar activo
   if (/^modelos\/[\w-]+$/.test(path)) return path;                // ficha y nuevo modelo
   if (/^instancias\/[\w-]+$/.test(path)) return path;             // ficha de la instalación
+  if (/^incidentes\/[\w-]+(\/editar)?$/.test(path)) return path; // registrar, ficha y editar incidente
   return findItem(menu(), path) ? path : 'dashboard';
 }
 
@@ -317,6 +318,8 @@ function viewPage() {
   if (S.route === 'modelos') return pageHead() + viewModels();
   if (S.route.startsWith('modelos/')) return viewModels();
   if (S.route.startsWith('instancias/')) return viewInstance();
+  if (S.route === 'incidentes') return pageHead() + viewIncidents();
+  if (S.route.startsWith('incidentes/')) return viewIncidents();
   // Activos, Modelos, Incidentes y Pendientes: se construyen en los pasos 3b a 3h
   return pageHead() + `<div class="card empty">${t('section_soon')}</div>`;
 }
@@ -1194,6 +1197,9 @@ window.addEventListener('hashchange', () => {
   S.instEdit = null; S.instAction = null; S.integForm = null; S.instMsg = '';
   // Las fichas se vuelven a cargar al entrar, para mostrar siempre datos al día
   S.inst = null; S.assetDetail = null; S.modelDetail = null; S.assets = null; S.models = null;
+  S.incDetail = null; S.incidents = null;
+  if (!/^incidentes\/(nuevo|[\w-]+\/editar)$/.test(parseHash().path)) S.incForm = null;
+  S.incMsg = S.incMsgNext || ''; S.incMsgNext = null;
   if (parseHash().path !== 'modelos/nuevo') S.modelNew = null;
   render(); window.scrollTo(0, 0);
 });

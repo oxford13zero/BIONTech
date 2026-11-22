@@ -144,7 +144,7 @@ function viewInstance() {
     <tr><td><b>${esc(h.version)}</b></td><td>${esc(h.valid_from)}</td><td>${h.valid_to ? esc(h.valid_to) : `<span class="chip c-g">${t('current')}</span>`}</td>
       <td>${h.changes_unknown ? `<span class="chip c-a">${t('changes_unknown')}</span> ` : ''}${esc(h.change_notes || '')}</td></tr>`).join('');
   const incRows = d.incidents.map(x => `
-    <tr><td>${esc(x.occurred_at)}</td><td><b>${esc(x.title)}</b></td><td>${esc(x.version || '—')}</td>
+    <tr class="row" onclick="location.hash='#/incidentes/${esc(x.id)}'"><td>${esc(x.occurred_at)}</td><td><b>${esc(x.title)}</b></td><td>${esc(x.version || '—')}</td>
       <td>${t('sev_' + x.severity)}</td><td>${t('ist_' + x.status)}</td></tr>`).join('');
 
   return `${back}
@@ -169,6 +169,7 @@ function viewInstance() {
       ${histRows ? `<div class="tbl-wrap"><table><thead><tr><th>${t('version')}</th><th>${t('from')}</th><th>${t('to')}</th><th>${t('what_changed')}</th></tr></thead><tbody>${histRows}</tbody></table></div>`
         : `<div class="empty small">${t('no_versions')}</div>`}</div>
     <div class="card mt"><h3>${t('nav_incidents')}</h3>
+      ${can('incident.write') && d.asset ? `<div class="edit-bar left"><a class="btn btn-sm" href="#/incidentes/nuevo?asset=${esc(d.asset.id)}&instance=${esc(i.id)}">+ ${t('new_incident')}</a></div>` : ''}
       ${incRows ? `<div class="tbl-wrap"><table><thead><tr><th>${t('f_date')}</th><th>${t('f_title')}</th><th>${t('version')}</th><th>${t('f_severity')}</th><th>${t('status')}</th></tr></thead><tbody>${incRows}</tbody></table></div>`
         : `<div class="empty small">${t('no_incidents')}</div>`}</div>`;
 }
