@@ -103,7 +103,69 @@ function sendError(res, e) {
   return res.status(500).json({ error: 'Server error' });
 }
 
+// ============================================================
+// Tabla de permisos — activos, modelos e instancias
+// Ver docs/activos-y-modelos.md, sección 6.
+// Valor por rol: 'company' = toda la empresa, 'division' = solo su división.
+// Si un rol no aparece en una acción, no puede hacerla.
+// Las columnas de super_division y usuario_division se completan en las fases 4 y 5.
+// ============================================================
+const PERMISSIONS = {
+  'inventory.view':  { super_empresa: 'company', super_division: 'division', usuario_division: 'division' },
+  'asset.write':     { super_empresa: 'company' },
+  'instance.write':  { super_empresa: 'company' },
+  'model.write':     { super_empresa: 'company' },
+  'version.write':   { super_empresa: 'company' },
+  'incident.write':  { super_empresa: 'company' },
+  'report.generate': { super_empresa: 'company', super_division: 'division', usuario_division: 'division' }
+};
+
+// Alcance de un rol para una acción: 'company', 'division' o null (no permitido)
+function can(user, action) {
+  const rule = PERMISSIONS[action];
+  if (!rule) throw new Error('Unknown permission: ' + action);
+  return rule[user.role] || null;
+}
+
+function assertCan(user, action) {
+  const scope = can(user, action);
+  if (!scope) throw authError(403, 'Not allowed');
+  return scope;
+}
+
+// Permisos del rol para enviarlos a la pantalla (misma tabla que usa el servidor)
+function permissionsFor(role) {
+  return Object.fromEntries(Object.keys(PERMISSIONS).map(a => [a, PERMISSIONS[a][role] || null]));
+}
+
+// División efectiva de una consulta (selector de división de la pantalla).
+// - super_empresa: la pedida, o null = todas las divisiones
+// - otros roles: siempre la suya; pedir otra es 403
+async function resolveDivision(pool, user, requested) {
+  const wanted = requested && requested !== 'all' ? String(requested) : null;
+  if (user.role !== ROLES.SUPER_EMPRESA) {
+    if (wanted && wanted !== String(user.divisionId)) throw authError(403, 'Division outside your access');
+    return String(user.divisionId);
+  }
+  if (!wanted) return null;
+  const r = await pool.query('SELECT id FROM branches WHERE id::text = $1 AND company_id = $2', [wanted, user.companyId]);
+  if (!r.rows[0]) throw authError(404, 'Division not found');
+  return wanted;
+}
+
+// Acepta solo campos conocidos (lista fija por tabla). Devuelve un objeto limpio.
+function pickKnownFields(payload, allowed) {
+  if (!payload || typeof payload !== 'object' || Array.isArray(payload)) throw authError(400, 'Invalid payload');
+  const out = {};
+  for (const [k, v] of Object.entries(payload)) {
+    if (!allowed.includes(k)) throw authError(400, `Field not allowed: ${k}`);
+    out[k] = v === '' ? null : v;
+  }
+  return out;
+}
+
 module.exports = {
   ROLES, verifyClient, divisionScope, canEdit, assertCanEdit, assertSuperEmpresa,
-  assertDivisionInScope, assertSystemInScope, assertSafeColumns, sendError
+  assertDivisionInScope, assertSystemInScope, assertSafeColumns, sendError,
+  PERMISSIONS, can, assertCan, permissionsFor, resolveDivision, pickKnownFields
 };
