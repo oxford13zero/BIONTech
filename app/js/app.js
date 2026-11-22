@@ -11,8 +11,12 @@ const S = {
   loginError: '',
   loginBusy: false,
   data: null,        // { branches, systems } visibles para el usuario
-  route: 'dashboard' // sección actual (#/ruta)
+  route: 'dashboard', // sección actual (#/ruta)
+  division: 'all',   // división elegida en el selector ('all' = todas)
+  nav: null          // conteos del menú: { assets, models, pending }
 };
+
+const DIVISION_KEY = 'bion_app_division';
 
 const esc = v => String(v ?? '').replace(/[&<>"']/g, c =>
   ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -68,7 +72,9 @@ async function login(e) {
         localStorage.setItem(USER_KEY, JSON.stringify(data.user));
       });
       S.user = data.user;
+      initDivision();
       loadData();
+      loadNav();
     }
   } catch (err) {
     S.loginError = t('login_network');
@@ -81,6 +87,9 @@ function logout() {
   clearSession();
   S.user = null;
   S.data = null;
+  S.nav = null;
+  S.rep = null;
+  S.division = 'all';
   S.loginError = '';
   history.replaceState(null, '', location.pathname);
   render();
@@ -125,10 +134,85 @@ async function loadData() {
       apiGet('/api/client-data?type=branches')
     ]);
     S.data = { branches, systems };
+    checkDivision();
   } catch (e) {
     if (!S.user) return;
     console.error('loadData', e);
     S.data = { branches: [], systems: [], error: true };
+  }
+  render();
+}
+
+// ── Permisos (los entrega el login; misma tabla que el servidor) ─
+// Respaldo para sesiones iniciadas antes de que el login enviara los permisos.
+const FALLBACK_PERMISSIONS = {
+  super_empresa:    { 'inventory.view': 'company', 'asset.write': 'company', 'instance.write': 'company', 'model.write': 'company',
+                      'version.write': 'company', 'incident.write': 'company', 'report.generate': 'company' },
+  super_division:   { 'inventory.view': 'division', 'report.generate': 'division' },
+  usuario_division: { 'inventory.view': 'division', 'report.generate': 'division' }
+};
+function can(action) {
+  const perms = S.user.permissions || FALLBACK_PERMISSIONS[S.user.role] || {};
+  return perms[action] || null;
+}
+
+// ── Selector de división ──────────────────────────────────────
+// Super usuario empresa elige ('all' o una división); los demás quedan fijos en la suya.
+const canChooseDivision = () => S.user.role === 'super_empresa';
+
+function initDivision() {
+  if (!canChooseDivision()) { S.division = String(S.user.divisionId || 'all'); return; }
+  S.division = storage(() => localStorage.getItem(DIVISION_KEY)) || 'all';
+}
+
+// División para las APIs nuevas (vacío = todas)
+const divisionParam = () => (S.division && S.division !== 'all' ? S.division : '');
+
+function setDivision(id) {
+  S.division = id || 'all';
+  storage(() => localStorage.setItem(DIVISION_KEY, S.division));
+  S.rep = null;            // el Reporting Hub toma la nueva división
+  render();
+  loadNav();
+}
+
+// Si la división guardada ya no existe (o no es de esta empresa), volver a "todas"
+function checkDivision() {
+  if (!canChooseDivision() || S.division === 'all' || !S.data) return;
+  if (!S.data.branches.some(b => String(b.id) === String(S.division))) {
+    S.division = 'all';
+    storage(() => localStorage.removeItem(DIVISION_KEY));
+    loadNav();
+  }
+}
+
+function divisionBar() {
+  const branches = S.data?.branches || [];
+  if (!canChooseDivision()) {
+    const own = branches.find(b => String(b.id) === String(S.user.divisionId));
+    return `<div class="divbar"><span class="divbar-label">${t('division')}:</span><b>${esc(own?.name || '—')}</b></div>`;
+  }
+  const opt = (v, label) => `<option value="${esc(v)}" ${String(v) === String(S.division) ? 'selected' : ''}>${esc(label)}</option>`;
+  return `<div class="divbar">
+    <label class="divbar-label" for="divSelect">${t('division')}:</label>
+    <select class="input divbar-select" id="divSelect" onchange="setDivision(this.value)">
+      ${opt('all', t('all_divisions'))}${branches.map(b => opt(b.id, b.name)).join('')}
+    </select></div>`;
+}
+
+// Conteos del menú (activos, modelos y pendientes de la división elegida)
+async function loadNav() {
+  const div = divisionParam();
+  const q = div ? '?division=' + encodeURIComponent(div) : '';
+  try {
+    const [assets, models, pending] = await Promise.all([
+      apiGet('/api/assets' + q), apiGet('/api/models' + q), apiGet('/api/pending' + q)
+    ]);
+    S.nav = { assets: assets.length, models: models.length, pending: pending.counts.total };
+  } catch (e) {
+    if (!S.user) return;
+    console.error('loadNav', e);
+    S.nav = null;
   }
   render();
 }
@@ -139,25 +223,30 @@ const countGroup = g => (S.data?.systems || []).filter(s => Number(s.inventory_g
 
 // Cada ítem: id = ruta (#/id), label = clave de texto, count opcional, kids opcional
 function menu() {
+  const navCount = k => (S.nav ? S.nav[k] : null);
   const items = [
     { id: 'dashboard', label: 'nav_dashboard' },
     { sec: 'nav_sec_inventory' },
-    { id: 'inventario', label: 'nav_systems', count: () => (S.data?.systems || []).length,
-      kids: GROUPS.map(g => ({ id: 'inventario/g' + g, label: 'group_' + g, count: () => countGroup(g) })) },
-    { id: 'divisiones', label: 'nav_divisions', count: () => (S.data?.branches || []).length },
+    { id: 'activos', label: 'nav_assets', count: () => navCount('assets') },
+    { id: 'modelos', label: 'nav_models', count: () => navCount('models') },
     { sec: 'nav_sec_risk' },
+    { id: 'incidentes', label: 'nav_incidents' },
+    { id: 'pendientes', label: 'nav_pending', count: () => navCount('pending'), alert: true },
     { id: 'reportes', label: 'nav_reporting', kids: [
       { id: 'reportes/iso',  label: 'report_iso' },
       { id: 'reportes/nist', label: 'report_nist' },
       { id: 'reportes/eu',   label: 'report_eu' }
-    ] }
+    ] },
+    { sec: 'nav_sec_settings' },
+    { id: 'divisiones', label: 'nav_divisions' }
   ];
-  // Configuración: solo Super usuario empresa
-  if (S.user.role === 'super_empresa') {
-    items.push({ sec: 'nav_sec_settings' }, { id: 'equipo', label: 'nav_team' });
-  }
+  // Equipo: solo Super usuario empresa
+  if (S.user.role === 'super_empresa') items.push({ id: 'equipo', label: 'nav_team' });
   return items;
 }
+
+// Rutas antiguas (inventario por sistema) que siguen funcionando hasta el paso 3i, fuera del menú
+const LEGACY_ROUTES = ['inventario', 'inventario/g1', 'inventario/g2', 'inventario/g3', 'inventario/g4'];
 
 function findItem(items, id) {
   for (const it of items) {
@@ -177,7 +266,8 @@ function sideHtml(items, depth = 0) {
     if (it.sec) return `<div class="sec-title">${t(it.sec)}</div>`;
     const active = S.route === it.id;
     const open = it.kids && (active || it.kids.some(k => k.id === S.route));
-    const count = it.count && S.data ? `<span class="badge">${it.count()}</span>` : '';
+    const n = it.count ? it.count() : null;
+    const count = n !== null && n !== undefined ? `<span class="badge ${it.alert && n > 0 ? 'badge-alert' : ''}">${n}</span>` : '';
     const caret = it.kids ? `<span class="caret">${open ? '▾' : '▸'}</span>` : `<span class="caret"></span>`;
     return `<a class="item ${active ? 'active' : ''}" href="#/${it.id}" onclick="closeSide()">${depth ? '' : caret}<span>${t(it.label)}</span>${count}</a>
       ${it.kids && open ? `<div class="kids">${sideHtml(it.kids, depth + 1)}</div>` : ''}`;
@@ -195,6 +285,7 @@ function currentRoute() {
   const { path } = parseHash();
   if (/^sistema\/[\w-]+$/.test(path)) return path;   // ficha de un sistema
   if (path === 'nuevo-sistema' && canCreateSystem()) return path;
+  if (LEGACY_ROUTES.includes(path)) return path;
   return findItem(menu(), path) ? path : 'dashboard';
 }
 
@@ -203,7 +294,7 @@ function closeSide() { document.body.classList.remove('side-open'); }
 
 // ── Vistas de la plataforma ───────────────────────────────────
 function pageHead() {
-  const it = findItem(menu(), S.route);
+  const it = findItem(menu(), S.route) || { label: LEGACY_ROUTES.includes(S.route) ? 'nav_systems' : 'nav_dashboard' };
   const parent = parentOf(S.route);
   const crumb = [t('app_crumb_root'), parent && t(parent.label), t(it.label)].filter(Boolean).join(' · ');
   return `<h1>${t(it.label)}</h1><div class="crumb">${esc(crumb)}</div>`;
@@ -217,6 +308,7 @@ function viewPage() {
   if (S.route === 'divisiones') return pageHead() + viewDivisions();
   if (S.route.startsWith('reportes')) return pageHead() + viewReports();
   if (S.route === 'equipo') return pageHead() + viewTeam();
+  // Activos, Modelos, Incidentes y Pendientes: se construyen en los pasos 3b a 3h
   return pageHead() + `<div class="card empty">${t('section_soon')}</div>`;
 }
 
@@ -232,7 +324,9 @@ const isHighRisk = s => s.risk_level === 'Critical' || s.risk_level === 'High';
 
 function viewDashboard() {
   if (!S.data) return `<div class="card empty">${t('loading')}</div>`;
-  const sys = S.data.systems;
+  const inDiv = x => S.division === 'all' || String(x.branch_id ?? x.id) === String(S.division);
+  const sys = S.data.systems.filter(inDiv);
+  const branchesInView = S.data.branches.filter(b => S.division === 'all' || String(b.id) === String(S.division));
   const tiles = [
     ['dash_total',      sys.length,                         ''],
     ['dash_high_risk',  sys.filter(isHighRisk).length,      'high'],
@@ -241,7 +335,7 @@ function viewDashboard() {
   ];
 
   // Mapa: divisiones × niveles de riesgo
-  const rows = S.data.branches.map(b => {
+  const rows = branchesInView.map(b => {
     const list = sys.filter(s => String(s.branch_id) === String(b.id));
     return `<tr><td class="l">${esc(b.name)}</td>${LEVELS.map(l => {
       const n = list.filter(s => s.risk_level === l).length;
@@ -787,6 +881,7 @@ function repState() {
   const fwFromRoute = (S.route.match(/^reportes\/(\w+)$/) || [])[1];
   if (fwFromRoute && fwFromRoute !== S.rep.fw) { S.rep.fw = fwFromRoute; S.rep.text = ''; S.rep.error = ''; }
   if (!S.rep.fw) S.rep.fw = 'iso';
+  if (!S.rep.div && S.division !== 'all') S.rep.div = S.division;
   if (!branches.some(b => String(b.id) === String(S.rep.div))) S.rep.div = branches[0]?.id || '';
   return S.rep;
 }
@@ -1052,6 +1147,7 @@ function viewShell() {
         <button class="menu-btn" onclick="openSide()" aria-label="${t('open_menu')}">☰</button>
         <span>${esc(u.companyName)}</span>
       </div>
+      ${divisionBar()}
       ${S.data?.error ? `<div class="alert">${t('data_error')}</div>` : ''}
       ${viewPage()}
     </main>
@@ -1080,5 +1176,6 @@ window.addEventListener('hashchange', () => {
 
 setLang(LANG);
 S.user = loadSession();
+if (S.user) initDivision();
 render();
-if (S.user) loadData();
+if (S.user) { loadData(); loadNav(); }
