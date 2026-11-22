@@ -156,10 +156,12 @@ function viewModelDetail(id) {
       </div></div>
     </div>`).join('');
 
+  const canVersion = can('version.write') && !retired && !editing;
   const verRows = versions.map(v => `
     <tr><td><b>${esc(v.version)}</b></td><td>${esc(v.released_at)}</td>
       <td>${v.changes_unknown ? `<span class="chip c-a">${t('changes_unknown')}</span> ` : ''}${esc(v.change_notes || '')}</td>
-      <td>${v.instances_count}</td></tr>`).join('');
+      <td>${v.instances_count}</td>
+      ${canVersion ? `<td class="actions">${!S.verForm ? `<button class="btn btn-sm" onclick="openVersionForm('apply','${esc(v.id)}','${esc(v.version)}')">${t('apply_more')}</button>` : ''}</td>` : ''}</tr>`).join('');
   const instRows = instances.map(i => `
     <tr class="row" onclick="location.hash='#/instancias/${esc(i.id)}'">
       <td>${i.asset_id ? `<a href="#/activos/${esc(i.asset_id)}" onclick="event.stopPropagation()"><b>${esc(i.asset_code)}</b></a><small>${esc(i.asset_name || '')}</small>`
@@ -205,13 +207,15 @@ function viewModelDetail(id) {
       ? `<button class="btn btn-ghost btn-sm" onclick="S.modelEdit=null;render()" ${S.modelEdit.busy ? 'disabled' : ''}>${t('cancel')}</button>
          <button class="btn btn-primary btn-sm" onclick="saveModel()" ${S.modelEdit.busy ? 'disabled' : ''}>${S.modelEdit.busy ? t('saving') : t('save')}</button>`
       : `<button class="btn btn-sm" onclick="S.modelEdit={id:'${esc(m.id)}'};S.modelMsg='';render()">${t('edit_model')}</button>
+         ${can('version.write') && !S.verForm ? `<button class="btn btn-sm btn-primary" onclick="openVersionForm('register')">${t('register_version')}</button>` : ''}
          <button class="btn btn-sm btn-danger" onclick="retireModel('${esc(m.id)}')">${t('retire')}</button>`}</div>` : ''}
     ${identity}
     <div class="card ${editing ? 'mt' : ''}"><h3>${t('vendor_transparency')}</h3>${transparency}</div>
     <h3 class="mt">${t('vendor_sheet')}</h3>
     <div class="secs">${groups}</div>
-    <div class="card mt"><h3>${t('versions')}</h3>
-      ${verRows ? `<div class="tbl-wrap"><table><thead><tr><th>${t('version')}</th><th>${t('released')}</th><th>${t('what_changed')}</th><th>${t('installations')}</th></tr></thead>
+    <div class="card mt" id="versionsCard"><h3>${t('versions')}</h3>
+      ${S.verForm ? versionFormHtml(instances) : ''}
+      ${verRows ? `<div class="tbl-wrap"><table><thead><tr><th>${t('version')}</th><th>${t('released')}</th><th>${t('what_changed')}</th><th>${t('installations')}</th>${canVersion ? '<th></th>' : ''}</tr></thead>
       <tbody>${verRows}</tbody></table></div>` : `<div class="empty small">${t('no_versions')}</div>`}</div>
     <div class="card mt"><h3>${t('where_installed')}</h3>
       ${instRows ? `<div class="tbl-wrap"><table><thead><tr><th>${t('asset')}</th><th>${t('division')}</th><th>${t('f_manufacturer')}</th>
@@ -343,6 +347,159 @@ async function createModel() {
     loadNav();
   } catch (e) {
     f.busy = false; f.error = t('save_error') + ' ' + apiErrorText(e.message);
+    render();
+  }
+}
+
+
+// ── Versiones: registrar y aplicar a más activos ──────────────
+// S.verForm = { mode: 'register'|'apply', versionId, versionLabel, values, applyMode, filter, listIds, preview, result, error, busy }
+function openVersionForm(mode, versionId, versionLabel) {
+  S.verForm = { mode, versionId: versionId || null, versionLabel: versionLabel || '',
+    values: { version: '', released_at: today(), change_notes: '', changes_unknown: false, installed_at: '' },
+    applyMode: mode === 'apply' ? 'filter' : 'all', filter: { manufacturer: '', division: '', asset_type: '' }, listIds: [] };
+  S.modelMsg = '';
+  render();
+  document.getElementById('versionsCard')?.scrollIntoView({ block: 'start' });
+}
+
+// Lee el formulario actual para no perder lo escrito al volver a dibujar
+function collectVersionForm() {
+  const f = S.verForm;
+  if (!f || !document.getElementById('vf_installed_at')) return;
+  const val = id => document.getElementById(id)?.value ?? '';
+  if (f.mode === 'register') {
+    f.values.version = val('vf_version').trim();
+    f.values.released_at = val('vf_released_at');
+    f.values.change_notes = val('vf_change_notes').trim();
+    f.values.changes_unknown = document.getElementById('vf_changes_unknown').checked;
+  }
+  f.values.installed_at = val('vf_installed_at');
+  const am = document.querySelector('input[name="vf_apply"]:checked');
+  if (am) f.applyMode = am.value;
+  if (document.getElementById('vf_manufacturer')) {
+    f.filter = { manufacturer: val('vf_manufacturer'), division: val('vf_division'), asset_type: val('vf_asset_type') };
+  }
+  if (document.querySelector('[data-vlist]')) f.listIds = [...document.querySelectorAll('[data-vlist]:checked')].map(el => el.dataset.vlist);
+}
+
+function setApplyMode(m) { collectVersionForm(); S.verForm.applyMode = m; S.verForm.preview = null; render(); }
+function versionFormChanged() { collectVersionForm(); S.verForm.preview = null; S.verForm.result = null; render(); }
+
+function versionFormHtml(instances) {
+  const f = S.verForm, v = f.values;
+  const active = instances.filter(i => i.status === 'activa');
+  const uniq = arr => [...new Set(arr.filter(Boolean))].sort();
+  const manufacturers = uniq(active.map(i => i.manufacturer));
+  const divisions = [...new Map(active.map(i => [String(i.branch_id), i.branch_name])).entries()];
+  const opt = (val, label, cur) => `<option value="${esc(val)}" ${String(val) === String(cur ?? '') ? 'selected' : ''}>${esc(label)}</option>`;
+  const modes = f.mode === 'register' ? ['all', 'filter', 'list', 'none'] : ['all', 'filter', 'list'];
+
+  const head = f.mode === 'register'
+    ? `<h3>${t('register_version')}</h3><div class="fields form">
+        <div class="field"><label for="vf_version">${t('version')} *</label><input class="input" id="vf_version" value="${esc(v.version)}"></div>
+        <div class="field"><label for="vf_released_at">${t('released')}</label><input class="input" type="date" id="vf_released_at" value="${esc(v.released_at)}" onchange="versionFormChanged()"></div>
+        <div class="field wide"><label for="vf_change_notes">${t('what_changed')}</label><textarea class="input" id="vf_change_notes" rows="2">${esc(v.change_notes)}</textarea></div>
+        <label class="radio wide"><input type="checkbox" id="vf_changes_unknown" ${v.changes_unknown ? 'checked' : ''}> ${t('changes_unknown')}</label>
+      </div>`
+    : `<h3>${t('apply_more')}: ${esc(f.versionLabel)}</h3>`;
+
+  let selector = '';
+  if (f.applyMode === 'filter') {
+    selector = `<div class="fields form">
+      <div class="field"><label for="vf_manufacturer">${t('f_manufacturer')}</label><select class="input" id="vf_manufacturer" onchange="versionFormChanged()">
+        ${opt('', t('any'), f.filter.manufacturer)}${manufacturers.map(x => opt(x, x, f.filter.manufacturer)).join('')}</select></div>
+      <div class="field"><label for="vf_division">${t('division')}</label><select class="input" id="vf_division" onchange="versionFormChanged()">
+        ${opt('', t('any'), f.filter.division)}${divisions.map(([id, name]) => opt(id, name, f.filter.division)).join('')}</select></div>
+      <div class="field"><label for="vf_asset_type">${t('f_type')}</label><select class="input" id="vf_asset_type" onchange="versionFormChanged()">
+        ${opt('', t('any'), f.filter.asset_type)}${ASSET_TYPES.map(x => opt(x, t('type_' + x), f.filter.asset_type)).join('')}</select></div>
+    </div>`;
+  } else if (f.applyMode === 'list') {
+    selector = active.length ? `<div class="pick-list">${active.map(i => `
+      <label class="pick pick-main"><input type="checkbox" data-vlist="${esc(i.id)}" ${f.listIds.includes(i.id) ? 'checked' : ''} onchange="versionFormChanged()">
+        <span class="pick-name"><b>${esc(i.asset_code || t('asset_unassigned'))}</b><small>${esc(i.code)} · ${esc(i.manufacturer || '—')} · ${esc(i.branch_name)}</small></span>
+        <span class="chip c-n">v${esc(i.current_version || '—')}</span></label>`).join('')}</div>`
+      : `<div class="empty small">${t('not_installed')}</div>`;
+  }
+
+  const preview = f.preview ? (f.preview.length
+    ? `<div class="alert info">${t('preview_title').replace('{n}', f.preview.length)}</div>
+       <div class="tbl-wrap"><table><thead><tr><th>${t('asset')}</th><th>${t('f_manufacturer')}</th><th>${t('division')}</th><th>${t('current_version')}</th></tr></thead>
+       <tbody>${f.preview.map(x => `<tr><td><b>${esc(x.asset_code || t('asset_unassigned'))}</b><small>${esc(x.code)}</small></td>
+         <td>${esc(x.manufacturer || '—')}</td><td>${esc(x.branch_name)}</td><td>${esc(x.current_version || '—')}</td></tr>`).join('')}</tbody></table></div>`
+    : `<div class="alert">${t('preview_none')}</div>`) : '';
+
+  const result = f.result ? `<div class="alert info">${esc(f.result)}</div>` : '';
+  const needsPreview = f.applyMode !== 'none';
+
+  return `<div class="div-form version-form">
+    ${head}
+    ${f.applyMode !== 'none' || f.mode === 'register' ? `<div class="fields form">
+      <div class="field"><label for="vf_installed_at">${t('installed_on')}</label>
+        <input class="input" type="date" id="vf_installed_at" value="${esc(v.installed_at)}" placeholder="${t('same_as_release')}" max="${today()}"></div></div>` : ''}
+    <h4>${t('apply_to_q')}</h4>
+    <div class="radios">${modes.map(m => `<label class="radio"><input type="radio" name="vf_apply" value="${m}" ${f.applyMode === m ? 'checked' : ''}
+      onchange="setApplyMode('${m}')"> ${t('apply_' + m)}</label>`).join('')}</div>
+    ${selector}
+    ${preview}${result}
+    ${f.error ? `<div class="form-error">${esc(f.error)}</div>` : ''}
+    <div class="edit-bar">
+      <button class="btn btn-ghost btn-sm" onclick="S.verForm=null;render()" ${f.busy ? 'disabled' : ''}>${f.result ? t('close') : t('cancel')}</button>
+      ${needsPreview && !f.result ? `<button class="btn btn-sm" onclick="submitVersion(true)" ${f.busy ? 'disabled' : ''}>${t('preview')}</button>` : ''}
+      ${!f.result ? `<button class="btn btn-primary btn-sm" onclick="submitVersion(false)" ${f.busy ? 'disabled' : ''}>${f.busy ? t('saving') : (f.mode === 'register' ? t('register') : t('apply'))}</button>` : ''}
+    </div>
+  </div>`;
+}
+
+function versionApplyTo() {
+  const f = S.verForm;
+  if (f.applyMode === 'none') return { mode: 'none' };
+  if (f.applyMode === 'all') return { mode: 'all' };
+  if (f.applyMode === 'list') return { mode: 'list', instance_ids: f.listIds };
+  const flt = Object.fromEntries(Object.entries(f.filter).filter(([, v]) => v));
+  return { mode: 'filter', ...flt };
+}
+
+async function submitVersion(dryRun) {
+  collectVersionForm();
+  const f = S.verForm, v = f.values, m = S.modelDetail.data.model;
+  f.error = ''; f.result = null;
+  if (f.mode === 'register' && !v.version) { f.error = t('required_fields') + ' ' + t('version'); return render(); }
+  if (f.applyMode === 'filter' && !f.filter.manufacturer && !f.filter.division && !f.filter.asset_type) { f.error = t('filter_required'); return render(); }
+  if (f.applyMode === 'list' && !f.listIds.length) { f.error = t('copy_select'); return render(); }
+  if (!dryRun && f.applyMode !== 'none' && !f.preview) {
+    // Siempre mostrar la vista previa antes de aplicar
+    return submitVersion(true);
+  }
+  const installed = v.installed_at || (f.mode === 'register' ? v.released_at : today());
+  f.busy = true; render();
+  try {
+    let out;
+    if (f.mode === 'register') {
+      out = await apiSend('POST', '/api/versions', {
+        model_id: m.id, version: v.version, released_at: v.released_at || undefined, change_notes: v.change_notes || null,
+        changes_unknown: v.changes_unknown, installed_at: installed, apply_to: versionApplyTo(), dry_run: dryRun
+      });
+    } else {
+      out = await apiSend('POST', `/api/versions?id=${encodeURIComponent(f.versionId)}&action=apply`, {
+        apply_to: versionApplyTo(), installed_at: installed, dry_run: dryRun
+      });
+    }
+    f.busy = false;
+    if (dryRun) { f.preview = out.instances; return render(); }
+    const applied = out.applied.map(a => `${a.asset_code || a.code}: ${a.from || '—'} → ${a.to}`).join(' · ');
+    f.result = (applied ? t('version_applied') + ' ' + applied : t('version_registered_only'))
+      + (out.skipped.length ? ' · ' + t('version_skipped').replace('{n}', out.skipped.length) : '');
+    S.modelDetail = null;   // recargar la ficha (versiones e instalaciones)
+    loadNav();
+    render();
+  } catch (e) {
+    f.busy = false;
+    const msg = e.message;
+    if (msg === 'Installation date is before the current version start' && e.data?.instances) {
+      f.error = t('version_too_early') + ' ' + e.data.instances.map(x => `${x.asset_code || x.code} (${x.current_since})`).join(', ');
+    } else if (msg === 'Version already exists for this model') f.error = t('version_exists');
+    else f.error = t('save_error') + ' ' + apiErrorText(msg);
     render();
   }
 }

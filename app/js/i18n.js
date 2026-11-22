@@ -308,7 +308,30 @@ const I18N = {
     assign_done:       'Activo asignado.',
     retire_installation: 'Retirar instalación',
     retire_inst_help:  'La instalación deja de estar activa. Su historial e incidentes se conservan.',
-    retire_inst_done:  'Instalación retirada.'
+    retire_inst_done:  'Instalación retirada.',
+    // Versiones
+    register_version:  'Registrar versión',
+    apply_more:        'Aplicar a más activos',
+    installed_on:      'Fecha de instalación',
+    same_as_release:   'Igual a la publicación',
+    apply_to_q:        '¿A qué instalaciones se aplica?',
+    apply_all:         'Todas',
+    apply_filter:      'Por filtro',
+    apply_list:        'Elegir a mano',
+    apply_none:        'Ninguna por ahora',
+    any:               'Cualquiera',
+    preview:           'Vista previa',
+    preview_title:     'Se aplicará a {n} instalaciones:',
+    preview_none:      'Ninguna instalación coincide con esta selección.',
+    register:          'Registrar',
+    apply:             'Aplicar',
+    close:             'Cerrar',
+    filter_required:   'Elige al menos un filtro: marca, división o tipo.',
+    version_applied:   'Listo. Cambiaron:',
+    version_registered_only: 'Versión registrada, sin aplicar a instalaciones.',
+    version_skipped:   '{n} ya la tenían',
+    version_too_early: 'La fecha de instalación es anterior a la versión vigente en:',
+    version_exists:    'Esa versión ya existe para este modelo.'
   },
   en: {
     app_subtitle:     'AI governance platform',
@@ -615,7 +638,30 @@ const I18N = {
     assign_done:       'Asset assigned.',
     retire_installation: 'Retire installation',
     retire_inst_help:  'The installation is no longer active. Its history and incidents are kept.',
-    retire_inst_done:  'Installation retired.'
+    retire_inst_done:  'Installation retired.',
+    // Versions
+    register_version:  'Register version',
+    apply_more:        'Apply to more assets',
+    installed_on:      'Installation date',
+    same_as_release:   'Same as release',
+    apply_to_q:        'Which installations does it apply to?',
+    apply_all:         'All',
+    apply_filter:      'By filter',
+    apply_list:        'Pick manually',
+    apply_none:        'None for now',
+    any:               'Any',
+    preview:           'Preview',
+    preview_title:     'It will apply to {n} installations:',
+    preview_none:      'No installation matches this selection.',
+    register:          'Register',
+    apply:             'Apply',
+    close:             'Close',
+    filter_required:   'Choose at least one filter: manufacturer, division or type.',
+    version_applied:   'Done. Changed:',
+    version_registered_only: 'Version registered, not applied to installations.',
+    version_skipped:   '{n} already had it',
+    version_too_early: 'The installation date is before the current version on:',
+    version_exists:    'That version already exists for this model.'
   }
 };
 

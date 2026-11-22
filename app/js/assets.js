@@ -17,7 +17,7 @@ async function apiSend(method, url, body) {
   });
   const data = await res.json().catch(() => ({}));
   if (res.status === 401) { logout(); throw new Error('unauthorized'); }
-  if (!res.ok) throw new Error(data.error || 'HTTP ' + res.status);
+  if (!res.ok) throw Object.assign(new Error(data.error || 'HTTP ' + res.status), { data });
   return data;
 }
 

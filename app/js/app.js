@@ -1190,7 +1190,7 @@ window.addEventListener('hashchange', () => {
   if (parseHash().path !== 'equipo') { S.team = null; S.teamForm = null; S.teamMsg = ''; }
   if (!/^activos\/(nuevo|[\w-]+\/editar)$/.test(parseHash().path)) S.assetForm = null;
   S.retireAsset = false;
-  S.modelEdit = null; S.modelMsg = '';
+  S.modelEdit = null; S.modelMsg = ''; S.verForm = null;
   S.instEdit = null; S.instAction = null; S.integForm = null; S.instMsg = '';
   // Las fichas se vuelven a cargar al entrar, para mostrar siempre datos al día
   S.inst = null; S.assetDetail = null; S.modelDetail = null; S.assets = null; S.models = null;

@@ -253,3 +253,9 @@ td a:hover b{color:var(--sand);text-decoration:underline}
 .crumb a{color:var(--muted);text-decoration:none}
 .crumb a:hover{color:var(--sand);text-decoration:underline}
 label.pick.pick-main{cursor:pointer}
+
+/* Versiones */
+.version-form{border:1px solid var(--border);border-radius:12px;padding:14px;margin:4px 0 16px;background:var(--row)}
+.version-form h4{margin:14px 0 8px;font-size:13.5px;color:var(--muted)}
+.version-form .fields.form{margin-bottom:6px}
+.alert.info{background:#0C2240;border-color:rgba(133,183,235,.45);color:#85B7EB;margin-top:12px}
