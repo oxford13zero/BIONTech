@@ -77,7 +77,7 @@ function viewIncidentList() {
         <td>${esc(i.occurred_at)}</td>
         <td><b>${esc(i.title)}</b>${i.eu_serious_incident ? ` <span class="chip c-r">${t('eu_serious_short')}</span>` : ''}</td>
         <td><a href="#/activos/${esc(i.asset_id)}" onclick="event.stopPropagation()"><b>${esc(i.asset_code)}</b></a>${showDiv ? `<small>${esc(i.branch_name)}</small>` : ''}</td>
-        <td>${i.model_name ? `${esc(i.model_name)}${i.version ? `<small>v${esc(i.version)}</small>` : ''}` : `<span class="chip c-a">${t('model_undetermined')}</span>`}</td>
+        <td>${i.model_name ? `${esc(i.model_name)}${i.version ? `<small>${verLabel(i.version)}</small>` : ''}` : `<span class="chip c-a">${t('model_undetermined')}</span>`}</td>
         <td>${t('kind_' + i.kind)}</td>
         <td>${sevChip(i.severity)}</td>
         <td>${t('ist_' + i.status)}</td>

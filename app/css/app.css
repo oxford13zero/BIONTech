@@ -270,3 +270,15 @@ table.cmp td small{display:block}
 .trend{font-size:12px;font-weight:700;white-space:nowrap}
 .trend.up{color:#F09595}
 .trend.down{color:#97C459}
+
+/* Pendientes */
+.pend-tiles{grid-template-columns:repeat(auto-fill,minmax(190px,1fr))}
+.badge-inline{font-size:12px;padding:1px 8px;border-radius:999px;background:#3D2500;color:#FAC775;margin-left:6px;vertical-align:middle}
+.pend-list{display:flex;flex-direction:column;gap:6px}
+.pend-item{display:flex;align-items:center;gap:10px;padding:9px 12px;border:1px solid var(--border);border-radius:10px;background:var(--row);
+  color:var(--text);text-decoration:none}
+.pend-item:hover{border-color:rgba(244,195,139,.6)}
+.pend-main{flex:1;min-width:0}
+.pend-main small{display:block;color:var(--dim);font-size:12px}
+.pend-item .arrow{color:var(--dim)}
+@media(max-width:600px){.pend-item{flex-wrap:wrap}.pend-item .chip{white-space:normal}}

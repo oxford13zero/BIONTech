@@ -8,6 +8,9 @@
 const ASSET_TYPES = ['equipo', 'instalacion', 'proceso'];
 const AI_USAGES = ['usa_ia', 'modelos_por_identificar', 'por_confirmar'];
 
+// Etiqueta de versión: "v3.0" para números; el nombre tal cual para otras ("Actualización 2022-03")
+const verLabel = v => !v ? '—' : /^\d/.test(String(v)) ? 'v' + esc(v) : esc(v);
+
 // Envío a la API con mensaje de error legible
 async function apiSend(method, url, body) {
   const res = await fetch(url, {
@@ -161,7 +164,7 @@ function viewAssetDetail(id) {
     <tr class="row" onclick="location.hash='#/incidentes/${esc(x.id)}'">
       <td>${esc(x.occurred_at)}</td>
       <td><b>${esc(x.title)}</b></td>
-      <td>${x.model_name ? esc(x.model_name) + (x.version ? ` <small>v${esc(x.version)}</small>` : '') : `<span class="chip c-a">${t('model_undetermined')}</span>`}</td>
+      <td>${x.model_name ? esc(x.model_name) + (x.version ? ` <small>${verLabel(x.version)}</small>` : '') : `<span class="chip c-a">${t('model_undetermined')}</span>`}</td>
       <td>${t('sev_' + x.severity)}</td>
       <td>${t('ist_' + x.status)}</td>
     </tr>`).join('');

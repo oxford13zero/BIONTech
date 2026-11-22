@@ -235,7 +235,7 @@ function instActionsHtml(d) {
     panel = `<div class="card"><h3>${t('copy_to_others')}</h3><p class="count-note">${t('copy_help')}</p>
       ${!list ? `<div class="empty small">${t('loading')}</div>` : !list.length ? `<div class="empty small">${t('copy_none')}</div>`
         : `<div class="pick-list">${list.map(o => `<label class="pick pick-main"><input type="checkbox" data-copy="${esc(o.id)}">
-            <span class="pick-name"><b>${esc(o.asset_code || t('asset_unassigned'))}</b><small>${esc(o.code)} · ${esc(o.branch_name)} · v${esc(o.current_version || '—')}</small></span></label>`).join('')}</div>`}
+            <span class="pick-name"><b>${esc(o.asset_code || t('asset_unassigned'))}</b><small>${esc(o.code)} · ${esc(o.branch_name)} · ${verLabel(o.current_version)}</small></span></label>`).join('')}</div>`}
       ${a.result ? `<div class="alert">${esc(a.result)}</div>` : ''}
       ${err}${list && list.length ? foot(t('copy'), 'submitCopy') : ''}</div>`;
   } else if (a.type === 'assign') {

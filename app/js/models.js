@@ -418,7 +418,7 @@ function versionFormHtml(instances) {
     selector = active.length ? `<div class="pick-list">${active.map(i => `
       <label class="pick pick-main"><input type="checkbox" data-vlist="${esc(i.id)}" ${f.listIds.includes(i.id) ? 'checked' : ''} onchange="versionFormChanged()">
         <span class="pick-name"><b>${esc(i.asset_code || t('asset_unassigned'))}</b><small>${esc(i.code)} · ${esc(i.manufacturer || '—')} · ${esc(i.branch_name)}</small></span>
-        <span class="chip c-n">v${esc(i.current_version || '—')}</span></label>`).join('')}</div>`
+        <span class="chip c-n">${verLabel(i.current_version)}</span></label>`).join('')}</div>`
       : `<div class="empty small">${t('not_installed')}</div>`;
   }
 
