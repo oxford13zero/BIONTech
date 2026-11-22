@@ -201,7 +201,7 @@ function viewAssetDetail(id) {
     ${instances.length ? compareCardHtml(a, instances) : ''}
 
     <div class="card mt"><h3>${t('nav_incidents')}</h3>
-      ${can('incident.write') && !retired ? `<div class="edit-bar left"><a class="btn btn-sm" href="#/incidentes/nuevo?asset=${esc(a.id)}">+ ${t('new_incident')}</a></div>` : ''}
+      ${can('incident.create') && !retired ? `<div class="edit-bar left"><a class="btn btn-sm" href="#/incidentes/nuevo?asset=${esc(a.id)}">+ ${t('new_incident')}</a></div>` : ''}
       ${incRows ? `<div class="tbl-wrap"><table>
         <thead><tr><th>${t('f_date')}</th><th>${t('f_title')}</th><th>${t('model')}</th><th>${t('f_severity')}</th><th>${t('status')}</th></tr></thead>
         <tbody>${incRows}</tbody></table></div>` : `<div class="empty small">${t('no_incidents')}</div>`}

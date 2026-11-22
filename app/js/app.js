@@ -145,9 +145,9 @@ async function loadData() {
 // Respaldo para sesiones iniciadas antes de que el login enviara los permisos.
 const FALLBACK_PERMISSIONS = {
   super_empresa:    { 'inventory.view': 'company', 'asset.write': 'company', 'instance.write': 'company', 'model.write': 'company',
-                      'version.write': 'company', 'incident.write': 'company', 'report.generate': 'company' },
-  super_division:   { 'inventory.view': 'division', 'report.generate': 'division' },
-  usuario_division: { 'inventory.view': 'division', 'report.generate': 'division' }
+                      'version.write': 'company', 'incident.create': 'company', 'incident.write': 'company', 'report.generate': 'company' },
+  super_division:   { 'inventory.view': 'division', 'incident.create': 'division', 'report.generate': 'division' },
+  usuario_division: { 'inventory.view': 'division', 'incident.create': 'division', 'report.generate': 'division' }
 };
 function can(action) {
   const perms = S.user.permissions || FALLBACK_PERMISSIONS[S.user.role] || {};

@@ -8,7 +8,7 @@
 // Diseño: docs/activos-y-modelos.md, regla 4
 // ============================================================
 const { getClientPool, setCors } = require('./_db');
-const { verifyClient, assertCan, resolveDivision, pickKnownFields, sendError } = require('./_auth');
+const { verifyClient, assertCan, can, resolveDivision, pickKnownFields, sendError } = require('./_auth');
 const I = require('./_inventory');
 
 const INCIDENT_FIELDS = [
@@ -108,12 +108,16 @@ async function list(db, user, q) {
 }
 
 async function create(pool, user, body) {
-  assertCan(user, 'incident.write');
+  const scope = assertCan(user, 'incident.create');
   const f = pickKnownFields(body, INCIDENT_FIELDS);
   f.kind = f.kind || 'incidente';
   f.status = f.status || 'abierto';
+  // Quien solo puede registrar (no editar ni cerrar) lo deja siempre abierto
+  if (!can(user, 'incident.write')) f.status = 'abierto';
   return I.inTransaction(pool, async db => {
     await validate(db, user, f);
+    // Roles de división: solo en activos de su división
+    if (scope === 'division' && String(f.branch_id) !== String(user.divisionId)) throw { status: 404, message: 'Asset not found' };
     if (f.instance_id) f.instance_assigned_at = new Date().toISOString();
     const row = { ...f, company_id: user.companyId, reported_by: I.asUuid(user.userId) };
     const keys = Object.keys(row);
@@ -125,7 +129,7 @@ async function create(pool, user, body) {
 }
 
 async function update(pool, user, id, body) {
-  assertCan(user, 'incident.write');
+  const scope = assertCan(user, 'incident.write');
   const changes = pickKnownFields(body, INCIDENT_FIELDS);
   if (!Object.keys(changes).length) throw I.badRequest('Nothing to update');
   return I.inTransaction(pool, async db => {
@@ -133,6 +137,7 @@ async function update(pool, user, id, body) {
     const merged = {};
     for (const k of INCIDENT_FIELDS) merged[k] = k in changes ? changes[k] : cur[k];
     await validate(db, user, merged);
+    if (scope === 'division' && String(merged.branch_id) !== String(user.divisionId)) throw { status: 404, message: 'Asset not found' };
     const instanceChanged = 'instance_id' in changes && String(changes.instance_id || '') !== String(cur.instance_id || '');
     const set = { ...merged };
     if (instanceChanged) set.instance_assigned_at = merged.instance_id ? new Date().toISOString() : null;

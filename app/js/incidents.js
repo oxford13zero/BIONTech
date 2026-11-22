@@ -23,7 +23,7 @@ function viewIncidents() {
   const r = incidentRoute();
   if (r.view === 'list') return viewIncidentList();
   if (r.view === 'detail') return viewIncidentDetail(r.id);
-  if (!can('incident.write')) return `<div class="card empty">${t('err_not_allowed')}</div>`;
+  if (!can(r.view === 'edit' ? 'incident.write' : 'incident.create')) return `<div class="card empty">${t('err_not_allowed')}</div>`;
   return viewIncidentForm(r.view === 'edit' ? r.id : null);
 }
 
@@ -89,7 +89,7 @@ function viewIncidentList() {
     </table></div><p class="count-note">${t('n_incidents').replace('{n}', x.list.length)}</p>`;
   }
   return `
-    ${can('incident.write') ? `<div class="page-actions"><a class="btn btn-primary" href="#/incidentes/nuevo">+ ${t('new_incident')}</a></div>` : ''}
+    ${can('incident.create') ? `<div class="page-actions"><a class="btn btn-primary" href="#/incidentes/nuevo">+ ${t('new_incident')}</a></div>` : ''}
     <div class="toolbar">
       <select class="input" onchange="setIncFilter('kind', this.value)">${opt('', t('all_kinds'), f.kind)}${INC_KINDS.map(k => opt(k, t('kind_' + k), f.kind)).join('')}</select>
       <select class="input" onchange="setIncFilter('severity', this.value)">${opt('', t('all_severities'), f.severity)}${INC_SEVERITIES.map(k => opt(k, t('sev_' + k), f.severity)).join('')}</select>
@@ -232,7 +232,7 @@ function viewIncidentForm(id) {
       ${txt('title', 'f_title', true)}
       <div class="field"><label for="if_kind">${t('f_kind')}</label><select class="input" id="if_kind">${INC_KINDS.map(k => opt(k, t('kind_' + k), v.kind)).join('')}</select></div>
       <div class="field"><label for="if_severity">${t('f_severity')} *</label><select class="input" id="if_severity">${opt('', '', v.severity)}${INC_SEVERITIES.map(k => opt(k, t('sev_' + k), v.severity)).join('')}</select></div>
-      <div class="field"><label for="if_status">${t('status')}</label><select class="input" id="if_status">${INC_STATUSES.map(k => opt(k, t('ist_' + k), v.status)).join('')}</select></div>
+      ${can('incident.write') ? `<div class="field"><label for="if_status">${t('status')}</label><select class="input" id="if_status">${INC_STATUSES.map(k => opt(k, t('ist_' + k), v.status)).join('')}</select></div>` : ''}
       ${txt('incident_type', 'f_incident_type')}
       ${txt('description', 'f_description', false, true)}
     </div></div>

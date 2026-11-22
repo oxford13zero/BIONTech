@@ -116,7 +116,8 @@ const PERMISSIONS = {
   'instance.write':  { super_empresa: 'company' },
   'model.write':     { super_empresa: 'company' },
   'version.write':   { super_empresa: 'company' },
-  'incident.write':  { super_empresa: 'company' },
+  'incident.create': { super_empresa: 'company', super_division: 'division', usuario_division: 'division' },  // registrar
+  'incident.write':  { super_empresa: 'company' },                                                          // editar y cerrar
   'report.generate': { super_empresa: 'company', super_division: 'division', usuario_division: 'division' }
 };
 
