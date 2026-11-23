@@ -175,36 +175,38 @@ function viewAssetDetail(id) {
       ${retired ? `<span class="chip c-n">${t('st_retired_m')}</span>` : ''}
       ${a.ai_usage !== 'usa_ia' ? `<span class="chip c-a">${t('usage_' + a.ai_usage)}</span>` : ''}</div>
     <div class="crumb">${esc([a.code, t('type_' + a.asset_type), a.branch_name].join(' · '))}</div>
-    ${can('asset.write') && !retired ? `<div class="edit-bar left">
-      <a class="btn btn-sm" href="#/activos/${esc(a.id)}/editar">${t('edit')}</a>
-      <button class="btn btn-sm btn-danger" onclick="openRetireAsset()">${t('retire')}</button></div>` : ''}
-    ${S.retireAsset ? `<div class="card danger-zone">
-      <div><b>${t('retire_asset_title')}</b><p>${t('retire_asset_help')}</p></div>
-      <div class="inline-form"><label class="field-label" for="retireDate">${t('f_retire_date')}</label>
-        <input class="input" type="date" id="retireDate" value="${today()}" max="${today()}">
-        <button class="btn btn-ghost btn-sm" onclick="S.retireAsset=false;render()">${t('cancel')}</button>
-        <button class="btn btn-danger btn-sm" onclick="retireAsset('${esc(a.id)}')">${t('retire')}</button></div>
-      ${S.retireError ? `<div class="form-error">${esc(S.retireError)}</div>` : ''}</div>` : ''}
+    ${S.retireAsset ? modalHtml({
+      title: t('retire_asset_title'), subtitle: `${a.code} — ${a.name}`, close: 'closeRetireAsset',
+      body: `<p class="count-note">${t('retire_asset_help')}</p>
+        <label class="field-label" for="retireDate">${t('f_retire_date')}</label>
+        <input class="input" type="date" id="retireDate" value="${esc(S.retireDate || today())}" max="${today()}">
+        ${S.retireError ? `<div class="form-error">${esc(S.retireError)}</div>` : ''}`,
+      footer: `<button class="btn btn-ghost btn-sm" onclick="closeRetireAsset()" ${S.retireBusy ? 'disabled' : ''}>${t('cancel')}</button>
+        <button class="btn btn-danger btn-sm" onclick="retireAsset('${esc(a.id)}')" ${S.retireBusy ? 'disabled' : ''}>${S.retireBusy ? t('saving') : t('retire')}</button>`
+    }) : ''}
 
-    <div class="card"><h3>${t('asset_data')}</h3><div class="fields">
+    <div class="card"><div class="card-head"><h3>${t('asset_data')}</h3>
+      ${can('asset.write') && !retired ? `<div class="card-actions">
+        <a class="btn btn-sm" href="#/activos/${esc(a.id)}/editar">${t('edit')}</a>
+        <button class="btn btn-sm" onclick="openRetireAsset()">${t('retire')}</button></div>` : ''}</div>
+      <div class="fields">
       ${field(t('f_manufacturer'), a.manufacturer)}${field(t('f_equipment_model'), a.equipment_model)}
       ${field(t('f_area'), a.area)}${field(t('f_commissioned_at'), a.commissioned_at)}
       ${retired ? field(t('f_retire_date'), a.retired_at) : ''}${field(t('f_notes'), a.notes)}
     </div></div>
 
-    <div class="card mt" id="assetModels"><h3>${t('models_used')}</h3>
-      ${can('instance.write') && !retired ? (S.installForm?.assetId === a.id ? installFormHtml(a, instances)
-        : `<div class="edit-bar left"><button class="btn btn-sm" onclick="openInstallForm('${esc(a.id)}')">+ ${t('install_model')}</button></div>`) : ''}
+    <div class="card mt" id="assetModels"><div class="card-head"><h3>${t('models_used')}</h3>
+      ${can('instance.write') && !retired && S.installForm?.assetId !== a.id ? `<div class="card-actions">
+        <button class="btn btn-sm" onclick="openInstallForm('${esc(a.id)}')">+ ${t('install_model')}</button></div>` : ''}</div>
+      ${can('instance.write') && !retired && S.installForm?.assetId === a.id ? installFormHtml(a, instances) : ''}
       ${instRows ? `<div class="tbl-wrap"><table>
         <thead><tr><th>${t('model')}</th><th>${t('version')}</th><th>${t('group')}</th><th>${t('risk')}</th><th></th></tr></thead>
         <tbody>${instRows}</tbody></table></div>`
         : `<div class="empty small">${a.ai_usage === 'usa_ia' ? t('no_models_yet') : t('usage_help_' + a.ai_usage)}</div>`}
     </div>
 
-    ${instances.length ? compareCardHtml(a, instances) : ''}
-
-    <div class="card mt"><h3>${t('nav_incidents')}</h3>
-      ${can('incident.create') && !retired ? `<div class="edit-bar left"><a class="btn btn-sm" href="#/incidentes/nuevo?asset=${esc(a.id)}">+ ${t('new_incident')}</a></div>` : ''}
+    <div class="card mt"><div class="card-head"><h3>${t('nav_incidents')}</h3>
+      ${can('incident.create') && !retired ? `<div class="card-actions"><a class="btn btn-sm" href="#/incidentes/nuevo?asset=${esc(a.id)}">+ ${t('new_incident')}</a></div>` : ''}</div>
       ${incRows ? `<div class="tbl-wrap"><table>
         <thead><tr><th>${t('f_date')}</th><th>${t('f_title')}</th><th>${t('model')}</th><th>${t('f_severity')}</th><th>${t('status')}</th></tr></thead>
         <tbody>${incRows}</tbody></table></div>` : `<div class="empty small">${t('no_incidents')}</div>`}
@@ -274,17 +276,24 @@ async function submitInstall(assetId) {
   render();
 }
 
-function openRetireAsset() { S.retireAsset = true; S.retireError = ''; render(); }
+function openRetireAsset() {
+  S.retireAsset = true; S.retireError = ''; S.retireDate = today(); S.retireBusy = false;
+  render();
+  document.getElementById('retireDate')?.focus();
+}
+function closeRetireAsset() { if (S.retireBusy) return; S.retireAsset = false; render(); }
 
 async function retireAsset(id) {
   const date = document.getElementById('retireDate').value;
+  S.retireDate = date; S.retireBusy = true; S.retireError = ''; render();
   try {
     await apiSend('DELETE', `/api/assets?id=${encodeURIComponent(id)}&date=${encodeURIComponent(date)}`);
   } catch (e) {
+    S.retireBusy = false;
     S.retireError = t('save_error') + ' ' + apiErrorText(e.message);
     return render();
   }
-  S.retireAsset = false; S.assets = null; S.assetDetail = null;
+  S.retireAsset = false; S.retireBusy = false; S.assets = null; S.assetDetail = null;
   loadNav();
   render();
 }
@@ -527,6 +536,8 @@ function compareResult(m) {
   return `<span class="chip c-a">${m.after.changes_unknown ? t('cmp_changed_unknown') : t('cmp_changed')}</span>${arrow}`;
 }
 
+// Comparación antes / después: por ahora no se muestra en la ficha del activo (decisión 23-11-2026).
+// Se mantiene, igual que la API, para volver a mostrarla si se necesita.
 function compareCardHtml(a, instances) {
   const p = parseHash().params, def = compareDefaults(instances);
   const from = p.from || def.from, to = p.to || def.to;

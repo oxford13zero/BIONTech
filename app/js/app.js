@@ -867,6 +867,22 @@ function viewShell() {
   </div>`;
 }
 
+// ── Ventana modal (reutilizable) ──────────────────────────────
+// close: nombre de la función global que la cierra (Cancelar, Esc o clic fuera del cuadro)
+function modalHtml({ title, subtitle, body, footer, close }) {
+  return `<div class="modal-backdrop" data-close="${close}" onclick="if (event.target === this) ${close}()">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+      <h3 id="modalTitle">${esc(title)}</h3>${subtitle ? `<div class="crumb">${esc(subtitle)}</div>` : ''}
+      <div class="modal-body">${body}</div>
+      <div class="modal-foot">${footer}</div>
+    </div></div>`;
+}
+document.addEventListener('keydown', e => {
+  if (e.key !== 'Escape') return;
+  const fn = document.querySelector('.modal-backdrop')?.dataset.close;
+  if (fn && typeof window[fn] === 'function') window[fn]();
+});
+
 function render() {
   // Mantener lo escrito en el login al re-renderizar (cambio de idioma, errores)
   const email = document.getElementById('lgEmail')?.value;
