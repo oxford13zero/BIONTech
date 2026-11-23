@@ -141,9 +141,12 @@ function viewModelDetail(id) {
   if (!d || d.id !== id || d.division !== S.division) { loadModelDetail(id); return back + `<div class="card empty">${t('loading')}</div>`; }
   if (d.loading) return back + `<div class="card empty">${t('loading')}</div>`;
   if (d.error) return back + `<div class="card empty">${t(d.error)}</div>`;
-  const { model: m, versions, instances, incidents_by_version } = d.data;
-  const fs = m.field_status || {};
-  const editing = S.modelEdit && S.modelEdit.id === m.id;
+  const { model: saved, versions, instances, incidents_by_version, changes = [] } = d.data;
+  const editing = S.modelEdit && S.modelEdit.id === saved.id;
+  // Mientras se edita, mostrar lo ya escrito (por ejemplo, al cancelar la ventana de guardar)
+  const pend = editing && S.modelEdit.pending;
+  const m = pend ? { ...saved, ...pend.values } : saved;
+  const fs = pend ? { ...(saved.field_status || {}), ...pend.states } : (saved.field_status || {});
   const retired = m.status === 'retirado';
   const canEdit = can('model.write') && !retired;
 
@@ -197,25 +200,26 @@ function viewModelDetail(id) {
     </div><p class="count-note">${t('base_risk_help')}</p></div>` : '';
 
   return `${back}
-    <div class="head-row"><h1>${esc(m.name)}</h1>${riskChip(m.base_risk_level)}
-      ${m.black_box ? `<span class="chip c-r">${t('black_box')}</span>` : ''}
-      ${retired ? `<span class="chip c-n">${t('st_retired_m')}</span>` : ''}</div>
-    <div class="crumb">${esc([m.code, m.vendor, m.suggested_group ? t('suggested_group') + ': ' + t('group_' + m.suggested_group) : null].filter(Boolean).join(' · '))}</div>
+    <div class="page-head"><div>
+      <div class="head-row"><h1>${esc(m.name)}</h1>${riskChip(m.base_risk_level)}
+        ${m.black_box ? `<span class="chip c-r">${t('black_box')}</span>` : ''}
+        ${retired ? `<span class="chip c-n">${t('st_retired_m')}</span>` : ''}</div>
+      <div class="crumb">${esc([m.code, m.vendor, m.suggested_group ? t('suggested_group') + ': ' + t('group_' + m.suggested_group) : null].filter(Boolean).join(' · '))}</div></div>
+      ${canEdit ? `<div class="card-actions">${editing
+        ? `<button class="btn btn-ghost btn-sm" onclick="S.modelEdit=null;S.verForm=null;render()">${t('cancel')}</button>
+           <button class="btn btn-primary btn-sm" onclick="saveModel()">${t('save')}</button>`
+        : `<button class="btn btn-sm" onclick="S.modelEdit={id:'${esc(m.id)}'};S.modelMsg='';S.verForm=null;render()">${t('edit_model')}</button>
+           <button class="btn btn-sm" onclick="retireModel('${esc(m.id)}')">${t('retire')}</button>`}</div>` : ''}
+    </div>
     ${S.modelMsg ? `<div class="alert">${esc(S.modelMsg)}</div>` : ''}
     ${editing && S.modelEdit.error ? `<div class="form-error" role="alert">${esc(S.modelEdit.error)}</div>` : ''}
-    ${canEdit ? `<div class="edit-bar left">${editing
-      ? `<button class="btn btn-ghost btn-sm" onclick="S.modelEdit=null;render()" ${S.modelEdit.busy ? 'disabled' : ''}>${t('cancel')}</button>
-         <button class="btn btn-primary btn-sm" onclick="saveModel()" ${S.modelEdit.busy ? 'disabled' : ''}>${S.modelEdit.busy ? t('saving') : t('save')}</button>`
-      : `<button class="btn btn-sm" onclick="S.modelEdit={id:'${esc(m.id)}'};S.modelMsg='';render()">${t('edit_model')}</button>
-         ${can('version.write') && !S.verForm ? `<button class="btn btn-sm btn-primary" onclick="openVersionForm('register')">${t('register_version')}</button>` : ''}
-         <button class="btn btn-sm btn-danger" onclick="retireModel('${esc(m.id)}')">${t('retire')}</button>`}</div>` : ''}
     ${identity}
     <div class="card ${editing ? 'mt' : ''}"><h3>${t('vendor_transparency')}</h3>${transparency}</div>
     <h3 class="mt">${t('vendor_sheet')}</h3>
     <div class="secs">${groups}</div>
     <div class="card mt" id="versionsCard"><h3>${t('versions')}</h3>
       ${can('version.apply') && !can('version.write') && !retired ? `<p class="count-note">${t('new_version_help_division')}</p>` : ''}
-      ${S.verForm ? versionFormHtml(instances) : ''}
+      ${S.verForm && !S.verForm.embedded ? versionFormHtml(instances) : ''}
       ${verRows ? `<div class="tbl-wrap"><table><thead><tr><th>${t('version')}</th><th>${t('released')}</th><th>${t('what_changed')}</th><th>${t('installations')}</th>${canVersion ? '<th></th>' : ''}</tr></thead>
       <tbody>${verRows}</tbody></table></div>` : `<div class="empty small">${t('no_versions')}</div>`}</div>
     <div class="card mt"><h3>${t('where_installed')}</h3>
@@ -224,7 +228,9 @@ function viewModelDetail(id) {
         : `<div class="empty small">${t('not_installed')}</div>`}</div>
     <div class="card mt"><h3>${t('incidents_by_version')}</h3>
       ${incRows ? `<div class="tbl-wrap"><table><thead><tr><th>${t('version')}</th><th>${t('nav_incidents')}</th></tr></thead><tbody>${incRows}</tbody></table></div>`
-        : `<div class="empty small">${t('no_incidents')}</div>`}</div>`;
+        : `<div class="empty small">${t('no_incidents')}</div>`}</div>
+    ${changeHistoryHtml(changes)}
+    ${editing && S.verForm && S.verForm.embedded ? modelSaveModalHtml(instances) : ''}`;
 }
 
 // Campo editable + selector de estado (informado / pendiente / no entregado)
@@ -274,18 +280,122 @@ async function saveModel() {
   const qr = document.getElementById('me_vendor_questionnaire_received').checked;
   if (qr !== !!m.vendor_questionnaire_received) body.vendor_questionnaire_received = qr;
   if (Object.keys(states).length) body.field_status = states;
-  if (!Object.keys(body).length) { S.modelEdit = null; return render(); }
 
-  S.modelEdit.busy = true; S.modelEdit.error = ''; render();
+  // Antes de guardar: ventana para justificar el cambio y, si corresponde, registrar la versión nueva
+  const { field_status: st, ...values } = body;
+  const hasChanges = Object.keys(body).length > 0;
+  S.modelEdit.pending = { body, values, states: st || {} };
+  S.modelEdit.error = '';
+  S.verForm = { mode: 'register', embedded: true, hasChanges, isVersion: hasChanges ? null : true, justification: '',
+    values: { version: '', released_at: today(), change_notes: '', changes_unknown: false, installed_at: '' },
+    applyMode: 'all', filter: { manufacturer: '', division: '', asset_type: '' }, listIds: [] };
+  render();
+  document.getElementById('chg_justification')?.focus();
+}
+
+// ── Ventana "Guardar cambios" de la ficha del modelo ──────────
+function closeModelSave() { if (S.verForm?.busy) return; S.verForm = null; render(); }
+function setIsVersion(v) { collectVersionForm(); S.verForm.isVersion = v; S.verForm.preview = null; S.verForm.error = ''; render(); }
+
+function modelSaveModalHtml(instances) {
+  const f = S.verForm, pend = S.modelEdit.pending;
+  const changed = [...Object.keys(pend.values), ...Object.keys(pend.states).filter(k => !(k in pend.values))].map(changeLabel);
+  const radio = (val, label) => `<label class="radio"><input type="radio" name="chg_is_version" value="${val ? 'yes' : 'no'}"
+    ${f.isVersion === val ? 'checked' : ''} onchange="setIsVersion(${val})"> ${label}</label>`;
+  const needsPreview = f.isVersion && f.applyMode !== 'none' && !f.preview;
+  return modalHtml({
+    title: t('save_changes_title'), wide: true, close: 'closeModelSave',
+    subtitle: changed.length ? t('fields_changed') + ' ' + changed.join(', ') : t('no_field_changes'),
+    body: `<h4>${t('is_new_version_q')}</h4>
+      <div class="radios">${radio(true, t('yes_new_version'))}${f.hasChanges ? radio(false, t('no_data_fix')) : ''}</div>
+      ${f.isVersion ? versionFormHtml(instances) : ''}
+      <label class="field-label" for="chg_justification">${t('justification')} *</label>
+      <textarea class="input" id="chg_justification" rows="3" placeholder="${t('justification_help')}">${esc(f.justification)}</textarea>
+      ${f.error ? `<div class="form-error" role="alert">${esc(f.error)}</div>` : ''}`,
+    footer: `<button class="btn btn-ghost btn-sm" onclick="closeModelSave()" ${f.busy ? 'disabled' : ''}>${t('cancel')}</button>
+      ${needsPreview ? `<button class="btn btn-sm" onclick="submitModelSave(true)" ${f.busy ? 'disabled' : ''}>${t('preview')}</button>` : ''}
+      <button class="btn btn-primary btn-sm" onclick="submitModelSave(false)" ${f.busy ? 'disabled' : ''}>${f.busy ? t('saving') : t('save')}</button>`
+  });
+}
+
+async function submitModelSave(dryRun) {
+  collectVersionForm();
+  const f = S.verForm, v = f.values, m = S.modelDetail.data.model, pend = S.modelEdit.pending;
+  f.error = '';
+  if (f.isVersion === null) { f.error = t('is_new_version_required'); return render(); }
+  if (f.isVersion) {
+    if (!v.version) { f.error = t('required_fields') + ' ' + t('version'); return render(); }
+    if (f.applyMode === 'filter' && !f.filter.manufacturer && !f.filter.division && !f.filter.asset_type) { f.error = t('filter_required'); return render(); }
+    if (f.applyMode === 'list' && !f.listIds.length) { f.error = t('copy_select'); return render(); }
+  }
+  if (!dryRun && !f.justification.trim()) { f.error = t('justification_required'); return render(); }
+  // Siempre mostrar la vista previa antes de aplicar una versión
+  if (!dryRun && f.isVersion && f.applyMode !== 'none' && !f.preview) return submitModelSave(true);
+
+  const body = { ...pend.body, justification: f.justification.trim() || '-' };
+  if (f.isVersion) body.new_version = { version: v.version, released_at: v.released_at || undefined, change_notes: v.change_notes || null,
+    changes_unknown: v.changes_unknown, installed_at: v.installed_at || v.released_at || undefined, apply_to: versionApplyTo() };
+  if (dryRun) body.dry_run = true;
+  f.busy = true; render();
+  let out;
   try {
-    const out = await apiSend('PUT', '/api/models?id=' + encodeURIComponent(m.id), body);
-    S.modelMsg = out.instances_risk_raised ? t('risk_raised_msg').replace('{n}', out.instances_risk_raised) : '';
+    out = await apiSend('PUT', '/api/models?id=' + encodeURIComponent(m.id), body);
   } catch (e) {
-    S.modelEdit.busy = false; S.modelEdit.error = t('save_error') + ' ' + apiErrorText(e.message);
+    f.busy = false;
+    const msg = e.message;
+    if (msg === 'Installation date is before the current version start' && e.data?.instances) {
+      f.error = t('version_too_early') + ' ' + e.data.instances.map(x => `${x.asset_code || x.code} (${x.current_since})`).join(', ');
+    } else if (msg === 'Version already exists for this model') f.error = t('version_exists');
+    else if (msg === 'Nothing to update') f.error = t('nothing_changed');
+    else if (msg === 'Database update pending (migration 003)') f.error = t('db_update_pending');
+    else f.error = t('save_error') + ' ' + apiErrorText(msg);
     return render();
   }
-  S.modelEdit = null; S.modelDetail = null; S.models = null;
+  f.busy = false;
+  if (dryRun) { f.preview = out.instances; return render(); }
+  // "Guardado. N instalaciones subieron…" ya dice que se guardó
+  const parts = [out.instances_risk_raised ? t('risk_raised_msg').replace('{n}', out.instances_risk_raised) : t('model_saved')];
+  if (out.version) {
+    const applied = out.applied.map(a => `${a.asset_code || a.code}: ${a.from || '—'} → ${a.to}`).join(' · ');
+    parts.push(applied ? t('version_applied') + ' ' + applied : t('version_registered_only'));
+    if (out.skipped.length) parts.push(t('version_skipped').replace('{n}', out.skipped.length));
+  }
+  S.modelMsg = parts.join(' ');
+  S.verForm = null; S.modelEdit = null; S.modelDetail = null; S.models = null;
+  loadNav();
   render();
+}
+
+// ── Historial de cambios ──────────────────────────────────────
+const CHANGE_LABELS = { name: 'f_model_name', vendor: 'vendor', base_risk_level: 'base_risk', suggested_group: 'suggested_group',
+  black_box: 'black_box', vendor_questionnaire_sent_at: 'questionnaire_sent', vendor_questionnaire_received: 'questionnaire_received' };
+const changeLabel = col => CHANGE_LABELS[col] ? t(CHANGE_LABELS[col]) : fieldLabel(col);
+
+function changeValue(col, v) {
+  if (v === null || v === undefined || v === '') return '—';
+  if (col === 'base_risk_level') return t('risk_' + v);
+  if (col === 'suggested_group') return t('group_' + v);
+  if (typeof v === 'boolean') return v ? t('yes') : t('no');
+  const s = String(v);
+  return s.length > 120 ? s.slice(0, 117) + '…' : s;
+}
+const stateText = s => s === 'pendiente' ? `⏳ ${t('st_pending')}` : s === 'no_entregado' ? `🚫 ${t('st_not_provided')}` : `✅ ${t('st_informed')}`;
+
+function changeHistoryHtml(changes) {
+  const items = changes.map(c => {
+    const when = new Date(c.changed_at).toLocaleString(LANG === 'es' ? 'es-CL' : 'en-US', { dateStyle: 'medium', timeStyle: 'short' });
+    const fields = Object.entries(c.changes?.fields || {}).map(([k, x]) =>
+      `<li><b>${esc(changeLabel(k))}:</b> ${esc(changeValue(k, x.from))} → ${esc(changeValue(k, x.to))}</li>`);
+    const states = Object.entries(c.changes?.states || {}).map(([k, x]) =>
+      `<li><b>${esc(changeLabel(k))}</b> (${t('field_state').toLowerCase()}): ${stateText(x.from)} → ${stateText(x.to)}</li>`);
+    return `<div class="chg-item">
+      <div class="chg-head"><b>${esc(when)}</b> · ${esc(c.changed_by_email || '—')}
+        ${c.version ? `<span class="chip c-g">${t('version_created')}: ${esc(c.version)}</span>` : ''}</div>
+      <div class="chg-why">${esc(c.justification)}</div>
+      ${fields.length || states.length ? `<ul class="chg-list">${fields.join('')}${states.join('')}</ul>` : ''}</div>`;
+  }).join('');
+  return `<div class="card mt" id="changeHistory"><h3>${t('change_history')}</h3>
+    ${items || `<div class="empty small">${t('no_change_history')}</div>`}</div>`;
 }
 
 async function retireModel(id) {
@@ -367,7 +477,10 @@ function openVersionForm(mode, versionId, versionLabel) {
 // Lee el formulario actual para no perder lo escrito al volver a dibujar
 function collectVersionForm() {
   const f = S.verForm;
-  if (!f || !document.getElementById('vf_installed_at')) return;
+  if (!f) return;
+  const just = document.getElementById('chg_justification');
+  if (just) f.justification = just.value;
+  if (!document.getElementById('vf_installed_at')) return;
   const val = id => document.getElementById(id)?.value ?? '';
   if (f.mode === 'register') {
     f.values.version = val('vf_version').trim();
@@ -432,6 +545,17 @@ function versionFormHtml(instances) {
 
   const result = f.result ? `<div class="alert info">${esc(f.result)}</div>` : '';
   const needsPreview = f.applyMode !== 'none';
+
+  // Dentro de la ventana "Guardar cambios": sin título, mensajes ni botones propios
+  if (f.embedded) return `<div class="version-form embedded">
+    ${head.replace(/^<h3>.*?<\/h3>/, '')}
+    <div class="fields form">
+      <div class="field"><label for="vf_installed_at">${t('installed_on')}</label>
+        <input class="input" type="date" id="vf_installed_at" value="${esc(v.installed_at)}" max="${today()}"></div></div>
+    <h4>${t('apply_to_q')}</h4>
+    <div class="radios">${modes.map(m => `<label class="radio"><input type="radio" name="vf_apply" value="${m}" ${f.applyMode === m ? 'checked' : ''}
+      onchange="setApplyMode('${m}')"> ${t('apply_' + m)}</label>`).join('')}</div>
+    ${selector}${preview}</div>`;
 
   return `<div class="div-form version-form">
     ${head}

@@ -869,9 +869,9 @@ function viewShell() {
 
 // ── Ventana modal (reutilizable) ──────────────────────────────
 // close: nombre de la función global que la cierra (Cancelar, Esc o clic fuera del cuadro)
-function modalHtml({ title, subtitle, body, footer, close }) {
+function modalHtml({ title, subtitle, body, footer, close, wide }) {
   return `<div class="modal-backdrop" data-close="${close}" onclick="if (event.target === this) ${close}()">
-    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <div class="modal ${wide ? 'modal-wide' : ''}" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
       <h3 id="modalTitle">${esc(title)}</h3>${subtitle ? `<div class="crumb">${esc(subtitle)}</div>` : ''}
       <div class="modal-body">${body}</div>
       <div class="modal-foot">${footer}</div>

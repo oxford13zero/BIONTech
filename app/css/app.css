@@ -232,11 +232,27 @@ td.actions .btn{margin-left:6px}
 /* Ventana modal */
 .modal-backdrop{position:fixed;inset:0;z-index:50;background:rgba(8,14,28,.7);display:flex;align-items:center;justify-content:center;padding:16px}
 .modal{background:var(--panel);border:1px solid var(--border);border-radius:14px;width:100%;max-width:460px;padding:22px;
-  box-shadow:0 20px 50px rgba(0,0,0,.45);max-height:calc(100vh - 32px);overflow:auto}
+  box-shadow:0 20px 50px rgba(0,0,0,.45);max-height:calc(100vh - 32px);display:flex;flex-direction:column}
+/* Título y botones fijos; solo el contenido se desplaza */
+.modal-body{overflow:auto;min-height:0;margin-right:-8px;padding-right:8px}
 .modal h3{margin:0 0 2px;font-size:17px}
 .modal .crumb{margin-bottom:6px}
 .modal-body .count-note{margin:6px 0 0}
 .modal-foot{display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap;margin-top:20px}
+.modal-wide{max-width:720px}
+.modal h4{margin:14px 0 6px;font-size:14px}
+.version-form.embedded .fields.form{margin-top:6px}
+/* Encabezado de página con acciones a la derecha */
+.page-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;margin-bottom:14px}
+.page-head .head-row{margin:0}
+/* Historial de cambios */
+.chg-item{border-top:1px solid var(--border);padding:12px 0}
+.chg-item:first-of-type{border-top:0;padding-top:4px}
+.chg-head{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:13.5px;color:var(--muted)}
+.chg-head b{color:var(--text)}
+.chg-why{margin:6px 0 4px;padding:8px 12px;border-left:3px solid var(--sand);background:var(--row);border-radius:0 8px 8px 0}
+.chg-list{margin:6px 0 0;padding-left:18px;font-size:13.5px;color:var(--muted)}
+.chg-list b{color:var(--text);font-weight:600}
 .radios{display:flex;gap:16px;flex-wrap:wrap}
 .radio{display:flex;align-items:center;gap:6px;font-size:14px;cursor:pointer}
 .pick-list{display:flex;flex-direction:column;gap:6px;margin:10px 0 4px;max-height:420px;overflow:auto}

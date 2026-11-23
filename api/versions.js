@@ -174,3 +174,8 @@ module.exports = async function handler(req, res) {
     return sendError(res, err);
   }
 };
+
+// Usadas también al guardar la ficha del modelo con una versión nueva (api/models.js)
+module.exports.selectInstances = selectInstances;
+module.exports.applyVersion = applyVersion;
+module.exports.preview = preview;

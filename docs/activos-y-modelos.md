@@ -82,6 +82,9 @@ Todas tienen `id`, `company_id`, `created_at`, `updated_at`. Las tablas antiguas
 ### `record_snapshots` — Copias de fichas
 `entity_type` (`modelo` · `instancia`), `entity_id`, `version_id`, `taken_at`, `reason`, `data` (copia completa de la ficha en ese momento).
 
+### `model_changes` — Historial de cambios de los modelos (migración 003)
+`model_id`, `changed_at`, `changed_by`, `changed_by_email`, `justification` (obligatoria), `changes` (campos y estados: valor anterior → nuevo), `version_id` (versión creada en ese cambio, si hubo).
+
 ### `ai_incidents` — Incidentes
 | Campo | Descripción |
 |---|---|
@@ -163,3 +166,4 @@ Todas tienen `id`, `company_id`, `created_at`, `updated_at`. Las tablas antiguas
 1. **Copiar de otra instancia**: solo llena los campos vacíos.
 2. **Incidentes**: tres campos — tipo (incidente / cuasi incidente, según OECD), gravedad interna (leve / moderado / grave / crítico) y si es "incidente grave" según EU AI Act art. 73 (activa la notificación al regulador). El NIST AI RMF no fija una escala; pide que cada organización defina la suya.
 3. **Grupo 1–4**: describe el uso, por eso va en la **instancia**. El modelo solo guarda un grupo sugerido.
+4. **Cambios en la ficha del modelo**: siempre con justificación. Al guardar, una ventana pregunta si el cambio es una **nueva versión** (se registra la versión y se elige a qué instalaciones se aplica) o una **corrección de datos**. Todo queda en el historial de cambios del modelo. Ya no hay un botón aparte para registrar versiones.

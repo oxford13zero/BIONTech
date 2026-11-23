@@ -744,3 +744,18 @@ CREATE INDEX IF NOT EXISTS instance_versions_idx     ON instance_versions (insta
 CREATE INDEX IF NOT EXISTS ai_incidents_asset_idx    ON ai_incidents (asset_id, occurred_at);
 CREATE INDEX IF NOT EXISTS ai_incidents_instance_idx ON ai_incidents (instance_id);
 CREATE INDEX IF NOT EXISTS record_snapshots_idx      ON record_snapshots (entity_type, entity_id);
+
+-- ============================================================
+-- Historial de cambios de los modelos (copia de db/migrations/003_historial_modelos.sql)
+-- ============================================================
+CREATE TABLE IF NOT EXISTS model_changes (
+  id                UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  model_id          UUID NOT NULL REFERENCES ai_models(id),
+  changed_at        TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  changed_by        UUID,
+  changed_by_email  TEXT,
+  justification     TEXT NOT NULL CHECK (length(trim(justification)) > 0),
+  changes           JSONB NOT NULL DEFAULT '{}',
+  version_id        UUID REFERENCES model_versions(id)
+);
+CREATE INDEX IF NOT EXISTS model_changes_model_idx ON model_changes (model_id, changed_at DESC);

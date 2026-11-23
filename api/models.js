@@ -3,13 +3,17 @@
 //   GET    /api/models?division=&q=&vendor=&status=&catalog=   lista (catalog=1: todo el catálogo aunque no esté en la división)
 //   GET    /api/models?id=&division=                  ficha (versiones, instalaciones, incidentes)
 //   POST   /api/models                                crear { ...campos, field_status?, first_version? }
-//   PUT    /api/models?id=                            editar { ...campos, field_status? }
+//   PUT    /api/models?id=                            editar { ...campos, field_status?, justification, new_version?, dry_run? }
+//          justification: obligatoria (queda en el historial de cambios)
+//          new_version:   { version, released_at?, change_notes?, changes_unknown?, installed_at?, apply_to }
+//          dry_run:       con new_version, solo devuelve a qué instalaciones se aplicaría
 //   DELETE /api/models?id=                            retirar (solo sin instancias activas)
 // Diseño: docs/activos-y-modelos.md
 // ============================================================
 const { getClientPool, setCors } = require('./_db');
 const { verifyClient, assertCan, resolveDivision, pickKnownFields, sendError } = require('./_auth');
 const I = require('./_inventory');
+const V = require('./versions');
 
 const BOOL_FIELDS = ['black_box', 'vendor_questionnaire_received', 'ce_marking_declared', 'annex_iv_complete'];
 const DATE_FIELDS = ['vendor_questionnaire_sent_at', 'last_retrain_date', 'next_contract_renewal'];
@@ -93,7 +97,16 @@ async function detail(db, user, id, q) {
       FROM ai_incidents x JOIN ai_instances i ON i.id = x.instance_id LEFT JOIN model_versions v ON v.id = x.version_id
       WHERE i.model_id = $1${scope} GROUP BY v.version ORDER BY v.version`, params)
   ]);
-  return { model, versions: versions.rows, instances: instances.rows, incidents_by_version: incidents.rows };
+  let changes = [];
+  try {
+    changes = (await db.query(`
+      SELECT c.id, c.changed_at, c.changed_by_email, c.justification, c.changes, v.version
+      FROM model_changes c LEFT JOIN model_versions v ON v.id = c.version_id
+      WHERE c.model_id = $1 ORDER BY c.changed_at DESC`, [model.id])).rows;
+  } catch (e) {
+    if (e.code !== '42P01') throw e;   // tabla aún no creada (migración 003)
+  }
+  return { model, versions: versions.rows, instances: instances.rows, incidents_by_version: incidents.rows, changes };
 }
 
 async function create(pool, user, body) {
@@ -119,25 +132,76 @@ async function create(pool, user, body) {
   });
 }
 
+// Valor comparable (fechas como texto, vacío = null)
+const norm = v => (v === undefined || v === null || v === '') ? null : (v instanceof Date ? v.toISOString().slice(0, 10) : v);
+
+// Qué cambió realmente respecto de la ficha guardada
+function diffModel(model, f, fs) {
+  const fields = {}, states = {};
+  for (const [k, v] of Object.entries(f)) {
+    const from = norm(model[k]), to = norm(v);
+    if (JSON.stringify(from) !== JSON.stringify(to)) fields[k] = { from, to };
+  }
+  if (fs !== undefined) {
+    const cur = model.field_status || {};
+    for (const k of new Set([...Object.keys(cur), ...Object.keys(fs)])) {
+      if ((cur[k] || null) !== (fs[k] || null)) states[k] = { from: cur[k] || null, to: fs[k] || null };
+    }
+  }
+  return { fields, states };
+}
+
+function validateNewVersion(nv) {
+  if (!nv || typeof nv !== 'object') throw I.badRequest('Invalid value: new_version');
+  const version = nv.version && String(nv.version).trim();
+  if (!version) throw I.badRequest('Version required');
+  const released = nv.released_at || I.today();
+  I.assertDate(released, 'released_at');
+  const installed = nv.installed_at || released;
+  I.assertDate(installed, 'installed_at');
+  if (nv.changes_unknown !== undefined && typeof nv.changes_unknown !== 'boolean') throw I.badRequest('Invalid value: changes_unknown');
+  return { version, released, installed, change_notes: nv.change_notes || null, changes_unknown: nv.changes_unknown === true, apply_to: nv.apply_to };
+}
+
 async function update(pool, user, id, body) {
   assertCan(user, 'model.write');
-  const { field_status, ...rest } = body;
+  const { field_status, justification, new_version, dry_run, ...rest } = body;
   const f = pickKnownFields(rest, I.MODEL_FIELDS);
   validateModel(f, false);
+  const why = justification && String(justification).trim();
+  if (!why) throw I.badRequest('Justification required');
+  const nv = new_version ? validateNewVersion(new_version) : null;
 
   return I.inTransaction(pool, async db => {
     const model = await loadModel(db, user, id);
     if (model.status === 'retirado') throw I.badRequest('Model is retired');
     const fs = I.mergeFieldStatus(model.field_status, field_status, I.MODEL_FIELDS);
-    if (fs !== undefined) f.field_status = JSON.stringify(fs);
-    if (!Object.keys(f).length) throw I.badRequest('Nothing to update');
-    const keys = Object.keys(f);
+    const changes = diffModel(model, f, fs);
+    const changed = Object.keys(changes.fields).length + Object.keys(changes.states).length;
+    if (!changed && !nv) throw I.badRequest('Nothing to update');
+
+    // Vista previa: a qué instalaciones se aplicaría la versión nueva
+    const targets = nv ? await V.selectInstances(db, model, nv.apply_to) : [];
+    if (dry_run) return V.preview(targets);
+
+    const userId = I.asUuid(user.userId);
+    // Copia completa de la ficha antes del cambio
     await db.query(
-      `UPDATE ai_models SET ${keys.map((k, i) => `${k} = $${i + 2}`).join(', ')}, updated_at = NOW() WHERE id = $1`,
-      [model.id, ...Object.values(f)]);
+      `INSERT INTO record_snapshots (entity_type, entity_id, reason, data, taken_by) VALUES ('modelo', $1, $2, $3, $4)`,
+      [model.id, 'Antes del cambio: ' + why, JSON.stringify(model), userId]);
+
+    // Solo se guardan los campos que cambiaron
+    const set = Object.fromEntries(Object.keys(changes.fields).map(k => [k, f[k]]));
+    if (Object.keys(changes.states).length) set.field_status = JSON.stringify(fs);
+    if (Object.keys(set).length) {
+      const keys = Object.keys(set);
+      await db.query(
+        `UPDATE ai_models SET ${keys.map((k, i) => `${k} = $${i + 2}`).join(', ')}, updated_at = NOW() WHERE id = $1`,
+        [model.id, ...Object.values(set)]);
+    }
     // Si sube el riesgo base, ninguna instancia puede quedar por debajo
     let raised = 0;
-    if (f.base_risk_level) {
+    if (changes.fields.base_risk_level && f.base_risk_level) {
       const r = await db.query(`
         UPDATE ai_instances SET risk_level = $2, updated_at = NOW()
         WHERE model_id = $1 AND status = 'activa' AND
@@ -146,7 +210,25 @@ async function update(pool, user, id, body) {
         [model.id, f.base_risk_level]);
       raised = r.rowCount;
     }
-    return { success: true, instances_risk_raised: raised };
+
+    // Versión nueva (opcional) y su aplicación a las instalaciones elegidas
+    let version = null, applied = { applied: [], skipped: [] };
+    if (nv) {
+      const r = await db.query(
+        `INSERT INTO model_versions (model_id, version, released_at, change_notes, changes_unknown, created_by)
+         VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
+        [model.id, nv.version, nv.released, nv.change_notes, nv.changes_unknown, userId]);
+      version = r.rows[0];
+      applied = await V.applyVersion(db, user, version, targets, nv.installed);
+    }
+
+    await db.query(
+      `INSERT INTO model_changes (model_id, changed_by, changed_by_email, justification, changes, version_id)
+       VALUES ($1, $2, $3, $4, $5, $6)`,
+      [model.id, userId, user.email || null, why, JSON.stringify(changes), version ? version.id : null]);
+
+    return { success: true, instances_risk_raised: raised, version_id: version ? version.id : null,
+             version: version ? version.version : null, ...applied };
   });
 }
 
@@ -176,7 +258,10 @@ module.exports = async function handler(req, res) {
     if (req.method === 'DELETE' && id) return res.status(200).json(await retire(pool, user, id));
     return res.status(405).json({ error: 'Method not allowed' });
   } catch (e) {
+    if (e && e.code === '42P01') return res.status(500).json({ error: 'Database update pending (migration 003)' });
+    if (e && e.code === '23505') return res.status(409).json({ error: 'Version already exists for this model' });
     const err = I.dbError(e);
+    if (err && err.status && err.instances) return res.status(err.status).json({ error: err.message, instances: err.instances });
     if (err && err.status && err.count !== undefined) return res.status(err.status).json({ error: err.message, count: err.count });
     return sendError(res, err);
   }
