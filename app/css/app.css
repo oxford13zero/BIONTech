@@ -165,6 +165,8 @@ textarea.edit-input{resize:vertical;min-height:36px;font-family:inherit}
 
 /* Nuevo sistema */
 .page-actions{display:flex;justify-content:flex-end;margin:-46px 0 14px}
+/* Botón principal de la página (+ Nuevo …): mismo alto que los botones secundarios */
+.page-actions .btn-primary{padding:5px 12px;font-size:12.5px;border-radius:8px;line-height:1.5}
 a.btn{text-decoration:none;display:inline-block}
 .fields.form{padding-top:0}
 .fields.form .input{margin-top:3px;font-size:14px;padding:8px 11px}
