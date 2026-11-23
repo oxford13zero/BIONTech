@@ -892,7 +892,7 @@ window.addEventListener('hashchange', () => {
   if (parseHash().path !== 'divisiones') { S.divForm = null; S.divMsg = ''; }
   if (parseHash().path !== 'equipo') { S.team = null; S.teamForm = null; S.teamMsg = ''; }
   if (!/^activos\/(nuevo|[\w-]+\/editar)$/.test(parseHash().path)) S.assetForm = null;
-  S.retireAsset = false;
+  S.retireAsset = false; S.installForm = null;
   S.modelEdit = null; S.modelMsg = ''; S.verForm = null;
   S.instEdit = null; S.instAction = null; S.integForm = null; S.instMsg = '';
   // Las fichas se vuelven a cargar al entrar, para mostrar siempre datos al día

@@ -72,14 +72,19 @@ async function create(pool, user, body) {
   return I.inTransaction(pool, async db => {
     let branchId = body.branch_id;
     if (body.asset_id) {
-      const a = await db.query(`SELECT id, branch_id, status FROM assets WHERE id::text = $1 AND company_id = $2`, [String(body.asset_id), user.companyId]);
+      const a = await db.query(`SELECT id, branch_id, status, ai_usage FROM assets WHERE id::text = $1 AND company_id = $2`, [String(body.asset_id), user.companyId]);
       if (!a.rows[0]) throw { status: 404, message: 'Asset not found' };
       if (a.rows[0].status !== 'activo') throw I.badRequest('Asset is retired');
       branchId = a.rows[0].branch_id;
+      assertOwnDivision(user, scope, branchId);
+      const dup = await db.query(`SELECT 1 FROM ai_instances WHERE asset_id = $1 AND model_id::text = $2 AND status = 'activa'`, [a.rows[0].id, String(body.model_id || '')]);
+      if (dup.rows[0]) throw I.badRequest('Model already installed on this asset');
+      // Con un modelo instalado, el activo pasa a "usa IA"
+      if (a.rows[0].ai_usage !== 'usa_ia') await db.query(`UPDATE assets SET ai_usage = 'usa_ia', updated_at = NOW() WHERE id = $1`, [a.rows[0].id]);
     } else {
       await I.assertBranch(db, user.companyId, branchId);
+      assertOwnDivision(user, scope, branchId);
     }
-    assertOwnDivision(user, scope, branchId);
     return I.createInstance(db, {
       companyId: user.companyId, modelId: body.model_id, assetId: body.asset_id || null, branchId,
       installedAt: body.installed_at, group: body.inventory_group, userId: user.userId

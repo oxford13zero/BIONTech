@@ -31,7 +31,8 @@ function apiErrorText(msg) {
     'Select at least one model, or mark the asset as "models to identify"': 'err_select_model',
     'Model selected twice': 'err_model_twice',
     'Asset is retired': 'err_asset_retired',
-    'Not allowed': 'err_not_allowed'
+    'Not allowed': 'err_not_allowed',
+    'Model already installed on this asset': 'err_model_installed'
   };
   return map[msg] ? t(map[msg]) : msg;
 }
@@ -191,7 +192,9 @@ function viewAssetDetail(id) {
       ${retired ? field(t('f_retire_date'), a.retired_at) : ''}${field(t('f_notes'), a.notes)}
     </div></div>
 
-    <div class="card mt"><h3>${t('models_used')}</h3>
+    <div class="card mt" id="assetModels"><h3>${t('models_used')}</h3>
+      ${can('instance.write') && !retired ? (S.installForm?.assetId === a.id ? installFormHtml(a, instances)
+        : `<div class="edit-bar left"><button class="btn btn-sm" onclick="openInstallForm('${esc(a.id)}')">+ ${t('install_model')}</button></div>`) : ''}
       ${instRows ? `<div class="tbl-wrap"><table>
         <thead><tr><th>${t('model')}</th><th>${t('version')}</th><th>${t('group')}</th><th>${t('risk')}</th><th></th></tr></thead>
         <tbody>${instRows}</tbody></table></div>`
@@ -206,6 +209,69 @@ function viewAssetDetail(id) {
         <thead><tr><th>${t('f_date')}</th><th>${t('f_title')}</th><th>${t('model')}</th><th>${t('f_severity')}</th><th>${t('status')}</th></tr></thead>
         <tbody>${incRows}</tbody></table></div>` : `<div class="empty small">${t('no_incidents')}</div>`}
     </div>`;
+}
+
+// ── Instalar un modelo del catálogo en un activo existente ─────
+// S.installForm = { assetId, catalog, model_id, group, installed_at, error, busy }
+async function openInstallForm(assetId) {
+  S.installForm = { assetId, catalog: null, model_id: '', group: '', installed_at: today() };
+  render();
+  try { S.installForm.catalog = await apiGet('/api/models?catalog=1'); } catch (e) { if (S.installForm) S.installForm.catalog = []; }
+  render();
+}
+
+function readInstallForm() {
+  const f = S.installForm;
+  for (const k of ['model_id', 'group', 'installed_at']) { const el = document.getElementById('ins_' + k); if (el) f[k] = el.value; }
+  return f;
+}
+
+function installModelChanged() {
+  const f = readInstallForm();
+  const m = (f.catalog || []).find(x => String(x.id) === String(f.model_id));
+  f.group = m && m.suggested_group ? String(m.suggested_group) : f.group;
+  render();
+}
+
+function installFormHtml(a, instances) {
+  const f = S.installForm;
+  if (!f.catalog) return `<div class="empty small">${t('loading')}</div>`;
+  const installed = new Set(instances.filter(i => i.status === 'activa').map(i => String(i.model_id)));
+  const list = f.catalog.filter(m => m.status !== 'retirado' && !installed.has(String(m.id)));
+  const opt = (val, label, cur) => `<option value="${esc(val)}" ${String(val) === String(cur ?? '') ? 'selected' : ''}>${esc(label)}</option>`;
+  return `<div class="div-form">
+    <h4>${t('install_model')}</h4>
+    ${list.length ? `<div class="fields form">
+      <div class="field wide"><label for="ins_model_id">${t('model')} *</label><select class="input" id="ins_model_id" onchange="installModelChanged()">
+        ${opt('', '', f.model_id)}${list.map(m => opt(m.id, `${m.name} · ${m.vendor} (${m.code})`, f.model_id)).join('')}</select></div>
+      <div class="field"><label for="ins_group">${t('group')} *</label><select class="input" id="ins_group">
+        ${opt('', '', f.group)}${[1, 2, 3, 4].map(g => opt(g, t('group_' + g), f.group)).join('')}</select></div>
+      <div class="field"><label for="ins_installed_at">${t('f_installed')}</label>
+        <input class="input" type="date" id="ins_installed_at" value="${esc(f.installed_at || '')}" max="${today()}"></div>
+    </div>
+    ${a.ai_usage !== 'usa_ia' ? `<p class="count-note">${t('install_sets_usage')}</p>` : ''}`
+    : `<div class="empty small">${t('install_none')}</div>`}
+    ${!can('model.write') ? `<p class="count-note">${t('model_not_in_catalog_help')}</p>` : ''}
+    ${f.error ? `<div class="form-error">${esc(f.error)}</div>` : ''}
+    <div class="edit-bar">
+      <button class="btn btn-ghost btn-sm" onclick="S.installForm=null;render()" ${f.busy ? 'disabled' : ''}>${t('cancel')}</button>
+      ${list.length ? `<button class="btn btn-primary btn-sm" onclick="submitInstall('${esc(a.id)}')" ${f.busy ? 'disabled' : ''}>${f.busy ? t('saving') : t('install')}</button>` : ''}
+    </div></div>`;
+}
+
+async function submitInstall(assetId) {
+  const f = readInstallForm();
+  if (!f.model_id || !f.group) { f.error = t('required_fields') + ' ' + t('model') + ', ' + t('group'); return render(); }
+  f.busy = true; f.error = ''; render();
+  try {
+    await apiSend('POST', '/api/instances', { asset_id: assetId, model_id: f.model_id, inventory_group: Number(f.group), installed_at: f.installed_at || null });
+  } catch (e) {
+    f.busy = false; f.error = t('save_error') + ' ' + apiErrorText(e.message);
+    return render();
+  }
+  S.installForm = null; S.assetDetail = null; S.assets = null;
+  loadNav();
+  render();
 }
 
 function openRetireAsset() { S.retireAsset = true; S.retireError = ''; render(); }
@@ -226,7 +292,7 @@ async function retireAsset(id) {
 // ── Nuevo / editar ────────────────────────────────────────────
 // S.assetForm = { id, values, usage, catalog, selected: {modelId: {group, installed_at}}, newModels: [...], search, error, busy }
 async function loadCatalog() {
-  try { S.assetForm.catalog = await apiGet('/api/models'); }
+  try { S.assetForm.catalog = await apiGet('/api/models?catalog=1'); }
   catch (e) { if (S.user) S.assetForm.catalog = []; }
   render();
 }

@@ -1,6 +1,6 @@
 // ============================================================
 // Catálogo de modelos — /api/models
-//   GET    /api/models?division=&q=&vendor=&status=   lista
+//   GET    /api/models?division=&q=&vendor=&status=&catalog=   lista (catalog=1: todo el catálogo aunque no esté en la división)
 //   GET    /api/models?id=&division=                  ficha (versiones, instalaciones, incidentes)
 //   POST   /api/models                                crear { ...campos, field_status?, first_version? }
 //   PUT    /api/models?id=                            editar { ...campos, field_status? }
@@ -51,7 +51,8 @@ async function list(db, user, q) {
   let instCond = "i.model_id = m.id AND i.status = 'activa'";
   if (division) { params.push(division); instCond += ` AND i.branch_id::text = $${params.length}`; }
   // Con una división elegida, solo los modelos instalados en ella
-  if (division) where.push(`EXISTS (SELECT 1 FROM ai_instances i WHERE ${instCond})`);
+  // (catalog=1: catálogo completo, para elegir qué instalar)
+  if (division && q.catalog !== '1') where.push(`EXISTS (SELECT 1 FROM ai_instances i WHERE ${instCond})`);
 
   const r = await db.query(`
     SELECT m.id, m.code, m.name, m.vendor, m.suggested_group, m.base_risk_level, m.black_box, m.status,
