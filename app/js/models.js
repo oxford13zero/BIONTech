@@ -381,8 +381,16 @@ function changeValue(col, v) {
 }
 const stateText = s => s === 'pendiente' ? `⏳ ${t('st_pending')}` : s === 'no_entregado' ? `🚫 ${t('st_not_provided')}` : `✅ ${t('st_informed')}`;
 
+// Filtro del historial: 'all' · 'version' (crearon versión) · 'data' (corrección de datos)
+function setChangeFilter(v) { S.changeFilter = v; render(); }
+
 function changeHistoryHtml(changes) {
-  const items = changes.map(c => {
+  const filter = S.changeFilter || 'all';
+  const shown = changes.filter(c => filter === 'all' || (filter === 'version' ? !!c.version : !c.version));
+  const opt = (v, label) => `<option value="${v}" ${filter === v ? 'selected' : ''}>${label}</option>`;
+  const select = changes.length ? `<div class="card-actions"><select class="input sm" id="changeFilter" aria-label="${t('change_filter')}"
+      onchange="setChangeFilter(this.value)">${opt('all', t('chg_all'))}${opt('version', t('chg_versions'))}${opt('data', t('chg_data'))}</select></div>` : '';
+  const items = shown.map(c => {
     const when = new Date(c.changed_at).toLocaleString(LANG === 'es' ? 'es-CL' : 'en-US', { dateStyle: 'medium', timeStyle: 'short' });
     const fields = Object.entries(c.changes?.fields || {}).map(([k, x]) =>
       `<li><b>${esc(changeLabel(k))}:</b> ${esc(changeValue(k, x.from))} → ${esc(changeValue(k, x.to))}</li>`);
@@ -394,8 +402,8 @@ function changeHistoryHtml(changes) {
       <div class="chg-why">${esc(c.justification)}</div>
       ${fields.length || states.length ? `<ul class="chg-list">${fields.join('')}${states.join('')}</ul>` : ''}</div>`;
   }).join('');
-  return `<div class="card mt" id="changeHistory"><h3>${t('change_history')}</h3>
-    ${items || `<div class="empty small">${t('no_change_history')}</div>`}</div>`;
+  return `<div class="card mt" id="changeHistory"><div class="card-head"><h3>${t('change_history')}</h3>${select}</div>
+    ${items || `<div class="empty small">${changes.length ? t('no_changes_of_type') : t('no_change_history')}</div>`}</div>`;
 }
 
 async function retireModel(id) {
