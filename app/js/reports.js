@@ -494,3 +494,127 @@ function grDocRiskMap(x) {
     + grSec(4, 'gr_s_concentration', grTable(['gr_c_division', 'gr_c_risk_to_review', 'gr_c_reviews_overdue', 'gr_c_serious_open'],
         x.matrix.map(r => [esc(r.division), r.risk_to_review, r.reviews_overdue, r.serious_open]), [1, 2, 3]) + grNote(t('gr_concentration_help')));
 }
+
+// ── Informe 8: Reporte de Incidente Grave Específico ──────────
+// Se genera desde la ficha de un incidente grave o desastre (EU AI Act art. 73 · CSET · OECD).
+// Ruta: #/incidentes/<id>/reporte?aud=gerencia|autoridad&inc=acciones,evidencia,contexto
+// Usa la misma ficha del incidente (/api/incidents?id=), que ya limita la división según el rol.
+const GR_INC_SERIOUS = ['incidente_grave', 'desastre'];
+const GR_INC_PARTS = ['acciones', 'evidencia', 'contexto'];
+const grIncReportAllowed = x => GR_INC_SERIOUS.includes(x.severity) && !!can('report.generate');
+
+function openIncReport() { S.incReport = { aud: 'gerencia', inc: [...GR_INC_PARTS] }; render(); }
+function closeIncReport() { S.incReport = null; render(); }
+function grIncSet(field, value) { S.incReport[field] = value; render(); }
+function grIncToggle(part) {
+  const r = S.incReport;
+  r.inc = r.inc.includes(part) ? r.inc.filter(p => p !== part) : [...r.inc, part];
+  render();
+}
+function grIncReportGo() {
+  const r = S.incReport, id = S.incDetail.id;
+  const q = new URLSearchParams({ aud: r.aud, inc: GR_INC_PARTS.filter(p => r.inc.includes(p)).join(',') });
+  S.incReport = null;
+  location.hash = `#/incidentes/${id}/reporte?${q}`;
+}
+
+function grIncReportModal(x) {
+  const r = S.incReport;
+  const check = p => `<label class="gr-check ${r.inc.includes(p) ? 'on' : ''}"><input type="checkbox" ${r.inc.includes(p) ? 'checked' : ''}
+    onchange="grIncToggle('${p}')"> ${t('gr_inc_part_' + p)}</label>`;
+  return modalHtml({ title: t('gr_r8'), subtitle: x.title, close: 'closeIncReport',
+    body: `<p class="count-note">${t('gr_inc_modal_help')}</p>
+      <div class="field"><label for="grAud">${t('gr_inc_audience')}</label>
+        <select id="grAud" class="input" onchange="grIncSet('aud', this.value)">
+          ${['gerencia', 'autoridad'].map(a => `<option value="${a}" ${a === r.aud ? 'selected' : ''}>${t('gr_aud_' + a)}</option>`).join('')}</select>
+        <p class="gr-help">${t('gr_aud_help_' + r.aud)}</p></div>
+      <div class="field"><label>${t('gr_inc_include')}</label><div class="gr-checks">${GR_INC_PARTS.map(check).join('')}</div></div>
+      ${x.status === 'abierto' ? `<div class="alert">${t('gr_inc_preliminary_note')}</div>` : ''}`,
+    footer: `<button class="btn btn-ghost btn-sm" onclick="closeIncReport()">${t('cancel')}</button>
+      <button class="btn btn-primary btn-sm" onclick="grIncReportGo()">${t('gr_inc_generate')}</button>` });
+}
+
+function grIncidentReportHtml(id) {
+  const back = `<button class="back gr-noprint" onclick="location.hash='#/incidentes/${esc(id)}'">← ${t('gr_inc_back')}</button>`;
+  if (!grIncReportAllowedRole()) return back + `<div class="card empty">${t('err_not_allowed')}</div>`;
+  if (!S.incDetail || S.incDetail.id !== id) { loadIncident(id); return back + `<div class="card empty">${t('gr_generating')}</div>`; }
+  const d = S.incDetail;
+  if (d.loading) return back + `<div class="card empty">${t('gr_generating')}</div>`;
+  if (d.error) return back + `<div class="card empty">${t(d.error)}</div>`;
+  const q = parseHash().params;
+  const aud = q.aud === 'autoridad' ? 'autoridad' : 'gerencia';
+  const parts = (q.inc || '').split(',').filter(p => GR_INC_PARTS.includes(p));
+  const x = d.data.incident;
+  if (!GR_INC_SERIOUS.includes(x.severity)) return back + `<div class="card empty">${t('gr_inc_not_serious')}</div>`;
+  const meta = { report: 8, generated_at: new Date().toISOString(), aud, parts };
+  S.grIncDocMeta = meta;   // para el nombre del PDF
+  return `${back}<h1>${t('nav_reporting')}</h1><div class="crumb">${t('gr_report_n').replace('{n}', 8)} · ${t('gr_r8')}</div>
+    <div class="gr-actions gr-noprint"><span class="gr-help">${t('gr_pdf_help')}</span>
+      <button class="btn btn-sm" onclick="grIncPrint()">${t('gr_pdf')}</button></div>
+    <article class="gr-doc">${grIncDocHtml(d.data, meta)}<footer class="gr-doc-foot">${t('gr_doc_foot')}</footer></article>`;
+}
+const grIncReportAllowedRole = () => !!can('report.generate');
+
+function grIncPrint() {
+  const m = S.grIncDocMeta, x = S.incDetail.data.incident, prev = document.title;
+  document.title = `BION_${t('gr_report_n').replace('{n}', 8).replace(/\s+/g, '')}_${x.occurred_at}_${m.aud}`
+    .normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^\w-]+/g, '_');
+  window.addEventListener('afterprint', () => { document.title = prev; }, { once: true });
+  window.print();
+}
+
+// Cuerpo del reporte: las pestañas de la ficha, en orden, con los mismos textos
+function grIncDocHtml(data, meta) {
+  const x = data.incident, gov = meta.aud === 'gerencia';
+  // Mismo texto que la ficha, sin enlaces internos y con fechas DD-MM-AAAA
+  const val = f => f.type === 'date' && x[f.k] ? grNw(grDate(String(x[f.k]).slice(0, 10)))
+    : incValueText(f, x).replace(/<a [^>]*>/g, '').replace(/<\/a>/g, '');
+  const rows = (tab, skip = []) => grDl(INC_SPEC[tab].filter(f => f.k && !skip.includes(f.k) && !(f.euOnly && !(x.eu_criteria || []).length))
+    .map(f => [t(f.label), val(f)]));
+  const time = x.occurred_time ? ' ' + String(x.occurred_time).slice(0, 5) : '';
+  const model = x.model_name ? `${esc(x.model_name)}${x.version ? ' · ' + verLabel(x.version) : ''}` : `<i>${t('model_undetermined')}</i>`;
+  let n = 0;
+  const sec = (k, html) => `<h3>${++n}. ${t(k)}</h3>${html}`;
+  const head = [
+    ['gr_inc_m_incident', esc(x.title)], ['gr_inc_m_status', t('ist_' + x.status)],
+    ['gr_inc_m_audience', t('gr_aud_' + meta.aud)], ['gr_m_generated', grDateTime(meta.generated_at)],
+    ['gr_m_by', gov ? `${esc(S.user.email)} (${t('role_' + S.user.role)})` : esc(S.user.companyName || '')],
+    ['gr_m_data', t('gr_m_data_v')]
+  ];
+  let html = `<h2>${t('gr_r8')}</h2>
+    <div class="gr-doc-sub">${esc(S.user.companyName || '')} · EU AI Act art. 73 · CSET · OECD</div>
+    ${x.status === 'abierto' ? `<div class="gr-prelim">${t('gr_inc_preliminary')}</div>` : ''}
+    <div class="gr-meta">${head.map(([k, v]) => `<div><b>${t(k)}</b>${v}</div>`).join('')}</div>`;
+  html += sec('gr_inc_s_id', grDl([
+    [t('f_date'), grNw(grDate(x.occurred_at) + time)], [t('gr_c_asset'), `${esc(x.asset_code)} — ${esc(x.asset_name)}`],
+    [t('gr_c_model'), model], [t('gr_c_division'), esc(x.branch_name)],
+    [t('f_inc_country'), x.country ? esc(x.country) : '—'], [t('f_inc_location'), x.location ? esc(x.location) : '—'],
+    [t('f_kind'), t('kind_' + x.kind)], [t('f_severity'), grSev(x.severity)],
+    ...(gov && x.reported_by_email ? [[t('gr_inc_reported_by'), esc(x.reported_by_email)]] : [])
+  ]));
+  html += sec('gr_inc_s_what', rows('registro', ['title', 'occurred_at', 'occurred_time', 'instance_id', 'kind', 'severity', 'country', 'location', 'evidence_links']));
+  html += sec('tab_personas', rows('personas'));
+  if (meta.parts.includes('contexto')) html += sec('tab_contexto', rows('contexto'));
+  if (data.eu_enabled || (x.eu_criteria || []).length) html += sec('gr_inc_s_eu', rows('eu'));
+  const closed = x.status === 'cerrado' && x.closed_at
+    ? [[t('gr_inc_closed_at'), grNw(grDateTime(x.closed_at).slice(0, 10)) + (gov && x.closed_by_email ? ` · ${esc(x.closed_by_email)}` : '')]] : [];
+  html += sec('gr_inc_s_response', rows('cierre') + (closed.length ? grDl(closed) : ''));
+  if (meta.parts.includes('acciones')) {
+    const st = a => a.status === 'terminada' ? t('act_terminada') : a.overdue ? t('act_vencida') : t('act_pendiente');
+    html += sec('h_actions', data.actions.length
+      ? grTable(gov ? ['act_action', 'act_owner', 'act_due', 'act_status'] : ['act_action', 'act_due', 'act_status'],
+          data.actions.map(a => gov ? [esc(a.action), esc(a.owner), grNw(grDate(a.due_date)), st(a)] : [esc(a.action), grNw(grDate(a.due_date)), st(a)]))
+      : `<p class="gr-empty">${t('act_none')}</p>`);
+  }
+  if (meta.parts.includes('evidencia')) {
+    const links = x.evidence_links || [];
+    html += sec('evidence', links.length
+      ? `<ul class="gr-links">${links.map(l => `<li>${esc(l.label || l.url)}<br><small>${esc(l.url)}</small></li>`).join('')}</ul>`
+      : `<p class="gr-empty">${t('no_info')}</p>`);
+  }
+  if (!gov) html += grNote(t('gr_aud_help_autoridad'));
+  return html;
+}
+
+// Lista de pares etiqueta / valor en dos columnas
+const grDl = pairs => `<dl class="gr-dl">${pairs.map(([k, v]) => `<div><dt>${k}</dt><dd>${v}</dd></div>`).join('')}</dl>`;

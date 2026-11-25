@@ -284,7 +284,7 @@ function currentRoute() {
   if (/^activos\/[\w-]+(\/editar)?$/.test(path)) return path;   // ficha, nuevo y editar activo
   if (/^modelos\/[\w-]+$/.test(path)) return path;                // ficha y nuevo modelo
   if (/^instancias\/[\w-]+$/.test(path)) return path;             // ficha de la instalación
-  if (/^incidentes\/[\w-]+(\/editar)?$/.test(path)) return path; // registrar, ficha y editar incidente
+  if (/^incidentes\/[\w-]+(\/(editar|reporte))?$/.test(path)) return path; // registrar, ficha, editar y reporte formal
   if (grIsConfigRoute(path)) return path;                         // configuración de un informe (reports.js)
   return findItem(menu(), path) ? path : 'dashboard';
 }
@@ -919,7 +919,7 @@ window.addEventListener('hashchange', () => {
   S.inst = null; S.assetDetail = null; S.modelDetail = null; S.assets = null; S.models = null;
   S.incDetail = null; S.incidents = null; S.cmp = null; S.pending = null; S.dash = null; S.repPreview = null; S.divStats = null; S.grPrev = null; S.grDoc = null;
   if (S.gr) S.gr.dd = false;
-  S.incEdit = null; S.incActForm = null; S.incClose = null;
+  S.incEdit = null; S.incActForm = null; S.incClose = null; S.incReport = null;
   if (parseHash().path !== 'incidentes/nuevo') S.wiz = null;
   S.incMsg = S.incMsgNext || ''; S.incMsgNext = null;
   if (parseHash().path !== 'modelos/nuevo') S.modelNew = null;
