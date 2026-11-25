@@ -1,6 +1,7 @@
 const { Pool } = require('pg');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const { permissionsFor } = require('./_auth');
 
 const USE_AZURE = process.env.DATABASE_PROVIDER === 'azure';
 
@@ -106,7 +107,8 @@ module.exports = async function handler(req, res) {
         companyId:   user.company_id,
         companyName: user.company_name,
         country:     user.country,
-        dbName:      user.azure_db_name
+        dbName:      user.azure_db_name,
+        permissions: permissionsFor(user.role)
       }
     });
 
