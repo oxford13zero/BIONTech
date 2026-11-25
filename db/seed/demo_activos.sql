@@ -171,24 +171,24 @@ BEGIN
   -- ── Incidentes (versión calculada desde el historial) ──────
   INSERT INTO ai_incidents (company_id, branch_id, asset_id, instance_id, version_id, occurred_at, title, kind, severity, status, description)
     SELECT v_company, v_norte, a_117, i117_per, iv.version_id, '2022-08-14', 'Frenado de emergencia por polvo',
-           'cuasi_incidente', 'leve', 'cerrado', 'El sistema detectó una nube de polvo como obstáculo y detuvo el camión.'
+           'peligro', 'incidente', 'cerrado', 'El sistema detectó una nube de polvo como obstáculo y detuvo el camión.'
     FROM instance_versions iv WHERE iv.instance_id = i117_per AND iv.valid_from <= '2022-08-14' AND (iv.valid_to IS NULL OR iv.valid_to > '2022-08-14');
 
   INSERT INTO ai_incidents (company_id, branch_id, asset_id, instance_id, version_id, occurred_at, title, kind, severity, status,
                             description, root_cause_technical, instance_assigned_at)
     SELECT v_company, v_norte, a_117, i117_nav, iv.version_id, '2023-01-20', 'Casi colisión con camioneta en intersección',
-           'cuasi_incidente', 'grave', 'cerrado', 'El camión ingresó a la intersección con una camioneta liviana a 15 metros.',
+           'peligro', 'incidente_grave', 'cerrado', 'El camión ingresó a la intersección con una camioneta liviana a 15 metros.',
            'Nueva lógica de intersecciones de la versión 4.0', '2023-02-05'
     FROM instance_versions iv WHERE iv.instance_id = i117_nav AND iv.valid_from <= '2023-01-20' AND (iv.valid_to IS NULL OR iv.valid_to > '2023-01-20');
 
   INSERT INTO ai_incidents (company_id, branch_id, asset_id, instance_id, version_id, occurred_at, title, kind, severity, status, description)
     SELECT v_company, v_norte, a_117, i117_dis, iv.version_id, '2023-06-05', 'Camión enviado a pala detenida',
-           'incidente', 'leve', 'cerrado', 'Se perdieron 40 minutos de operación.'
+           'incidente', 'incidente', 'cerrado', 'Se perdieron 40 minutos de operación.'
     FROM instance_versions iv WHERE iv.instance_id = i117_dis AND iv.valid_from <= '2023-06-05' AND (iv.valid_to IS NULL OR iv.valid_to > '2023-06-05');
 
   -- Incidente con modelo por determinar
   INSERT INTO ai_incidents (company_id, branch_id, asset_id, occurred_at, title, kind, severity, status, description)
-    VALUES (v_company, v_norte, a_201, '2024-02-11', 'Detención no programada en rampa', 'incidente', 'moderado', 'en_investigacion',
+    VALUES (v_company, v_norte, a_201, '2024-02-11', 'Detención no programada en rampa', 'incidente', 'incidente', 'abierto',
             'El camión se detuvo sin causa aparente. Se investiga qué sistema la provocó.');
 
   RAISE NOTICE 'Datos de demostración creados.';
