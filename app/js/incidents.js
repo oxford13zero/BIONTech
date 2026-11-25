@@ -5,10 +5,17 @@
 // Se carga antes de app.js; usa sus funciones solo al ejecutarse.
 // ============================================================
 
-const INC_KINDS = ['incidente', 'cuasi_incidente'];
-const INC_SEVERITIES = ['leve', 'moderado', 'grave', 'critico'];
-const INC_STATUSES = ['abierto', 'en_investigacion', 'cerrado'];
-const SEV_CLS = { leve: 'l-low', moderado: 'l-med', grave: 'l-high', critico: 'l-crit' };
+// Valores (diseño: docs/incidentes.md). Deben coincidir con api/incidents.js
+const INC_KINDS = ['incidente', 'peligro'];
+const INC_SEVERITIES = ['incidente', 'incidente_grave', 'desastre'];
+const INC_STATUSES = ['abierto', 'cerrado'];
+const INC_HARMED = ['personas', 'equipo_vehiculo', 'instalacion', 'mismo_activo', 'medio_ambiente', 'datos'];
+const INC_BEHAVIORS = ['actuo_mal', 'no_detecto', 'mal_uso', 'no_claro'];
+const INC_LINKS = ['causo', 'contribuyo', 'no_claro'];
+const INC_HARM_TYPES = ['fisico_salud', 'psicologico', 'economico', 'reputacional', 'ambiental', 'interes_publico', 'derechos_humanos', 'propiedad_intelectual'];
+const SEV_CLS = { incidente: 'l-med', incidente_grave: 'l-high', desastre: 'l-crit' };
+// Texto de ayuda opcional: vacío si no existe o está en blanco
+const th = key => { const v = t(key); return v === key ? '' : v; };
 const sevChip = s => `<span class="chip ${SEV_CLS[s] || 'c-n'}">${t('sev_' + s)}</span>`;
 
 function incidentRoute() {
@@ -24,7 +31,8 @@ function viewIncidents() {
   if (r.view === 'list') return viewIncidentList();
   if (r.view === 'detail') return viewIncidentDetail(r.id);
   if (!can(r.view === 'edit' ? 'incident.write' : 'incident.create')) return `<div class="card empty">${t('err_not_allowed')}</div>`;
-  return viewIncidentForm(r.view === 'edit' ? r.id : null);
+  if (r.view === 'new') return viewIncidentWizard();
+  return viewIncidentForm(r.id);
 }
 
 function incErrorText(msg) {
@@ -289,4 +297,225 @@ async function saveIncident() {
     f.busy = false; f.error = t('save_error') + ' ' + incErrorText(e.message);
     render();
   }
+}
+
+// ── Registrar: asistente de 3 pasos (CSET → OECD → revisar) ──────────
+// S.wiz = { step, v: {...}, assets, insts: {assetId: [...]}, meta, autoLoc, error, busy }
+function initWizard() {
+  if (S.wiz) return;
+  const p = parseHash().params;
+  S.wiz = { step: 1, insts: {}, autoLoc: '', v: {
+    asset_id: p.asset || '', model: p.instance || '', occurred_at: today(), occurred_time: '',
+    harmed_targets: [], harmed_description: '', title: '', description: '', ai_behavior: '', ai_link: '',
+    kind: '', harm_types: [], severity: '', country: '', location: '', links: [] } };
+  const q = divisionParam() ? '?division=' + encodeURIComponent(divisionParam()) : '';
+  apiGet('/api/assets' + q).then(a => { if (!S.wiz) return; S.wiz.assets = a; wizAutoLocation(); render(); })
+    .catch(() => { if (S.wiz) { S.wiz.assets = []; render(); } });
+  apiGet('/api/incidents?meta=1').then(m => { if (!S.wiz) return; S.wiz.meta = m; if (!S.wiz.v.country) S.wiz.v.country = m.country || ''; render(); })
+    .catch(() => { if (S.wiz) S.wiz.meta = {}; });
+  if (S.wiz.v.asset_id) wizLoadInstances(S.wiz.v.asset_id);
+}
+
+async function wizLoadInstances(assetId) {
+  if (!assetId || S.wiz.insts[assetId]) return;
+  S.wiz.insts[assetId] = 'loading';
+  try { const d = await apiGet('/api/assets?id=' + encodeURIComponent(assetId)); if (S.wiz) S.wiz.insts[assetId] = d.instances; }
+  catch (e) { if (S.wiz) S.wiz.insts[assetId] = []; }
+  if (S.wiz) render();
+}
+
+// Lugar sugerido desde el activo (división · área), sin pisar lo que escribió el usuario
+function wizAutoLocation() {
+  const w = S.wiz, a = (w.assets || []).find(x => String(x.id) === String(w.v.asset_id));
+  if (!a) return;
+  const auto = [a.branch_name, a.area].filter(Boolean).join(' · ');
+  if (!w.v.location || w.v.location === w.autoLoc) w.v.location = auto;
+  w.autoLoc = auto;
+}
+
+// Lee lo escrito en el paso actual para no perderlo al volver a dibujar
+function collectWizard() {
+  const w = S.wiz;
+  if (!w || !document.getElementById('wizard')) return;
+  const val = id => document.getElementById(id)?.value;
+  const checked = name => [...document.querySelectorAll(`input[name="${name}"]:checked`)].map(el => el.value);
+  const set = (k, v) => { if (v !== undefined) w.v[k] = typeof v === 'string' ? v : v; };
+  if (w.step === 1) {
+    set('asset_id', val('w_asset')); set('occurred_at', val('w_date')); set('occurred_time', val('w_time'));
+    set('model', val('w_model')); set('harmed_description', val('w_harmed_desc')); set('title', val('w_title'));
+    set('description', val('w_desc'));
+    w.v.harmed_targets = checked('w_harmed');
+    w.v.ai_behavior = checked('w_behavior')[0] || ''; w.v.ai_link = checked('w_link')[0] || '';
+  }
+  if (w.step === 2) {
+    w.v.kind = checked('w_kind')[0] || ''; w.v.harm_types = checked('w_harm'); w.v.severity = checked('w_sev')[0] || '';
+    set('country', val('w_country')); set('location', val('w_location'));
+    w.v.links = w.v.links.map((l, i) => ({ label: val('w_link_label_' + i) ?? l.label, url: val('w_link_url_' + i) ?? l.url }));
+  }
+}
+
+function wizAssetChanged() {
+  collectWizard();
+  S.wiz.v.model = '';
+  wizAutoLocation();
+  wizLoadInstances(S.wiz.v.asset_id);
+  render();
+}
+
+function wizValidate(step) {
+  const v = S.wiz.v, miss = [];
+  if (step === 1) {
+    if (!v.asset_id) miss.push(t('asset'));
+    if (!v.occurred_at) miss.push(t('f_date'));
+    if (!v.model) miss.push(t('model'));
+    if (!v.harmed_targets.length) miss.push(t('harmed_word'));
+    if (!String(v.title).trim()) miss.push(t('f_title'));
+    if (!v.ai_behavior) miss.push(t('q_behavior'));
+    if (!v.ai_link) miss.push(t('q_link'));
+    if (miss.length) return t('required_fields') + ' ' + miss.join(', ');
+    if (v.occurred_at > today()) return t('err_future_date');
+  }
+  if (step === 2) {
+    if (!v.kind) miss.push(t('q_kind'));
+    if (!v.harm_types.length) miss.push(t('q_harm_types'));
+    if (!v.severity) miss.push(t('q_severity'));
+    if (miss.length) return t('required_fields') + ' ' + miss.join(', ');
+    const bad = v.links.filter(l => (l.url || l.label) && !/^https?:\/\/\S+$/i.test(String(l.url).trim()));
+    if (bad.length) return t('err_links');
+  }
+  return '';
+}
+
+function wizNext() {
+  collectWizard();
+  const err = wizValidate(S.wiz.step);
+  S.wiz.error = err;
+  if (!err) S.wiz.step++;
+  render(); window.scrollTo(0, 0);
+}
+function wizGo(step) { collectWizard(); S.wiz.error = ''; S.wiz.step = step; render(); window.scrollTo(0, 0); }
+function wizAddLink() { collectWizard(); S.wiz.v.links.push({ label: '', url: '' }); render(); }
+function wizRemoveLink(i) { collectWizard(); S.wiz.v.links.splice(i, 1); render(); }
+// Al corregir un campo, el aviso de error desaparece
+function wizClearError() { if (S.wiz && S.wiz.error) { S.wiz.error = ''; document.getElementById('wizErr')?.remove(); } }
+function wizCancel() { S.wiz = null; location.hash = '#/incidentes'; }
+
+async function wizSubmit() {
+  const w = S.wiz, v = w.v;
+  for (const s of [1, 2]) { const err = wizValidate(s); if (err) { w.error = err; w.step = s; return render(); } }
+  const body = {
+    asset_id: v.asset_id, instance_id: v.model && v.model !== '__unknown' ? v.model : null,
+    occurred_at: v.occurred_at, occurred_time: v.occurred_time || null,
+    harmed_targets: v.harmed_targets, harmed_description: v.harmed_description.trim() || null,
+    title: v.title.trim(), description: v.description.trim() || null, ai_behavior: v.ai_behavior, ai_link: v.ai_link,
+    kind: v.kind, harm_types: v.harm_types, severity: v.severity,
+    country: v.country.trim() || null, location: v.location.trim() || null,
+    evidence_links: v.links.filter(l => String(l.url).trim()).map(l => ({ label: String(l.label).trim(), url: String(l.url).trim() }))
+  };
+  w.busy = true; w.error = ''; render();
+  try {
+    const out = await apiSend('POST', '/api/incidents', body);
+    S.wiz = null; S.incidents = null; S.incDetail = null;
+    S.incMsgNext = t('registered_msg');
+    location.hash = '#/incidentes/' + out.id;
+    loadNav();
+  } catch (e) {
+    w.busy = false; w.error = t('save_error') + ' ' + incErrorText(e.message);
+    render();
+  }
+}
+
+function viewIncidentWizard() {
+  initWizard();
+  const w = S.wiz, v = w.v;
+  const steps = [t('wiz_s1'), t('wiz_s2'), t('wiz_s3')];
+  const stepper = `<div class="wz-steps">${steps.map((s, i) => `<div class="wz-step ${i + 1 < w.step ? 'done' : i + 1 === w.step ? 'on' : ''}">
+    <b>${t('wiz_step').replace('{n}', i + 1)}${i + 1 < w.step ? ' ✓' : ''}</b>${esc(s)}</div>`).join('')}</div>`;
+  const card = (type, name, value, on, title, help) => `<label class="opt"><input type="${type}" name="${name}" value="${esc(value)}" ${on ? 'checked' : ''}>
+    <span><b>${esc(title)}</b>${help ? `<small>${esc(help)}</small>` : ''}</span></label>`;
+  const opt = (val, label, cur) => `<option value="${esc(val)}" ${String(val) === String(cur ?? '') ? 'selected' : ''}>${esc(label)}</option>`;
+  const asset = (w.assets || []).find(a => String(a.id) === String(v.asset_id));
+  const insts = v.asset_id ? w.insts[v.asset_id] : null;
+  const inst = Array.isArray(insts) ? insts.find(i => String(i.id) === String(v.model)) : null;
+  const modelLabel = i => `${i.model_name} · ${i.vendor || ''}${i.current_version ? ' · ' + i.current_version : ''}${i.status !== 'activa' ? ' — ' + t('st_retired_f') : ''}`;
+  let body = '';
+
+  if (w.step === 1) {
+    body = `
+      <div class="wz-q">${t('q_asset')}</div>
+      <div class="fields form">
+        <div class="field wide">${!w.assets ? `<div class="no-info">${t('loading')}</div>` : `<select class="input" id="w_asset" aria-label="${t('asset')}" onchange="wizAssetChanged()">
+          ${opt('', '', v.asset_id)}${w.assets.map(a => opt(a.id, `${a.code} — ${a.name} · ${a.branch_name}`, v.asset_id)).join('')}</select>`}</div>
+        <div class="field"><label for="w_date">${t('f_date')} *</label><input class="input" type="date" id="w_date" value="${esc(v.occurred_at)}" max="${today()}"></div>
+        <div class="field"><label for="w_time">${t('f_time')}</label><input class="input" type="time" id="w_time" value="${esc(v.occurred_time)}"></div>
+      </div>
+      <div class="wz-q">${t('q_model')}</div>
+      <div class="fields form"><div class="field wide">
+        ${!v.asset_id ? `<div class="no-info">${t('choose_asset_first2')}</div>` : !Array.isArray(insts) ? `<div class="no-info">${t('loading')}</div>`
+          : `<select class="input" id="w_model" aria-label="${t('model')}">${opt('', t('model_choose'), v.model)}
+              ${insts.map(i => opt(i.id, modelLabel(i), v.model)).join('')}${opt('__unknown', t('model_unknown'), v.model)}</select>`}
+        <small class="count-note">${t('version_auto_note')}</small></div></div>
+      <div class="wz-q">${t('q_harmed')}</div><p class="wz-help">${t('q_harmed_help')}</p>
+      <div class="opts c4">${INC_HARMED.map(k => card('checkbox', 'w_harmed', k, v.harmed_targets.includes(k), t('harmed_' + k))).join('')}</div>
+      <div class="fields form"><div class="field wide"><label for="w_harmed_desc">${t('f_harmed_desc')}</label>
+        <input class="input" id="w_harmed_desc" value="${esc(v.harmed_description)}" placeholder="${t('f_harmed_desc_ph')}"></div></div>
+      <div class="wz-q">${t('q_event')}</div>
+      <div class="fields form">
+        <div class="field wide"><label for="w_title">${t('f_title')} *</label><input class="input" id="w_title" value="${esc(v.title)}"></div>
+        <div class="field wide"><label for="w_desc">${t('f_description')}</label><textarea class="input" id="w_desc" rows="3">${esc(v.description)}</textarea></div>
+      </div>
+      <div class="wz-q">${t('q_behavior')}</div>
+      <div class="opts">${INC_BEHAVIORS.map(k => card('radio', 'w_behavior', k, v.ai_behavior === k, t('behavior_' + k), th('behaviorh_' + k))).join('')}</div>
+      <div class="wz-q">${t('q_link')}</div>
+      <div class="opts">${INC_LINKS.map(k => card('radio', 'w_link', k, v.ai_link === k, t('link_' + k), th('linkh_' + k))).join('')}</div>`;
+  }
+
+  if (w.step === 2) {
+    body = `
+      <div class="wz-q">${t('q_kind')}</div>
+      <div class="opts">${INC_KINDS.map(k => card('radio', 'w_kind', k, v.kind === k, t('kind_' + k), th('kindh_' + k))).join('')}</div>
+      <div class="wz-q">${t('q_harm_types')}</div><p class="wz-help">${t('q_harm_types_help')}</p>
+      <div class="opts c4">${INC_HARM_TYPES.map(k => card('checkbox', 'w_harm', k, v.harm_types.includes(k), t('harm_' + k), th('harmh_' + k))).join('')}</div>
+      <div class="wz-q">${t('q_severity')} <small class="count-note">(OECD)</small></div>
+      <div class="opts">${INC_SEVERITIES.map(k => card('radio', 'w_sev', k, v.severity === k, t('sev_' + k), th('sevh_' + k))).join('')}</div>
+      <div class="wz-q">${t('q_where_evidence')}</div>
+      <div class="fields form">
+        <div class="field"><label for="w_country">${t('f_inc_country')} <span class="src">${t('src_company')}</span></label><input class="input" id="w_country" value="${esc(v.country)}"></div>
+        <div class="field"><label for="w_location">${t('f_inc_location')} <span class="src">${t('src_asset')}</span></label><input class="input" id="w_location" value="${esc(v.location)}"></div>
+      </div>
+      <div class="wz-q small">${t('evidence')}</div><p class="wz-help">${t('evidence_help')}</p>
+      ${v.links.map((l, i) => `<div class="link-row">
+        <input class="input" id="w_link_label_${i}" value="${esc(l.label)}" placeholder="${t('link_label')}" aria-label="${t('link_label')}">
+        <input class="input" id="w_link_url_${i}" value="${esc(l.url)}" placeholder="${t('link_url')}" aria-label="${t('link_url')}">
+        <button class="btn btn-ghost btn-sm" onclick="wizRemoveLink(${i})" aria-label="${t('remove')}">✕</button></div>`).join('')}
+      <button class="btn btn-sm" onclick="wizAddLink()">${t('add_link')}</button>`;
+  }
+
+  if (w.step === 3) {
+    const row = (label, html, step) => `<div class="sum"><dt>${label}</dt><dd>${html}</dd>
+      <button class="btn btn-ghost btn-sm" onclick="wizGo(${step})">${t('edit')}</button></div>`;
+    const links = v.links.filter(l => String(l.url).trim());
+    body = `<dl class="sum-list">
+      ${row(t('sum_ai'), `${esc(asset ? asset.code + ' — ' + asset.name : '')} · ${inst ? esc(inst.model_name) : `<span class="chip c-a">${t('model_undetermined')}</span>`}
+        <small class="count-note">${esc(v.occurred_at)}${v.occurred_time ? ', ' + esc(v.occurred_time) : ''} · ${t('version_auto_note')}</small>`, 1)}
+      ${row(t('sum_event'), `<b>${esc(v.title)}</b>${v.description ? `<small class="count-note">${esc(v.description)}</small>` : ''}
+        <div>${t('harmed_word')}: ${v.harmed_targets.map(k => esc(t('harmed_' + k))).join(', ')}${v.harmed_description ? ' (' + esc(v.harmed_description) + ')' : ''}</div>
+        <div>${esc(t('behavior_' + v.ai_behavior))} · ${esc(t('link_' + v.ai_link))}</div>`, 1)}
+      ${row(t('sum_harm'), `<div>${t('f_kind')}: <b>${esc(t('kind_' + v.kind))}</b> · ${t('f_severity')}: ${sevChip(v.severity)}</div>
+        <div>${v.harm_types.map(k => esc(t('harm_' + k))).join(', ')}</div>
+        <small class="count-note">${esc([v.country, v.location].filter(Boolean).join(' · '))}${links.length
+          ? ' · ' + (links.length === 1 ? t('evidence_1') : t('evidence_n').replace('{n}', links.length)) : ''}</small>`, 2)}
+      </dl>
+      <div class="alert info">${t('wiz_submit_note')}</div>`;
+  }
+
+  return `<button class="back" onclick="wizCancel()">← ${t('back_to_incidents')}</button>
+    <h1>${t('new_incident')}</h1><div class="crumb">${t('wiz_sub')}</div>
+    ${stepper}
+    <div class="card" id="wizard" oninput="wizClearError()" onchange="wizClearError()">${body}</div>
+    ${w.error ? `<div class="form-error" id="wizErr" role="alert">${esc(w.error)}</div>` : ''}
+    <div class="wz-foot"><button class="btn btn-ghost btn-sm" onclick="wizCancel()" ${w.busy ? 'disabled' : ''}>${t('cancel')}</button>
+      <div class="right">${w.step > 1 ? `<button class="btn btn-sm" onclick="wizGo(${w.step - 1})" ${w.busy ? 'disabled' : ''}>${t('wiz_prev')}</button>` : ''}
+        ${w.step < 3 ? `<button class="btn btn-primary btn-sm" onclick="wizNext()">${t('wiz_next')}</button>`
+          : `<button class="btn btn-primary btn-sm" onclick="wizSubmit()" ${w.busy ? 'disabled' : ''}>${w.busy ? t('saving') : t('register_incident')}</button>`}</div></div>`;
 }

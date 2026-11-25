@@ -915,6 +915,7 @@ window.addEventListener('hashchange', () => {
   S.inst = null; S.assetDetail = null; S.modelDetail = null; S.assets = null; S.models = null;
   S.incDetail = null; S.incidents = null; S.cmp = null; S.pending = null; S.dash = null; S.repPreview = null; S.divStats = null;
   if (!/^incidentes\/(nuevo|[\w-]+\/editar)$/.test(parseHash().path)) S.incForm = null;
+  if (parseHash().path !== 'incidentes/nuevo') S.wiz = null;
   S.incMsg = S.incMsgNext || ''; S.incMsgNext = null;
   if (parseHash().path !== 'modelos/nuevo') S.modelNew = null;
   render(); window.scrollTo(0, 0);
