@@ -257,7 +257,7 @@ function grDocHtml(r) {
   const d = S.grDoc;
   if (!d || d.loading) return back + `<div class="card empty">${t('gr_generating')}</div>`;
   if (d.error) return back + `<div class="card empty">${t('data_error')}</div>`;
-  const body = { 4: grDocIncidents }[r.id];
+  const body = { 3: grDocInventory, 4: grDocIncidents, 5: grDocActions, 6: grDocChanges, 7: grDocGaps }[r.id];
   return back + `
     <div class="gr-actions gr-noprint"><span class="gr-help">${t('gr_pdf_help')}</span>
       <button class="btn btn-sm" onclick="grPrint()">${t('gr_pdf')}</button></div>
@@ -291,6 +291,11 @@ function grTable(cols, rows, numeric = []) {
 }
 
 const grSev = s => `<span class="gr-tag gr-${esc(s)}">${t('sev_' + s)}</span>`;
+const grKpi = (n, k) => `<div><b>${n}</b>${t(k)}</div>`;
+const grSec = (n, k, html) => `<h3>${n}. ${t(k)}</h3>${html}`;
+const grNote = html => `<p class="gr-note-doc">${html}</p>`;
+const grNw = v => `<span class="gr-nw">${v}</span>`;
+const grTrunc = (flag, n) => flag ? grNote(t('gr_truncated_rows').replace('{n}', n)) : '';
 
 // Informe 4: Incidentes del período
 function grDocIncidents(x) {
@@ -314,4 +319,101 @@ function grDocIncidents(x) {
         x.detail.map(r => [`<span class="gr-nw">${grDate(r.occurred_at)}</span>`, esc(r.title) + (r.kind === 'peligro' ? ` <small>(${t('kind_peligro')})</small>` : ''),
           `<span class="gr-nw">${esc(r.asset_code)}</span>`, model(r.model), esc(r.division), grSev(r.severity), t('ist_' + r.status)])))
     + (x.detail_truncated ? `<p class="gr-note-doc">${t('gr_truncated').replace('{n}', x.detail.length)}</p>` : '');
+}
+
+// Informe 3: Inventario de IA
+function grDocInventory(x) {
+  const s = x.summary;
+  const risk = l => l === 'none' ? t('gr_risk_none') : t('risk_' + l);
+  const info = r => {
+    const parts = [];
+    if (r.gaps) parts.push(t('gr_n_to_complete').replace('{n}', r.gaps));
+    if (r.model_gap) parts.push(t('gr_vendor_gap'));
+    return parts.length ? parts.join(' · ') : `<span class="gr-ok">${t('gr_info_ok')}</span>`;
+  };
+  return grSec(1, 'gr_s_summary', `<div class="gr-kpi">
+      ${grKpi(s.assets, 'gr_k_assets')}${grKpi(s.models, 'gr_k_models')}${grKpi(s.installations, 'gr_k_installations')}
+      ${grKpi(s.high_risk, 'gr_k_high_risk')}${grKpi(s.risk_to_review, 'gr_k_risk_to_review')}${grKpi(s.reviews_overdue, 'gr_k_reviews_overdue')}</div>
+      ${s.assets_unknown ? grNote(t('gr_assets_unknown_note').replace('{n}', s.assets_unknown)) : ''}
+      ${s.without_asset ? grNote(t('gr_without_asset_note').replace('{n}', s.without_asset)) : ''}`)
+    + grSec(2, 'gr_s_risk', grTable(['gr_c_risk', 'gr_c_installations'], x.by_risk.map(r => [risk(r.risk_level), r.installations]), [1]))
+    + grSec(3, 'gr_s_division', grTable(['gr_c_division', 'gr_c_assets', 'gr_c_installations', 'gr_c_high_risk', 'gr_c_risk_to_review'],
+        x.by_division.map(r => [esc(r.division), r.assets, r.installations, r.high_risk, r.risk_to_review]), [1, 2, 3, 4]))
+    + grSec(4, 'gr_s_installations', x.installations.length ? grTable(['gr_c_asset', 'gr_c_model', 'gr_c_version', 'gr_c_risk', 'gr_c_next_review', 'gr_c_division', 'gr_c_info'],
+        x.installations.map(r => [grNw(r.asset_code ? esc(r.asset_code) : `<i>${t('asset_unassigned')}</i>`),
+          `${esc(r.model)} <small>${esc(r.vendor)}</small>`, grNw(verLabel(r.version)),
+          `${r.risk_level ? t('risk_' + r.risk_level) : t('gr_risk_none')}${r.reclassification_pending ? ` <small>(${t('gr_to_review')})</small>` : ''}`,
+          r.next_review_date ? grNw(grDate(r.next_review_date)) : '—', esc(r.division), info(r)]))
+        + grTrunc(x.installations_truncated, x.installations.length)
+      : `<p class="gr-empty">${t('gr_empty_installations')}</p>`)
+    + (x.assets_unknown.length ? grSec(5, 'gr_s_assets_unknown', grTable(['gr_c_asset', 'gr_c_name', 'gr_c_ai_usage', 'gr_c_division'],
+        x.assets_unknown.map(a => [grNw(esc(a.code)), esc(a.name), t('usage_' + a.ai_usage), esc(a.division)])) + grTrunc(x.assets_unknown_truncated, x.assets_unknown.length)) : '');
+}
+
+// Informe 5: Acciones correctivas
+function grDocActions(x) {
+  const s = x.summary;
+  if (!s.actions) return grSec(1, 'gr_s_summary', `<p class="gr-empty">${t('gr_empty_actions')}</p>`);
+  const state = r => r.status === 'pendiente'
+    ? (r.overdue ? `<span class="gr-tag gr-incidente_grave">${t('gr_overdue_days').replace('{n}', r.days_late)}</span>` : t('gr_act_pendiente'))
+    : t('gr_act_terminada') + (r.days_late ? ` <small>(${t('gr_late_days').replace('{n}', r.days_late)})</small>` : '');
+  return grSec(1, 'gr_s_summary', `<div class="gr-kpi">
+      ${grKpi(s.actions, 'gr_k_actions')}${grKpi(s.pending, 'gr_k_pending')}${grKpi(s.overdue, 'gr_k_actions_overdue')}
+      ${grKpi(s.done, 'gr_k_done')}${grKpi(s.on_time_pct === null ? '—' : s.on_time_pct + '%', 'gr_k_on_time')}${grKpi(s.done_late, 'gr_k_done_late')}</div>`)
+    + grSec(2, 'gr_s_owner', grTable(['gr_c_owner', 'gr_c_actions', 'gr_c_pending', 'gr_c_overdue'],
+        x.by_owner.map(r => [esc(r.owner), r.actions, r.pending, r.overdue]), [1, 2, 3]))
+    + grSec(3, 'gr_s_division', grTable(['gr_c_division', 'gr_c_actions', 'gr_c_pending', 'gr_c_overdue', 'gr_c_done'],
+        x.by_division.map(r => [esc(r.division), r.actions, r.pending, r.overdue, r.done]), [1, 2, 3, 4]))
+    + grSec(4, 'gr_s_actions', grTable(['gr_c_action', 'gr_c_owner', 'gr_c_due', 'gr_c_status', 'gr_c_incident', 'gr_c_division'],
+        x.detail.map(r => [esc(r.action), esc(r.owner), grNw(grDate(r.due_date)), state(r),
+          `${esc(r.incident)} <small>${esc(r.asset_code)} · ${t('sev_' + r.severity)}</small>`, esc(r.division)]))
+      + grTrunc(x.detail_truncated, x.detail.length));
+}
+
+// Informe 6: Gestión del cambio
+function grDocChanges(x) {
+  const s = x.summary;
+  if (!s.changes) return grSec(1, 'gr_s_summary', `<p class="gr-empty">${t('gr_empty_changes')}</p>`);
+  const review = r => r.reviewed
+    ? `${grNw(grDate(r.reviewed_at))} <small>${esc(r.reviewed_by_email || '')}</small>`
+    : `<span class="gr-tag gr-incidente_grave">${t('gr_not_reviewed')}</span>`;
+  const watch = r => !r.reviewed ? '—'
+    : r.reopened ? `<span class="gr-tag gr-incidente_grave">${t('rv_reopened')}</span>`
+    : `${t('n_days').replace('{n}', r.monitoring_days)} · ${r.in_monitoring ? t('gr_watch_on') : t('gr_watch_done')}`;
+  // Decisión de la revisión: riesgo y si el cambio es sustancial
+  const decision = r => r.reviewed ? `${t('risk_' + r.review_risk)} <small>${t('rv_q2_short')}: ${t('yn_' + r.substantial)}</small>` : '—';
+  const inc = r => r.reviewed
+    ? `${r.before_n} → ${r.after_n}${r.after_serious ? ` <small>(${t('gr_n_serious').replace('{n}', r.after_serious)})</small>` : ''}`
+    : `${r.before_n} → —`;
+  return grSec(1, 'gr_s_summary', `<div class="gr-kpi">
+      ${grKpi(s.changes, 'gr_k_changes')}${grKpi(s.reviewed, 'gr_k_reviewed')}${grKpi(s.pending_review, 'gr_k_pending_review')}
+      ${grKpi(s.substantial, 'gr_k_substantial')}${grKpi(s.in_monitoring, 'gr_k_in_monitoring')}${grKpi(s.reopened, 'gr_k_reopened')}</div>
+      ${s.changes_unknown ? grNote(t('gr_changes_unknown_note').replace('{n}', s.changes_unknown)) : ''}`)
+    + grSec(2, 'gr_s_model', grTable(['gr_c_model', 'gr_c_changes', 'gr_c_reviewed', 'gr_c_pending_review'],
+        x.by_model.map(r => [esc(r.model), r.changes, r.reviewed, r.pending_review]), [1, 2, 3]))
+    + grSec(3, 'gr_s_changes', grTable(['gr_c_date', 'gr_c_asset', 'gr_c_model', 'gr_c_change', 'gr_c_review', 'gr_c_decision', 'gr_c_watch', 'gr_c_before_after'],
+        x.detail.map(r => [grNw(grDate(r.changed_at)), grNw(r.asset_code ? esc(r.asset_code) : esc(r.code)), esc(r.model),
+          `${grNw(`${verLabel(r.from_version)} → ${verLabel(r.to_version)}`)}${r.changes_unknown ? ` <small>(${t('gr_changes_unknown')})</small>` : ''}`,
+          review(r), decision(r), watch(r), grNw(inc(r))]))
+      + grNote(t('gr_before_after_help')) + grTrunc(x.detail_truncated, x.detail.length));
+}
+
+// Informe 7: Brechas de información
+function grDocGaps(x) {
+  const s = x.summary;
+  const labels = (cols, fn) => cols.length ? cols.map(c => esc(fn(c))).join(', ') : '—';
+  const quest = m => m.vendor_questionnaire_received ? t('questionnaire_answered')
+    : m.vendor_questionnaire_sent_at ? t('questionnaire_waiting').replace('{d}', grDate(m.vendor_questionnaire_sent_at)) : t('questionnaire_not_sent');
+  if (!x.models.length && !x.installations.length) return grSec(1, 'gr_s_summary', `<p class="gr-empty">${t('gr_empty_gaps')}</p>`);
+  return grSec(1, 'gr_s_summary', `<div class="gr-kpi">
+      ${grKpi(s.models_with_gaps, 'gr_k_models_with_gaps')}${grKpi(s.black_box, 'gr_k_black_box')}${grKpi(s.vendor_fields_not_provided, 'gr_k_vendor_not_provided')}
+      ${grKpi(s.questionnaire_not_sent, 'gr_k_questionnaire_not_sent')}${grKpi(s.installations_with_gaps, 'gr_k_installations_with_gaps')}${grKpi(s.internal_fields_pending, 'gr_k_internal_pending')}</div>`)
+    + grSec(2, 'gr_s_vendor', x.models.length ? grTable(['gr_c_model', 'gr_c_vendor', 'gr_c_black_box', 'gr_c_questionnaire', 'gr_c_not_provided', 'gr_c_to_complete', 'gr_c_installations'],
+        x.models.map(m => [`${esc(m.name)} <small>${esc(m.code)}</small>`, esc(m.vendor), t(m.black_box ? 'yn_si' : 'yn_no'), quest(m),
+          labels(m.not_provided, fieldLabel), labels(m.pending, fieldLabel), m.installations]), [6])
+      : `<p class="gr-empty">${t('gr_empty_vendor_gaps')}</p>`)
+    + grSec(3, 'gr_s_internal', x.installations.length ? grTable(['gr_c_installation', 'gr_c_asset', 'gr_c_model', 'gr_c_division', 'gr_c_to_complete', 'gr_c_not_provided'],
+        x.installations.map(r => [grNw(esc(r.code)), grNw(r.asset_code ? esc(r.asset_code) : '—'), esc(r.model), esc(r.division), r.pending, r.not_provided]), [4, 5])
+        + grNote(t('gr_internal_help')) + grTrunc(x.installations_truncated, x.installations.length)
+      : `<p class="gr-empty">${t('gr_empty_internal_gaps')}</p>`);
 }

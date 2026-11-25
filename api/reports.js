@@ -26,11 +26,11 @@ function bad(status, message) { return { status, message }; }
 const REPORTS = {
   1: { level: 'company',  frameworks: ['ISO 42001 9.3', 'NIST Govern'], filters: ['period'] },
   2: { level: 'company',  frameworks: ['ISO 42001 6.1', 'NIST Map/Measure'], filters: [] },
-  3: { level: 'division', frameworks: ['ISO 42001 A.4', 'EU AI Act art. 49', 'NIST Map'], filters: [] },
+  3: { level: 'division', frameworks: ['ISO 42001 A.4', 'EU AI Act art. 49', 'NIST Map'], filters: [], ready: true },
   4: { level: 'division', frameworks: ['ISO 42001 10.2', 'ISO 45001', 'OECD'], filters: ['period', 'status', 'severity'], ready: true },
-  5: { level: 'division', frameworks: ['ISO 42001 10.2', 'ISO 45001 10.2'], filters: ['period', 'status'] },
-  6: { level: 'division', frameworks: ['ISO 42001 8.1', 'ISO 45001 MOC', 'NIST Manage'], filters: ['period'] },
-  7: { level: 'division', frameworks: ['ISO 42001 A.6/A.10', 'EU AI Act art. 11/13'], filters: [] },
+  5: { level: 'division', frameworks: ['ISO 42001 10.2', 'ISO 45001 10.2'], filters: ['period'], ready: true },
+  6: { level: 'division', frameworks: ['ISO 42001 8.1', 'ISO 45001 MOC', 'NIST Manage'], filters: ['period'], ready: true },
+  7: { level: 'division', frameworks: ['ISO 42001 A.6/A.10', 'EU AI Act art. 11/13'], filters: [], ready: true },
   8: { level: 'system',   frameworks: ['EU AI Act art. 73', 'CSET', 'OECD'], filters: [] }
 };
 
@@ -219,9 +219,236 @@ async function incidentsReport(db, user, P) {
   };
 }
 
-// Generadores por informe (los demás se agregan en las etapas siguientes)
+// Filtro de cobertura para una tabla con branch_id (alias): agrega el parámetro y devuelve la condición
+function cov(alias, P, p) {
+  if (!P.coverage) return '';
+  p.push(P.coverage.map(b => String(b.id)));
+  return ` AND ${alias}.branch_id::text = ANY($${p.length}::text[])`;
+}
+const LIMIT_ROWS = `LIMIT ${DETAIL_LIMIT + 1}`;
+const cut = rows => ({ rows: rows.slice(0, DETAIL_LIMIT), truncated: rows.length > DETAIL_LIMIT });
+
+// ── Informe 3: Inventario de IA (fotografía a la fecha) ───────
+// Datos por completar de una instalación: sus campos y sus secciones marcados como pendiente / no entregado
+const INST_SECTION_TABLES = Object.values(I.INSTANCE_SECTIONS).map(s => s.table);
+const instGaps = (state) => `(
+  (SELECT count(*) FROM jsonb_each_text(i.field_status) e WHERE e.value = '${state}')
+  ${INST_SECTION_TABLES.map(t => `+ COALESCE((SELECT count(*) FROM ${t} s, jsonb_each_text(s.field_status) e WHERE s.instance_id = i.id AND e.value = '${state}'), 0)`).join('\n  ')})::int`;
+const modelGap = `(m.black_box OR EXISTS (SELECT 1 FROM jsonb_each_text(m.field_status) e WHERE e.value IN ('no_entregado','pendiente')))`;
+
+async function inventoryCounts(db, user, P) {
+  const p = [user.companyId];
+  const ca = cov('a', P, p), ci = P.coverage ? ` AND i.branch_id::text = ANY($2::text[])` : '';
+  const r = await db.query(`SELECT
+    (SELECT count(*)::int FROM assets a WHERE a.company_id = $1 AND a.status = 'activo'${ca}) AS assets,
+    (SELECT count(*)::int FROM assets a WHERE a.company_id = $1 AND a.status = 'activo' AND a.ai_usage <> 'usa_ia'${ca}) AS assets_unknown,
+    (SELECT count(DISTINCT i.model_id)::int FROM ai_instances i WHERE i.company_id = $1 AND i.status = 'activa'${ci}) AS models,
+    (SELECT count(*)::int FROM ai_instances i WHERE i.company_id = $1 AND i.status = 'activa'${ci}) AS installations,
+    (SELECT count(*)::int FROM ai_instances i WHERE i.company_id = $1 AND i.status = 'activa' AND i.risk_level IN ('Critical','High')${ci}) AS high_risk,
+    (SELECT count(*)::int FROM ai_instances i WHERE i.company_id = $1 AND i.status = 'activa' AND i.reclassification_pending${ci}) AS risk_to_review,
+    (SELECT count(*)::int FROM ai_instances i WHERE i.company_id = $1 AND i.status = 'activa' AND i.next_review_date < CURRENT_DATE${ci}) AS reviews_overdue,
+    (SELECT count(*)::int FROM ai_instances i WHERE i.company_id = $1 AND i.status = 'activa' AND i.asset_id IS NULL${ci}) AS without_asset`, p);
+  return r.rows[0];
+}
+
+async function inventoryPreview(db, user, P) {
+  const c = await inventoryCounts(db, user, P);
+  return { assets: c.assets, models: c.models, installations: c.installations, high_risk: c.high_risk };
+}
+
+async function inventoryReport(db, user, P) {
+  const p = [user.companyId];
+  const ci = cov('i', P, p);
+  const [summary, byRisk, byDivision, inst, assets] = await Promise.all([
+    inventoryCounts(db, user, P),
+    db.query(`SELECT COALESCE(i.risk_level, 'none') AS risk_level, count(*)::int AS installations
+      FROM ai_instances i WHERE i.company_id = $1 AND i.status = 'activa'${ci} GROUP BY 1`, p),
+    db.query(`SELECT b.name AS division,
+        (SELECT count(*)::int FROM assets a WHERE a.branch_id = b.id AND a.status = 'activo') AS assets,
+        count(i.id)::int AS installations,
+        count(i.id) FILTER (WHERE i.risk_level IN ('Critical','High'))::int AS high_risk,
+        count(i.id) FILTER (WHERE i.reclassification_pending)::int AS risk_to_review
+      FROM branches b LEFT JOIN ai_instances i ON i.branch_id = b.id AND i.status = 'activa'
+      WHERE b.company_id = $1 AND b.status = 'active'${P.coverage ? ' AND b.id::text = ANY($2::text[])' : ''}
+      GROUP BY b.id, b.name ORDER BY b.name`, p),
+    db.query(`SELECT i.id, i.code, a.code AS asset_code, a.name AS asset_name, m.name AS model, m.vendor, v.version,
+        i.risk_level, i.reclassification_pending, i.next_review_date, b.name AS division,
+        ${instGaps('pendiente')} + ${instGaps('no_entregado')} AS gaps, ${modelGap} AS model_gap
+      FROM ai_instances i JOIN ai_models m ON m.id = i.model_id JOIN branches b ON b.id = i.branch_id
+      LEFT JOIN assets a ON a.id = i.asset_id LEFT JOIN model_versions v ON v.id = i.current_version_id
+      WHERE i.company_id = $1 AND i.status = 'activa'${ci}
+      ORDER BY b.name, a.code NULLS LAST, m.name ${LIMIT_ROWS}`, p),
+    db.query(`SELECT a.code, a.name, a.ai_usage, b.name AS division
+      FROM assets a JOIN branches b ON b.id = a.branch_id
+      WHERE a.company_id = $1 AND a.status = 'activo' AND a.ai_usage <> 'usa_ia'${P.coverage ? ' AND a.branch_id::text = ANY($2::text[])' : ''}
+      ORDER BY b.name, a.code ${LIMIT_ROWS}`, p)
+  ]);
+  const risk = Object.fromEntries(byRisk.rows.map(r => [r.risk_level, r.installations]));
+  const I2 = cut(inst.rows), A2 = cut(assets.rows);
+  return {
+    summary,
+    by_risk: ['Critical', 'High', 'Medium', 'Low', 'none'].map(l => ({ risk_level: l, installations: risk[l] || 0 })),
+    by_division: byDivision.rows,
+    installations: I2.rows, installations_truncated: I2.truncated,
+    assets_unknown: A2.rows, assets_unknown_truncated: A2.truncated
+  };
+}
+
+// ── Informe 5: Acciones correctivas (creadas en el período) ───
+function actionsWhere(user, P) {
+  const p = [user.companyId, P.filters.from, P.filters.to];
+  const w = `x.company_id = $1 AND ac.created_at::date BETWEEN $2 AND $3${cov('x', P, p)}`;
+  return { w, p };
+}
+const ACT_FROM = `FROM incident_actions ac JOIN ai_incidents x ON x.id = ac.incident_id JOIN branches b ON b.id = x.branch_id`;
+const ACT_COUNTS = `count(*)::int AS actions,
+  count(*) FILTER (WHERE ac.status = 'pendiente')::int AS pending,
+  count(*) FILTER (WHERE ac.status = 'pendiente' AND ac.due_date < CURRENT_DATE)::int AS overdue,
+  count(*) FILTER (WHERE ac.status = 'terminada')::int AS done`;
+
+async function actionsPreview(db, user, P) {
+  const { w, p } = actionsWhere(user, P);
+  return (await db.query(`SELECT ${ACT_COUNTS} ${ACT_FROM} WHERE ${w}`, p)).rows[0];
+}
+
+async function actionsReport(db, user, P) {
+  const { w, p } = actionsWhere(user, P);
+  const [summary, byOwner, byDivision, detail] = await Promise.all([
+    db.query(`SELECT ${ACT_COUNTS},
+        count(*) FILTER (WHERE ac.status = 'terminada' AND ac.done_at <= ac.due_date)::int AS done_on_time,
+        count(*) FILTER (WHERE ac.status = 'terminada' AND ac.done_at > ac.due_date)::int AS done_late
+      ${ACT_FROM} WHERE ${w}`, p),
+    db.query(`SELECT ac.owner, ${ACT_COUNTS} ${ACT_FROM} WHERE ${w} GROUP BY ac.owner ORDER BY count(*) FILTER (WHERE ac.status = 'pendiente' AND ac.due_date < CURRENT_DATE) DESC, count(*) DESC, ac.owner`, p),
+    db.query(`SELECT b.name AS division, ${ACT_COUNTS} ${ACT_FROM} WHERE ${w} GROUP BY b.name ORDER BY b.name`, p),
+    db.query(`SELECT ac.action, ac.owner, ac.due_date, ac.status, ac.done_at,
+        (ac.status = 'pendiente' AND ac.due_date < CURRENT_DATE) AS overdue,
+        CASE WHEN ac.status = 'pendiente' AND ac.due_date < CURRENT_DATE THEN CURRENT_DATE - ac.due_date
+             WHEN ac.status = 'terminada' AND ac.done_at > ac.due_date THEN ac.done_at - ac.due_date ELSE 0 END::int AS days_late,
+        x.id AS incident_id, x.title AS incident, x.severity, x.status AS incident_status, a.code AS asset_code, b.name AS division
+      ${ACT_FROM} JOIN assets a ON a.id = x.asset_id WHERE ${w}
+      ORDER BY (ac.status = 'pendiente' AND ac.due_date < CURRENT_DATE) DESC, ac.status = 'terminada', ac.due_date ${LIMIT_ROWS}`, p)
+  ]);
+  const s = summary.rows[0];
+  s.on_time_pct = s.done ? Math.round(100 * s.done_on_time / s.done) : null;
+  const D = cut(detail.rows);
+  return { summary: s, by_owner: byOwner.rows, by_division: byDivision.rows, detail: D.rows, detail_truncated: D.truncated };
+}
+
+// ── Informe 6: Gestión del cambio (cambios de versión en el período) ──
+// Un cambio = una versión aplicada después de la primera de la instalación
+function changesCte(user, P) {
+  const p = [user.companyId, P.filters.from, P.filters.to];
+  const ci = cov('i', P, p);
+  const sql = `WITH h AS (
+      SELECT iv.instance_id, iv.version_id, iv.valid_from,
+        lag(iv.version_id) OVER (PARTITION BY iv.instance_id ORDER BY iv.valid_from, iv.created_at) AS prev_version_id
+      FROM instance_versions iv JOIN ai_instances i ON i.id = iv.instance_id
+      WHERE i.company_id = $1${ci}),
+    c AS (
+      SELECT h.*, r.id AS review_id, r.reviewed_at, r.reviewed_by_email, r.substantial, r.risk_level AS review_risk,
+        r.monitoring_days, r.monitoring_until, r.reopened_at
+      FROM h LEFT JOIN LATERAL (
+        SELECT * FROM instance_version_reviews r WHERE r.instance_id = h.instance_id AND r.version_id = h.version_id
+        ORDER BY r.reviewed_at DESC LIMIT 1) r ON true
+      WHERE h.prev_version_id IS NOT NULL AND h.valid_from BETWEEN $2 AND $3)`;
+  return { sql, p };
+}
+const CHG_COUNTS = `count(*)::int AS changes,
+  count(*) FILTER (WHERE c.review_id IS NOT NULL)::int AS reviewed,
+  count(*) FILTER (WHERE c.review_id IS NULL)::int AS pending_review,
+  count(*) FILTER (WHERE c.review_id IS NOT NULL AND c.monitoring_until >= CURRENT_DATE AND c.reopened_at IS NULL)::int AS in_monitoring`;
+
+async function changesPreview(db, user, P) {
+  const { sql, p } = changesCte(user, P);
+  return (await db.query(`${sql} SELECT ${CHG_COUNTS} FROM c`, p)).rows[0];
+}
+
+async function changesReport(db, user, P) {
+  const { sql, p } = changesCte(user, P);
+  const pd = [...p, SERIOUS], sv = '$' + pd.length;   // gravedades graves, solo para el detalle
+  const [summary, byModel, detail] = await Promise.all([
+    db.query(`${sql} SELECT ${CHG_COUNTS},
+        count(*) FILTER (WHERE c.substantial = 'si')::int AS substantial,
+        count(*) FILTER (WHERE c.reopened_at IS NOT NULL)::int AS reopened,
+        count(*) FILTER (WHERE v.changes_unknown)::int AS changes_unknown
+      FROM c JOIN model_versions v ON v.id = c.version_id`, p),
+    db.query(`${sql} SELECT m.name AS model, ${CHG_COUNTS}
+      FROM c JOIN ai_instances i ON i.id = c.instance_id JOIN ai_models m ON m.id = i.model_id
+      GROUP BY m.name ORDER BY count(*) DESC, m.name`, p),
+    db.query(`${sql} SELECT c.valid_from AS changed_at, i.id AS instance_id, i.code, a.code AS asset_code, m.name AS model, b.name AS division,
+        pv.version AS from_version, v.version AS to_version, v.changes_unknown,
+        c.review_id IS NOT NULL AS reviewed, c.reviewed_at::date AS reviewed_at, c.reviewed_by_email, c.substantial, c.review_risk,
+        c.monitoring_days, c.monitoring_until, c.reopened_at IS NOT NULL AS reopened,
+        (c.review_id IS NOT NULL AND c.monitoring_until >= CURRENT_DATE AND c.reopened_at IS NULL) AS in_monitoring,
+        -- Incidentes antes (mismos días que la vigilancia, antes del cambio) y durante la vigilancia
+        (SELECT count(*)::int FROM ai_incidents x WHERE x.instance_id = c.instance_id
+           AND x.occurred_at >= c.valid_from - COALESCE(c.monitoring_days, 30) AND x.occurred_at < c.valid_from) AS before_n,
+        (SELECT count(*)::int FROM ai_incidents x WHERE x.instance_id = c.instance_id AND c.review_id IS NOT NULL
+           AND x.occurred_at >= c.reviewed_at::date AND x.occurred_at <= LEAST(CURRENT_DATE, c.monitoring_until)) AS after_n,
+        (SELECT count(*)::int FROM ai_incidents x WHERE x.instance_id = c.instance_id AND c.review_id IS NOT NULL AND x.severity = ANY(${sv})
+           AND x.occurred_at >= c.reviewed_at::date AND x.occurred_at <= LEAST(CURRENT_DATE, c.monitoring_until)) AS after_serious
+      FROM c JOIN ai_instances i ON i.id = c.instance_id JOIN ai_models m ON m.id = i.model_id JOIN branches b ON b.id = i.branch_id
+      LEFT JOIN assets a ON a.id = i.asset_id JOIN model_versions v ON v.id = c.version_id
+      LEFT JOIN model_versions pv ON pv.id = c.prev_version_id
+      ORDER BY c.valid_from DESC, a.code NULLS LAST ${LIMIT_ROWS}`, pd)
+  ]);
+  const D = cut(detail.rows);
+  return { summary: summary.rows[0], by_model: byModel.rows, detail: D.rows, detail_truncated: D.truncated };
+}
+
+// ── Informe 7: Brechas de información (fotografía a la fecha) ─
+// Modelos usados en la cobertura (con instalaciones activas) y las instalaciones con datos marcados
+async function gapsData(db, user, P) {
+  const p = [user.companyId];
+  const ci = cov('i', P, p);
+  const models = await db.query(`
+    SELECT m.id, m.code, m.name, m.vendor, m.black_box, m.vendor_questionnaire_sent_at, m.vendor_questionnaire_received,
+      COALESCE((SELECT array_agg(e.key ORDER BY e.key) FROM jsonb_each_text(m.field_status) e WHERE e.value = 'no_entregado'), '{}') AS not_provided,
+      COALESCE((SELECT array_agg(e.key ORDER BY e.key) FROM jsonb_each_text(m.field_status) e WHERE e.value = 'pendiente'), '{}') AS pending,
+      count(i.id)::int AS installations
+    FROM ai_models m JOIN ai_instances i ON i.model_id = m.id AND i.status = 'activa'${ci}
+    WHERE m.company_id = $1 AND ${modelGap}
+    GROUP BY m.id ORDER BY m.black_box DESC, m.name`, p);
+  const inst = await db.query(`
+    SELECT * FROM (
+      SELECT i.id, i.code, a.code AS asset_code, m.name AS model, b.name AS division,
+        ${instGaps('pendiente')} AS pending, ${instGaps('no_entregado')} AS not_provided
+      FROM ai_instances i JOIN ai_models m ON m.id = i.model_id JOIN branches b ON b.id = i.branch_id LEFT JOIN assets a ON a.id = i.asset_id
+      WHERE i.company_id = $1 AND i.status = 'activa'${ci}) t
+    WHERE t.pending + t.not_provided > 0
+    ORDER BY t.pending + t.not_provided DESC, t.asset_code NULLS LAST ${LIMIT_ROWS}`, p);
+  return { models: models.rows, inst: inst.rows };
+}
+
+function gapsSummary(g) {
+  return {
+    models_with_gaps: g.models.length,
+    black_box: g.models.filter(m => m.black_box).length,
+    vendor_fields_not_provided: g.models.reduce((n, m) => n + m.not_provided.length, 0),
+    installations_with_gaps: Math.min(g.inst.length, DETAIL_LIMIT),
+    questionnaire_not_sent: g.models.filter(m => m.black_box && !m.vendor_questionnaire_sent_at && !m.vendor_questionnaire_received).length,
+    internal_fields_pending: g.models.reduce((n, m) => n + m.pending.length, 0) + g.inst.slice(0, DETAIL_LIMIT).reduce((n, i) => n + i.pending + i.not_provided, 0)
+  };
+}
+
+async function gapsPreview(db, user, P) {
+  const s = gapsSummary(await gapsData(db, user, P));
+  return { models_with_gaps: s.models_with_gaps, black_box: s.black_box, vendor_fields_not_provided: s.vendor_fields_not_provided, installations_with_gaps: s.installations_with_gaps };
+}
+
+async function gapsReport(db, user, P) {
+  const g = await gapsData(db, user, P);
+  const D = cut(g.inst);
+  return { summary: gapsSummary(g), models: g.models, installations: D.rows, installations_truncated: D.truncated };
+}
+
+// Generadores por informe (1, 2 y 8 llegan en las etapas siguientes)
 const BUILDERS = {
-  4: { preview: incidentsPreview, generate: incidentsReport }
+  3: { preview: inventoryPreview, generate: inventoryReport },
+  4: { preview: incidentsPreview, generate: incidentsReport },
+  5: { preview: actionsPreview, generate: actionsReport },
+  6: { preview: changesPreview, generate: changesReport },
+  7: { preview: gapsPreview, generate: gapsReport }
 };
 
 async function run(db, user, q, kind) {
