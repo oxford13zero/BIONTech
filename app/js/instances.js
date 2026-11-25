@@ -151,6 +151,7 @@ function viewInstance() {
     <div class="head-row"><h1>${esc(i.model_name)}</h1>${riskChip(i.risk_level)}
       ${i.black_box ? `<span class="chip c-r">${t('black_box')}</span>` : ''}
       ${i.reclassification_pending ? `<span class="chip c-a">${t('reclass_pending')}</span>` : ''}
+      ${d.version_review && d.version_review.in_monitoring ? `<span class="chip c-a">${t('rv_monitoring_chip').replace('{n}', d.version_review.comparison.days_left)}</span>` : ''}
       ${!active ? `<span class="chip c-n">${t('st_retired_f')}</span>` : ''}</div>
     <div class="crumb">${esc(i.code)} · ${d.asset ? `<a href="#/activos/${esc(d.asset.id)}">${esc(d.asset.code)} — ${esc(d.asset.name)}</a>` : t('asset_unassigned')}
       · <a href="#/modelos/${esc(i.model_id)}">${esc(i.model_code)} · ${esc(i.vendor)}</a> · ${esc(d.branch?.name || '')}</div>
@@ -163,6 +164,7 @@ function viewInstance() {
     </div></div>
     ${canEdit ? instActionsHtml(d) : ''}
     ${S.instMsg ? `<div class="alert">${esc(S.instMsg)}</div>` : ''}
+    ${S.instAction?.type === 'review' ? '' : reviewSummaryHtml(d)}
     <h3 class="mt">${t('usage_sheet')}</h3>
     <div class="secs">${blocks}</div>
     ${integrationsHtml(d, canEdit)}
@@ -243,7 +245,7 @@ function instActionsHtml(d) {
   const i = d.instance;
   const a = S.instAction;
   const btns = `<div class="edit-bar left mt">
-    ${i.reclassification_pending ? `<button class="btn btn-sm btn-primary" onclick="openInstAction('review')">${t('risk_reviewed')}</button>` : ''}
+    ${i.reclassification_pending ? `<button class="btn btn-sm btn-primary" onclick="openInstAction('review')">${t('review_change')}</button>` : ''}
     <button class="btn btn-sm" onclick="openInstAction('copy')">${t('copy_to_others')}</button>
     ${!i.asset_id ? `<button class="btn btn-sm" onclick="openInstAction('assign')">${t('assign_asset')}</button>` : ''}
     <button class="btn btn-sm btn-danger" onclick="openInstAction('retire')">${t('retire_installation')}</button></div>`;
@@ -254,12 +256,8 @@ function instActionsHtml(d) {
     <button class="btn btn-sm ${danger ? 'btn-danger' : 'btn-primary'}" onclick="${fn}()" ${a.busy ? 'disabled' : ''}>${a.busy ? t('saving') : label}</button></div>`;
   let panel = '';
   if (a.type === 'review') {
-    const minIdx = LEVELS.indexOf(i.base_risk_level);
-    const allowed = LEVELS.filter((l, idx) => minIdx < 0 || idx <= minIdx);   // LEVELS va de Crítico a Bajo
-    panel = `<div class="card"><h3>${t('risk_reviewed')}</h3><p class="count-note">${t('risk_reviewed_help')}</p>
-      <div class="inline-form"><label class="field-label" for="revRisk">${t('risk')}</label>
-      <select class="input" id="revRisk">${allowed.map(l => `<option value="${l}" ${l === i.risk_level ? 'selected' : ''}>${t('risk_' + l)}</option>`).join('')}</select></div>
-      ${err}${foot(t('confirm'), 'submitReview')}</div>`;
+    panel = reviewFormHtml(d, a) + `${err}<div class="wz-foot"><button class="btn btn-ghost btn-sm" onclick="S.instAction=null;render()" ${a.busy ? 'disabled' : ''}>${t('cancel')}</button>
+      <div class="right"><button class="btn btn-primary btn-sm" onclick="submitReview()" ${a.busy ? 'disabled' : ''}>${a.busy ? t('saving') : t('register_review')}</button></div></div>`;
   } else if (a.type === 'copy') {
     const list = a.options;
     panel = `<div class="card"><h3>${t('copy_to_others')}</h3><p class="count-note">${t('copy_help')}</p>
@@ -285,6 +283,13 @@ function instActionsHtml(d) {
 
 async function openInstAction(type) {
   S.instAction = { type };
+  if (type === 'review') {
+    // "Qué cambió" viene de la versión vigente
+    const cur = S.inst.data.version_history.find(h => !h.valid_to);
+    S.instAction.v = { what_changed: cur ? (cur.change_notes || (cur.changes_unknown ? t('changes_unknown') : '')) : '', substantial: '',
+      affected_aspects: [], tests: [], test_result: '', evidence_url: '', controls: [], rollback_plan: '', monitoring_days: '30',
+      risk_level: S.inst.data.instance.risk_level, approved_by: '', justification: '' };
+  }
   S.instMsg = '';
   render();
   const i = S.inst.data.instance;
@@ -308,13 +313,94 @@ async function runInstAction(fn) {
   catch (e) { a.busy = false; a.error = t('save_error') + ' ' + apiErrorText(e.message); return render(); }
 }
 
+// ── Revisión del cambio de versión (gestión del cambio) ────────
+const REV_ASPECTS = ['funciones_seguridad', 'autonomia', 'interaccion_personas', 'sensores_datos', 'umbrales', 'pantalla_operador'];
+const REV_TESTS = ['piloto', 'pruebas_faena', 'validacion_proveedor', 'sin_pruebas'];
+const REV_CONTROLS = ['capacitacion', 'procedimientos', 'supervision_humana', 'ninguno'];
+
+function reviewFormHtml(d, a) {
+  const i = d.instance, v = a.v, hist = d.version_history;
+  const cur = hist.find(h => !h.valid_to), prev = hist.find(h => h.valid_to && cur && String(h.valid_to) === String(cur.valid_from));
+  const card = (name, value, on, title) => `<label class="opt"><input type="checkbox" name="${name}" value="${value}" ${on ? 'checked' : ''}><span><b>${esc(title)}</b></span></label>`;
+  const seg = (name, cur) => `<span class="seg">${['si', 'no', 'no_se_sabe'].map(o => `<label><input type="radio" name="${name}" value="${o}" ${cur === o ? 'checked' : ''}><span>${t('yn_' + o)}</span></label>`).join('')}</span>`;
+  const step = (n, title, help, body) => `<div class="moc-step"><span class="n">${n}</span><span><b>${title}</b>${help ? `<small>${help}</small>` : ''}</span></div><div class="moc-body">${body}</div>`;
+  const minIdx = LEVELS.indexOf(i.base_risk_level);
+  const allowed = LEVELS.filter((l, idx) => minIdx < 0 || idx <= minIdx);   // LEVELS va de Crítico a Bajo
+  return `<div class="card mt" id="reviewForm"><h3 style="margin-bottom:2px">${t('review_change_title')}</h3>
+    <p class="count-note" style="margin:0">${t('review_change_help')}${cur ? ' ' + t('review_versions').replace('{a}', esc(prev ? prev.version : '—')).replace('{b}', esc(cur.version)).replace('{d}', esc(cur.valid_from)) : ''}</p>
+    ${step(1, t('rv_q1'), t('rv_q1_help'), `<textarea class="input" id="rv_what_changed" rows="2">${esc(v.what_changed)}</textarea>`)}
+    ${step(2, t('rv_q2'), t('rv_q2_help'), `<div class="yn"><span>${t('rv_q2_short')}</span>${seg('rv_substantial', v.substantial)}</div>`)}
+    ${step(3, t('rv_q3'), t('rv_multi'), `<div class="opts c4">${REV_ASPECTS.map(k => card('rv_affected_aspects', k, v.affected_aspects.includes(k), t('rva_' + k))).join('')}</div>`)}
+    ${step(4, t('rv_q4'), t('rv_multi'), `<div class="opts c4">${REV_TESTS.map(k => card('rv_tests', k, v.tests.includes(k), t('rvt_' + k))).join('')}</div>
+      <div class="fields form" style="margin-top:8px">
+        <div class="field wide"><label for="rv_test_result">${t('rv_test_result')}</label><textarea class="input" id="rv_test_result" rows="2">${esc(v.test_result)}</textarea></div>
+        <div class="field wide"><label for="rv_evidence_url">${t('rv_evidence')}</label><input class="input" id="rv_evidence_url" value="${esc(v.evidence_url)}" placeholder="https://…"></div></div>`)}
+    ${step(5, t('rv_q5'), t('rv_multi'), `<div class="opts c4">${REV_CONTROLS.map(k => card('rv_controls', k, v.controls.includes(k), t('rvc_' + k))).join('')}</div>`)}
+    ${step(6, t('rv_q6'), '', `<div class="yn"><span>${t('rv_q6_short')}</span>${seg('rv_rollback_plan', v.rollback_plan)}</div>`)}
+    ${step(7, t('rv_q7'), t('rv_q7_help'), `<div class="fields form"><div class="field"><label for="rv_monitoring_days">${t('rv_monitoring')}</label>
+      <select class="input" id="rv_monitoring_days">${[15, 30, 60, 90].map(n => `<option value="${n}" ${String(n) === String(v.monitoring_days) ? 'selected' : ''}>${t('n_days').replace('{n}', n)}</option>`).join('')}</select></div></div>`)}
+    ${step(8, t('rv_q8'), t('rv_q8_help').replace('{r}', i.base_risk_level ? t('risk_' + i.base_risk_level) : '—'), `<div class="fields form">
+      <div class="field"><label for="rv_risk_level">${t('rv_risk')}</label><select class="input" id="rv_risk_level">
+        ${allowed.map(l => `<option value="${l}" ${l === v.risk_level ? 'selected' : ''}>${t('risk_' + l)}${l === i.risk_level ? ' (' + t('rv_no_change') + ')' : ''}</option>`).join('')}</select></div>
+      <div class="field"><label for="rv_approved_by">${t('rv_approved_by')}</label><input class="input" id="rv_approved_by" value="${esc(v.approved_by)}"></div>
+      <div class="field wide"><label for="rv_justification">${t('justification')} *</label><textarea class="input" id="rv_justification" rows="3">${esc(v.justification)}</textarea></div></div>`)}
+  </div>`;
+}
+
+function readReviewForm() {
+  const v = S.instAction.v;
+  const val = id => document.getElementById(id)?.value ?? '';
+  const checked = name => [...document.querySelectorAll(`input[name="${name}"]:checked`)].map(el => el.value);
+  for (const k of ['what_changed', 'test_result', 'evidence_url', 'monitoring_days', 'risk_level', 'approved_by', 'justification']) v[k] = val('rv_' + k);
+  for (const k of ['affected_aspects', 'tests', 'controls']) v[k] = checked('rv_' + k);
+  v.substantial = checked('rv_substantial')[0] || ''; v.rollback_plan = checked('rv_rollback_plan')[0] || '';
+  return v;
+}
+
 function submitReview() {
-  const id = S.inst.data.instance.id, risk = document.getElementById('revRisk').value;
+  const v = readReviewForm(), a = S.instAction, miss = [];
+  if (!v.substantial) miss.push(t('rv_q2_short'));
+  if (!v.tests.length) miss.push(t('rv_q4'));
+  if (!v.controls.length) miss.push(t('rv_q5'));
+  if (!v.rollback_plan) miss.push(t('rv_q6_short'));
+  if (!v.justification.trim()) miss.push(t('justification'));
+  if (miss.length) { a.error = t('required_fields') + ' ' + miss.join(', '); return render(); }
+  if (v.evidence_url.trim() && !/^https?:\/\/\S+$/i.test(v.evidence_url.trim())) { a.error = t('err_links'); return render(); }
+  const id = S.inst.data.instance.id;
   runInstAction(async () => {
-    await apiSend('POST', `/api/instances?id=${encodeURIComponent(id)}&action=review`, { risk_level: risk });
+    await apiSend('POST', `/api/instances?id=${encodeURIComponent(id)}&action=review`, { ...v, monitoring_days: Number(v.monitoring_days),
+      what_changed: v.what_changed.trim(), test_result: v.test_result.trim(), evidence_url: v.evidence_url.trim(), justification: v.justification.trim() });
     S.instAction = null; S.instMsg = t('review_done');
     loadNav(); reloadInstance();
   });
+}
+
+// Resumen de la última revisión y comparación de incidentes antes / durante la vigilancia
+function reviewSummaryHtml(d) {
+  const r = d.version_review;
+  if (!r) return '';
+  const c = r.comparison, done = c.days_left < 0;
+  const list = (arr, p) => (arr || []).map(k => t(p + k)).join(', ') || '—';
+  let result;
+  if (r.reopened_at) result = `<b class="txt-r">${t('rv_reopened')}</b><small>${esc(r.reopened_by_title || '')}</small>`;
+  else if (!done) result = `<b>—</b><small>${t('rv_result_on').replace('{d}', esc(r.monitoring_until))}</small>`;
+  else if (c.after_serious > 0 || c.after_n > c.before_n) result = `<b class="txt-r">${t('rv_worse')}</b><small>${t('rv_worse_help')}</small>`;
+  else result = `<b class="txt-g">${t('rv_ok')}</b><small>${t('rv_ok_help')}</small>`;
+  return `<div class="card mt" id="reviewSummary"><h3>${t('review_change_title')} ${esc(r.previous_version || '—')} → ${esc(r.version || '—')}</h3>
+    <div class="fields">
+      <div class="field"><label>${t('rv_q8')}</label><div>${riskChip(r.risk_level)}${r.approved_by ? ' · ' + t('rv_approved_by_x').replace('{u}', esc(r.approved_by)) : ''}</div></div>
+      <div class="field"><label>${t('rv_q2_short')}</label><div>${t('yn_' + r.substantial)}${r.affected_aspects.length ? ' · ' + esc(list(r.affected_aspects, 'rva_')) : ''}</div></div>
+      <div class="field"><label>${t('rv_tests_short')}</label><div>${esc(list(r.tests, 'rvt_'))}${r.evidence_url ? ` · <a href="${esc(r.evidence_url)}" target="_blank" rel="noopener noreferrer">${t('rv_evidence_short')}</a>` : ''}</div></div>
+      <div class="field"><label>${t('rv_reviewed')}</label><div>${esc(new Date(r.reviewed_at).toLocaleDateString(LANG === 'es' ? 'es-CL' : 'en-US'))} · ${esc(r.reviewed_by_email || '—')}</div></div>
+      <div class="field wide"><label>${t('justification')}</label><div>${esc(r.justification)}</div></div>
+    </div>
+    <div class="wz-q">${t('rv_compare_title').replace('{n}', r.monitoring_days)}</div>
+    <div class="cmp">
+      <div><small>${t('rv_before').replace('{n}', r.monitoring_days).replace('{v}', esc(r.previous_version || '—'))}</small><b>${c.before_n}</b><small>${t('rv_incidents_serious').replace('{s}', c.before_serious)}</small></div>
+      <div><small>${t('rv_after').replace('{v}', esc(r.version || '—')).replace('{n}', Math.max(c.elapsed, 0))}</small><b>${c.after_n}</b><small>${t('rv_incidents_serious').replace('{s}', c.after_serious)}</small></div>
+      <div><small>${t('rv_result')}</small>${result}</div>
+    </div>
+    <p class="count-note" style="margin-top:10px">${t('rv_reopen_note')}</p></div>`;
 }
 
 function submitCopy() {

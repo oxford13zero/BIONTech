@@ -409,3 +409,18 @@ table.cmp td small{display:block}
 .flash{animation:flash 1.6s ease-out}
 @keyframes flash{0%,40%{background:rgba(244,195,139,.25);border-radius:8px}100%{background:transparent}}
 @media(max-width:700px){.inc-row{grid-template-columns:1fr}}
+
+/* ── Revisión del cambio de versión ──────────────────────────── */
+.moc-step{display:flex;gap:12px;align-items:flex-start;margin:20px 0 8px}
+.moc-step .n{flex:none;width:24px;height:24px;border-radius:50%;background:var(--sand);color:#192F52;font-weight:800;font-size:13px;display:flex;align-items:center;justify-content:center;margin-top:1px}
+.moc-step b{font-size:15px}
+.moc-step small{display:block;color:var(--dim);font-size:12.5px;font-weight:400}
+.moc-body{margin-left:36px}
+.moc-body .yn{border-top:0;padding-top:0}
+.cmp{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:6px}
+.cmp > div{background:var(--row);border:1px solid var(--border);border-radius:10px;padding:10px 12px}
+.cmp b{display:block;font-size:22px;margin:2px 0}
+.cmp small{display:block;color:var(--dim);font-size:12.5px}
+.txt-r{color:#F09595}.txt-g{color:#8FD3B0}
+@media(max-width:700px){.moc-body{margin-left:0}.cmp{grid-template-columns:1fr}}
+#reviewSummary a{color:#9DB9FF}
