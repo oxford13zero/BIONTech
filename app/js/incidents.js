@@ -23,16 +23,15 @@ function incidentRoute() {
   if (!m) return null;
   if (!m[1]) return { view: 'list' };
   if (m[1] === 'nuevo') return { view: 'new' };
-  return { view: m[2] ? 'edit' : 'detail', id: m[1] };
+  return { view: 'detail', id: m[1] };
 }
 
 function viewIncidents() {
   const r = incidentRoute();
   if (r.view === 'list') return viewIncidentList();
   if (r.view === 'detail') return viewIncidentDetail(r.id);
-  if (!can(r.view === 'edit' ? 'incident.write' : 'incident.create')) return `<div class="card empty">${t('err_not_allowed')}</div>`;
-  if (r.view === 'new') return viewIncidentWizard();
-  return viewIncidentForm(r.id);
+  if (!can('incident.create')) return `<div class="card empty">${t('err_not_allowed')}</div>`;
+  return viewIncidentWizard();
 }
 
 function incErrorText(msg) {
@@ -40,7 +39,9 @@ function incErrorText(msg) {
     'The model was not installed on that date': 'err_not_installed',
     'EU AI Act serious incident requires regulator authority and notification deadline': 'err_eu_fields',
     'The instance does not belong to this asset': 'err_instance_asset',
-    'Date cannot be in the future': 'err_future_date'
+    'Date cannot be in the future': 'err_future_date',
+    'Incident is closed': 'err_inc_closed',
+    'EU AI Act is not enabled for this company': 'err_eu_disabled'
   };
   return map[msg] ? t(map[msg]) : apiErrorText(msg);
 }
@@ -112,7 +113,71 @@ function viewIncidentList() {
     <div class="card">${body}</div>`;
 }
 
-// ── Ficha ─────────────────────────────────────────────────────
+// ── Ficha del incidente: registro + investigación en pestañas ──────────
+// Ruta: #/incidentes/<id>?tab=registro|personas|contexto|eu|cierre
+// S.incDetail = { id, data: { incident, actions, eu_enabled, suggestions } }
+// S.incEdit   = { key, v: {...}, insts, error, busy }   (formulario de la pestaña abierta)
+const INC_GROUPS = ['trabajadores', 'consumidores', 'grupos_vulnerables', 'empresas', 'publico'];
+const INC_PRINCIPLES = ['bienestar', 'derechos_equidad_privacidad', 'transparencia', 'robustez_seguridad', 'rendicion_cuentas'];
+const INC_DATA_ISSUES = ['sesgados', 'erroneos', 'no_representativos', 'sin_consentimiento', 'no_se_sabe'];
+const INC_EU = ['muerte_salud', 'infraestructura_critica', 'derechos_fundamentales', 'propiedad_ambiente'];
+const INC_MEASURES = ['corrigio', 'alerta', 'retiro', 'investigacion_legal'];
+const SRC_LABEL = { empresa: 'src_company', modelo: 'src_model', instalacion: 'src_instance' };
+
+// Campos de cada pestaña. type: text · area · date · time · int · model · one · multi · yn · links · h (subtítulo)
+const INC_SPEC = {
+  registro: [
+    { k: 'title', type: 'text', label: 'f_title', req: true, wide: true },
+    { k: 'description', type: 'area', label: 'f_description' },
+    { k: 'occurred_at', type: 'date', label: 'f_date', req: true },
+    { k: 'occurred_time', type: 'time', label: 'f_time' },
+    { k: 'instance_id', type: 'model', label: 'q_model' },
+    { k: 'harmed_targets', type: 'multi', opts: INC_HARMED, lab: 'harmed_', label: 'q_harmed', req: true, cls: 'c4' },
+    { k: 'harmed_description', type: 'text', label: 'f_harmed_desc' },
+    { k: 'ai_behavior', type: 'one', opts: INC_BEHAVIORS, lab: 'behavior_', help: 'behaviorh_', label: 'q_behavior', req: true },
+    { k: 'ai_link', type: 'one', opts: INC_LINKS, lab: 'link_', help: 'linkh_', label: 'q_link', req: true },
+    { k: 'kind', type: 'one', opts: INC_KINDS, lab: 'kind_', help: 'kindh_', label: 'q_kind', req: true },
+    { k: 'harm_types', type: 'multi', opts: INC_HARM_TYPES, lab: 'harm_', help: 'harmh_', label: 'q_harm_types', req: true, cls: 'c4' },
+    { k: 'severity', type: 'one', opts: INC_SEVERITIES, lab: 'sev_', help: 'sevh_', label: 'q_severity', req: true },
+    { k: 'country', type: 'text', label: 'f_inc_country' },
+    { k: 'location', type: 'text', label: 'f_inc_location' },
+    { k: 'evidence_links', type: 'links', label: 'evidence' }
+  ],
+  personas: [
+    { k: 'affected_groups', type: 'multi', opts: INC_GROUPS, lab: 'grp_', help: 'grph_', label: 'q_groups', cls: 'c4' },
+    { k: 'injured_count', type: 'int', label: 'f_injured' },
+    { k: 'oecd_principles', type: 'multi', opts: INC_PRINCIPLES, lab: 'pr_', help: 'prh_', label: 'q_principles' }
+  ],
+  contexto: [
+    { type: 'h', label: 'h_context_econ' },
+    { k: 'sector', type: 'text', label: 'f_sector', sug: true }, { k: 'deployment_scope', type: 'text', label: 'f_deployment', sug: true },
+    { k: 'data_issues', type: 'multi', opts: INC_DATA_ISSUES, lab: 'di_', label: 'q_data', cls: 'c4' },
+    { type: 'h', label: 'h_model' },
+    { k: 'model_type', type: 'text', label: 'f_inc_model_type', sug: true }, { k: 'explainability', type: 'text', label: 'f_explainability', sug: true },
+    { k: 'robustness_failure', type: 'text', label: 'f_robustness' },
+    { type: 'h', label: 'h_task' },
+    { k: 'ai_task', type: 'text', label: 'f_task', sug: true }, { k: 'autonomy', type: 'text', label: 'f_autonomy', sug: true },
+    { k: 'human_oversight', type: 'text', label: 'f_oversight', sug: true }
+  ],
+  eu: [
+    { k: 'eu_criteria', type: 'yn', opts: INC_EU, lab: 'eu_', label: 'q_eu' },
+    { k: 'regulator_authority', type: 'text', label: 'f_authority', euOnly: true },
+    { k: 'notification_deadline', type: 'date', label: 'f_deadline', euOnly: true },
+    { k: 'eu_notified_at', type: 'date', label: 'f_eu_notified', euOnly: true },
+    { k: 'eu_notification_ref', type: 'text', label: 'f_eu_ref', euOnly: true }
+  ],
+  cierre: [
+    { k: 'measures_taken', type: 'multi', opts: INC_MEASURES, lab: 'ms_', label: 'q_measures', cls: 'c4' },
+    { type: 'h', label: 'h_root' },
+    { k: 'root_cause_technical', type: 'area', label: 'f_root_tech' }, { k: 'root_cause_organizational', type: 'area', label: 'f_root_org' },
+    { type: 'actions' },
+    { type: 'h', label: 'h_closure' },
+    { k: 'effectiveness_check', type: 'area', label: 'f_effectiveness', ph: 'f_effectiveness_ph' },
+    { k: 'lessons_learned', type: 'area', label: 'f_lessons' }
+  ]
+};
+const incFields = tab => INC_SPEC[tab].filter(f => f.k);
+
 async function loadIncident(id) {
   S.incDetail = { id, loading: true };
   try { S.incDetail = { id, data: await apiGet('/api/incidents?id=' + encodeURIComponent(id)) }; }
@@ -121,182 +186,303 @@ async function loadIncident(id) {
   if (r && r.id === id) render();
 }
 
+function incTabs(d) { return ['registro', 'personas', 'contexto', ...(d.eu_enabled ? ['eu'] : []), 'cierre']; }
+function incTab(d) { const tab = parseHash().params.tab; return incTabs(d).includes(tab) ? tab : 'registro'; }
+function setIncTab(tab) {
+  S.incEdit = null; S.incMsg = '';
+  history.replaceState(null, '', `#/incidentes/${S.incDetail.id}?tab=${tab}`);
+  render();
+}
+const incCanWrite = x => !!can('incident.write') && x.status === 'abierto';
+
+// Pestaña con datos (marca ✓)
+function incTabDone(x, tab, actions) {
+  if (tab === 'registro') return true;
+  if (tab === 'personas') return (x.affected_groups || []).length > 0 || x.injured_count != null || (x.oecd_principles || []).length > 0;
+  if (tab === 'contexto') return !!(x.sector || x.deployment_scope || x.model_type || (x.data_issues || []).length || x.robustness_failure);
+  if (tab === 'eu') return !!x.eu_notified_at;
+  if (tab === 'cierre') return x.status === 'cerrado';
+  return false;
+}
+
+// Valores iniciales del formulario: lo guardado o, si falta, lo sugerido por el inventario
+function initIncEdit(d, tab) {
+  const key = d.incident.id + ':' + tab;
+  if (S.incEdit && S.incEdit.key === key) return;
+  const x = d.incident, v = {};
+  for (const f of incFields(tab)) {
+    let val = x[f.k];
+    if (f.sug && (val === null || val === undefined || val === '') && d.suggestions[f.k]?.value) val = d.suggestions[f.k].value;
+    if (f.type === 'links') val = (val || []).map(l => ({ label: l.label || '', url: l.url || '' }));
+    if (f.type === 'model') val = x.instance_id || '__unknown';
+    v[f.k] = val ?? (['multi', 'yn'].includes(f.type) ? [] : '');
+  }
+  S.incEdit = { key, tab, v };
+  if (tab === 'registro') incLoadInsts(x.asset_id);
+}
+
+async function incLoadInsts(assetId) {
+  const e = S.incEdit;
+  try { const a = await apiGet('/api/assets?id=' + encodeURIComponent(assetId)); if (S.incEdit === e) e.insts = a.instances; }
+  catch (err) { if (S.incEdit === e) e.insts = []; }
+  if (S.incEdit === e) render();
+}
+
+// Lee el formulario de la pestaña abierta
+function collectIncEdit() {
+  const e = S.incEdit;
+  if (!e || !document.getElementById('incTabForm')) return;
+  for (const f of incFields(e.tab)) {
+    const el = document.getElementById('ix_' + f.k);
+    if (f.type === 'multi') e.v[f.k] = [...document.querySelectorAll(`input[name="ix_${f.k}"]:checked`)].map(i => i.value);
+    else if (f.type === 'one') e.v[f.k] = document.querySelector(`input[name="ix_${f.k}"]:checked`)?.value || '';
+    else if (f.type === 'yn') e.v[f.k] = f.opts.filter(o => document.querySelector(`input[name="ix_${f.k}_${o}"]:checked`)?.value === 'si');
+    else if (f.type === 'links') e.v[f.k] = e.v[f.k].map((l, i) => ({ label: document.getElementById(`ix_lk_label_${i}`)?.value ?? l.label, url: document.getElementById(`ix_lk_url_${i}`)?.value ?? l.url }));
+    else if (el) e.v[f.k] = el.value;
+  }
+}
+function incEditRerender() { collectIncEdit(); if (S.incEdit) S.incEdit.error = ''; render(); }
+function incAddLink() { collectIncEdit(); S.incEdit.v.evidence_links.push({ label: '', url: '' }); render(); }
+function incRemoveLink(i) { collectIncEdit(); S.incEdit.v.evidence_links.splice(i, 1); render(); }
+
+async function saveIncSection() {
+  collectIncEdit();
+  const e = S.incEdit, id = S.incDetail.id, body = {};
+  const missing = [];
+  for (const f of incFields(e.tab)) {
+    let val = e.v[f.k];
+    if (f.type === 'model') { body.instance_id = val && val !== '__unknown' ? val : null; continue; }
+    if (f.type === 'int') val = String(val).trim() === '' ? null : Number(val);
+    else if (f.type === 'links') val = val.filter(l => String(l.url).trim()).map(l => ({ label: String(l.label).trim(), url: String(l.url).trim() }));
+    else if (typeof val === 'string') val = val.trim() || null;
+    if (f.euOnly && !e.v.eu_criteria.length) val = null;
+    if (f.req && (val === null || (Array.isArray(val) && !val.length))) missing.push(t(f.label));
+    body[f.k] = val;
+  }
+  if (missing.length) { e.error = t('required_fields') + ' ' + missing.join(', '); return render(); }
+  if (body.injured_count !== undefined && body.injured_count !== null && (!Number.isInteger(body.injured_count) || body.injured_count < 0)) { e.error = t('f_injured') + ': ' + t('invalid_value'); return render(); }
+  if ((body.evidence_links || []).some(l => !/^https?:\/\/\S+$/i.test(l.url))) { e.error = t('err_links'); return render(); }
+  if (e.tab === 'eu' && body.eu_criteria.length && (!body.regulator_authority || !body.notification_deadline)) { e.error = t('err_eu_fields'); return render(); }
+  e.busy = true; e.error = ''; render();
+  try {
+    await apiSend('PUT', `/api/incidents?id=${encodeURIComponent(id)}&section=${e.tab}`, body);
+  } catch (err) {
+    e.busy = false; e.error = t('save_error') + ' ' + incErrorText(err.message); return render();
+  }
+  S.incEdit = null; S.incidents = null;
+  S.incDetail = null; S.incMsg = t('section_saved');
+  loadIncident(id);
+}
+
+// ── Controles de formulario (editables o de solo lectura) ──
+function incFieldHtml(f, v, ctx) {
+  const id = 'ix_' + f.k, val = v[f.k];
+  const lbl = (extra = '') => `<label for="${id}">${t(f.label)}${f.req ? ' *' : ''}${extra}</label>`;
+  const card = (type, name, value, on, title, help) => `<label class="opt"><input type="${type}" name="${name}" value="${esc(value)}" ${on ? 'checked' : ''}>
+    <span><b>${esc(title)}</b>${help ? `<small>${esc(help)}</small>` : ''}</span></label>`;
+  if (f.type === 'h') return `<div class="wz-q">${t(f.label)}</div>`;
+  if (f.type === 'actions') return incActionsHtml(ctx);
+  if (f.euOnly && !v.eu_criteria.length) return '';
+  if (f.type === 'multi' || f.type === 'one') {
+    const type = f.type === 'multi' ? 'checkbox' : 'radio';
+    return `<div class="wz-q">${t(f.label)}${f.req ? ' *' : ''}</div><div class="opts ${f.cls || ''}">
+      ${f.opts.map(o => card(type, id, o, f.type === 'multi' ? val.includes(o) : val === o, t(f.lab + o), f.help ? th(f.help + o) : '')).join('')}</div>`;
+  }
+  if (f.type === 'yn') {
+    const serious = val.length > 0;
+    return `<div class="wz-q">${t(f.label)}</div><p class="wz-help">${t('eu_help')}</p>
+      ${f.opts.map(o => `<div class="yn"><span>${t(f.lab + o)}</span><span class="seg">
+        <label><input type="radio" name="${id}_${o}" value="si" ${val.includes(o) ? 'checked' : ''} onchange="incEditRerender()"><span>${t('yes')}</span></label>
+        <label><input type="radio" name="${id}_${o}" value="no" ${val.includes(o) ? '' : 'checked'} onchange="incEditRerender()"><span>${t('no')}</span></label></span></div>`).join('')}
+      <div class="${serious ? 'box-warn' : 'box-ok'}">${serious ? '⚠️ ' + t('eu_is_serious') : '✅ ' + t('eu_not_serious')}</div>`;
+  }
+  if (f.type === 'links') {
+    return `<div class="wz-q small">${t(f.label)}</div><p class="wz-help">${t('evidence_help')}</p>
+      ${val.map((l, i) => `<div class="link-row">
+        <input class="input" id="ix_lk_label_${i}" value="${esc(l.label)}" placeholder="${t('link_label')}" aria-label="${t('link_label')}">
+        <input class="input" id="ix_lk_url_${i}" value="${esc(l.url)}" placeholder="${t('link_url')}" aria-label="${t('link_url')}">
+        <button class="btn btn-ghost btn-sm" onclick="incRemoveLink(${i})" aria-label="${t('remove')}">✕</button></div>`).join('')}
+      <button class="btn btn-sm" onclick="incAddLink()">${t('add_link')}</button>`;
+  }
+  if (f.type === 'model') {
+    const insts = ctx.insts;
+    const opt = (value, label) => `<option value="${esc(value)}" ${String(value) === String(val) ? 'selected' : ''}>${esc(label)}</option>`;
+    return `<div class="field wide">${lbl()}${!insts ? `<div class="no-info">${t('loading')}</div>` : `<select class="input" id="${id}">
+      ${insts.map(i => opt(i.id, `${i.model_name} · ${i.vendor || ''}${i.status !== 'activa' ? ' — ' + t('st_retired_f') : ''}`)).join('')}
+      ${opt('__unknown', t('model_unknown'))}</select>`}<small class="count-note">${t('version_auto_note')}</small></div>`;
+  }
+  // Texto, fecha, hora, número: etiqueta de origen si viene del inventario
+  let src = '';
+  const sg = f.sug && ctx.suggestions[f.k];
+  if (sg && !ctx.incident[f.k]) {
+    src = (!sg.value || sg.state) ? ` <span class="src warn">${t('not_in_record')}</span>` : ` <span class="src">${t(SRC_LABEL[sg.source])}</span>`;
+  }
+  const wide = f.type === 'area' ? 'wide' : '';
+  if (f.type === 'area') return `<div class="field ${wide}">${lbl(src)}<textarea class="input" id="${id}" rows="3" ${f.ph ? `placeholder="${t(f.ph)}"` : ''}>${esc(val)}</textarea></div>`;
+  const type = { date: 'date', time: 'time', int: 'number' }[f.type] || 'text';
+  return `<div class="field ${f.wide ? 'wide' : ''}">${lbl(src)}<input class="input" type="${type}" id="${id}" value="${esc(String(val ?? '').slice(0, f.type === 'time' ? 5 : undefined))}"
+    ${f.type === 'int' ? 'min="0" step="1"' : ''} ${f.type === 'date' && f.k === 'occurred_at' ? `max="${today()}"` : ''}></div>`;
+}
+
+// Texto de solo lectura de un campo
+function incValueText(f, x) {
+  const val = x[f.k];
+  const none = `<span class="no-info">${t('no_info')}</span>`;
+  if (f.type === 'multi') return val && val.length ? val.map(o => esc(t(f.lab + o))).join(', ') : none;
+  if (f.type === 'one') return val ? esc(t(f.lab + val)) : none;
+  if (f.type === 'yn') return val && val.length ? `<span class="chip c-r">${t('eu_is_serious')}</span><div>${val.map(o => esc(t(f.lab + o))).join('<br>')}</div>` : t('eu_not_serious');
+  if (f.type === 'links') return val && val.length ? val.map(l => `<a href="${esc(l.url)}" target="_blank" rel="noopener noreferrer">🔗 ${esc(l.label || l.url)}</a>`).join('<br>') : none;
+  if (f.type === 'model') return x.model_name ? `<a href="#/instancias/${esc(x.instance_id)}"><b>${esc(x.model_name)}</b></a>${x.version ? ` · ${esc(x.version)}` : ''}` : `<span class="chip c-a">${t('model_undetermined')}</span>`;
+  if (f.type === 'time') return val ? esc(String(val).slice(0, 5)) : none;
+  return val !== null && val !== undefined && val !== '' ? esc(val) : none;
+}
+
+function incReadOnlyHtml(tab, d) {
+  const x = d.incident;
+  let html = '', grid = [];
+  const flush = () => { if (grid.length) { html += `<div class="fields">${grid.join('')}</div>`; grid = []; } };
+  for (const f of INC_SPEC[tab]) {
+    if (f.type === 'h') { flush(); html += `<div class="wz-q">${t(f.label)}</div>`; continue; }
+    if (f.type === 'actions') { flush(); html += incActionsHtml({ ...d, readOnly: true }); continue; }
+    if (f.euOnly && !(x.eu_criteria || []).length) continue;
+    const wide = ['area', 'multi', 'yn', 'links'].includes(f.type) ? 'wide' : '';
+    grid.push(`<div class="field ${wide}"><label>${t(f.label)}</label><div>${incValueText(f, x)}</div></div>`);
+  }
+  flush();
+  return html;
+}
+
+// ── Acciones correctivas ──
+function incActionsHtml(ctx) {
+  const d = S.incDetail.data, x = d.incident, write = !ctx.readOnly && incCanWrite(x);
+  const st = a => a.status === 'terminada' ? `<span class="chip c-g">${t('act_terminada')}</span>`
+    : a.overdue ? `<span class="chip c-r">${t('act_vencida')}</span>` : `<span class="chip c-a">${t('act_pendiente')}</span>`;
+  const rows = d.actions.map(a => `<tr><td><b>${esc(a.action)}</b></td><td>${esc(a.owner)}</td><td>${esc(a.due_date)}</td><td>${st(a)}</td>
+    ${write ? `<td class="actions"><button class="btn btn-ghost btn-sm" onclick="incActionStatus('${esc(a.id)}','${a.status === 'terminada' ? 'pendiente' : 'terminada'}')">
+      ${a.status === 'terminada' ? t('act_reopen') : t('act_finish')}</button>
+      <button class="btn btn-ghost btn-sm" onclick="incActionDelete('${esc(a.id)}')" aria-label="${t('remove')}">✕</button></td>` : ''}</tr>`).join('');
+  const a = S.incActForm || {};
+  return `<div class="wz-q">${t('h_actions')} <small class="count-note">(ISO 42001 · 10.2)</small></div>
+    ${rows ? `<div class="tbl-wrap"><table><thead><tr><th>${t('act_action')}</th><th>${t('act_owner')}</th><th>${t('act_due')}</th><th>${t('act_status')}</th>${write ? '<th></th>' : ''}</tr></thead>
+      <tbody>${rows}</tbody></table></div>` : `<div class="empty small">${t('act_none')}</div>`}
+    ${write ? `<div class="act-add">
+      <input class="input" id="ia_action" placeholder="${t('act_action')}" aria-label="${t('act_action')}" value="${esc(a.action || '')}">
+      <input class="input" id="ia_owner" placeholder="${t('act_owner')}" aria-label="${t('act_owner')}" value="${esc(a.owner || '')}">
+      <input class="input" type="date" id="ia_due" aria-label="${t('act_due')}" value="${esc(a.due || '')}">
+      <button class="btn btn-sm" onclick="incActionAdd()">+ ${t('act_add')}</button></div>
+      ${a.error ? `<div class="form-error">${esc(a.error)}</div>` : ''}` : ''}`;
+}
+
+async function incActionAdd() {
+  collectIncEdit();
+  const val = id => document.getElementById(id).value.trim();
+  const f = { action: val('ia_action'), owner: val('ia_owner'), due: val('ia_due') };
+  if (!f.action || !f.owner || !f.due) { S.incActForm = { ...f, error: t('act_required') }; return render(); }
+  try {
+    await apiSend('POST', `/api/incidents?id=${encodeURIComponent(S.incDetail.id)}&actions=1`, { action: f.action, owner: f.owner, due_date: f.due });
+  } catch (e) { S.incActForm = { ...f, error: t('save_error') + ' ' + incErrorText(e.message) }; return render(); }
+  S.incActForm = null;
+  incReloadKeepingForm();
+}
+async function incActionStatus(actionId, status) {
+  collectIncEdit();
+  try { await apiSend('PUT', `/api/incidents?id=${encodeURIComponent(S.incDetail.id)}&action_id=${encodeURIComponent(actionId)}`, { status }); }
+  catch (e) { S.incActForm = { error: t('save_error') + ' ' + incErrorText(e.message) }; return render(); }
+  incReloadKeepingForm();
+}
+async function incActionDelete(actionId) {
+  collectIncEdit();
+  try { await apiSend('DELETE', `/api/incidents?id=${encodeURIComponent(S.incDetail.id)}&action_id=${encodeURIComponent(actionId)}`); }
+  catch (e) { S.incActForm = { error: t('save_error') + ' ' + incErrorText(e.message) }; return render(); }
+  incReloadKeepingForm();
+}
+// Recarga la ficha sin perder lo escrito en la pestaña
+async function incReloadKeepingForm() {
+  const id = S.incDetail.id;
+  try { S.incDetail = { id, data: await apiGet('/api/incidents?id=' + encodeURIComponent(id)) }; } catch (e) { /* se mantiene la ficha anterior */ }
+  S.incidents = null;
+  loadNav();
+  render();
+}
+
+// ── Cierre ──
+function incCloseMissing(d) {
+  const x = d.incident, miss = [];
+  if (!x.root_cause_technical && !x.root_cause_organizational) miss.push(t('miss_root_cause'));
+  if (!x.effectiveness_check) miss.push(t('miss_effectiveness'));
+  const pend = d.actions.filter(a => a.status === 'pendiente').length;
+  if (pend) miss.push(t('miss_actions').replace('{n}', pend));
+  return miss;
+}
+function openIncClose() { collectIncEdit(); S.incClose = { error: '' }; render(); }
+function closeIncCloseModal() { if (S.incClose?.busy) return; S.incClose = null; render(); }
+async function confirmIncClose() {
+  const id = S.incDetail.id;
+  S.incClose.busy = true; render();
+  try { await apiSend('POST', `/api/incidents?id=${encodeURIComponent(id)}&do=close`); }
+  catch (e) { S.incClose.busy = false; S.incClose.error = t('save_error') + ' ' + incErrorText(e.message); return render(); }
+  S.incClose = null; S.incEdit = null; S.incidents = null; S.incDetail = null; S.incMsg = '';
+  loadNav();
+  loadIncident(id);
+}
+
 function viewIncidentDetail(id) {
   const back = `<button class="back" onclick="location.hash='#/incidentes'">← ${t('back_to_incidents')}</button>`;
   if (!S.incDetail || S.incDetail.id !== id) { loadIncident(id); return back + `<div class="card empty">${t('loading')}</div>`; }
   const d = S.incDetail;
   if (d.loading) return back + `<div class="card empty">${t('loading')}</div>`;
   if (d.error) return back + `<div class="card empty">${t(d.error)}</div>`;
-  const x = d.data;
-  const f = (label, v) => `<div class="field"><label>${label}</label><div class="${v ? '' : 'no-info'}">${v ? esc(v) : t('no_info')}</div></div>`;
+  const data = d.data, x = data.incident, tab = incTab(data), write = incCanWrite(x);
+  const when = v => new Date(v).toLocaleDateString(LANG === 'es' ? 'es-CL' : 'en-US', { dateStyle: 'medium' });
+
+  let body;
+  if (write) {
+    initIncEdit(data, tab);
+    const e = S.incEdit, ctx = { ...data, insts: e.insts };
+    const fields = INC_SPEC[tab].map(f => incFieldHtml(f, e.v, ctx));
+    // Agrupa los campos simples en rejillas de 2–3 columnas
+    let html = '', grid = [];
+    INC_SPEC[tab].forEach((f, i) => {
+      const simple = ['text', 'date', 'time', 'int', 'area', 'model'].includes(f.type);
+      if (simple) { if (fields[i]) grid.push(fields[i]); return; }
+      if (grid.length) { html += `<div class="fields form">${grid.join('')}</div>`; grid = []; }
+      html += fields[i];
+    });
+    if (grid.length) html += `<div class="fields form">${grid.join('')}</div>`;
+    const inv = tab === 'contexto' ? `<div class="box-info"><b>${t('from_inventory_title')}</b>${t('from_inventory_help')}</div>` : '';
+    body = `<div class="card" id="incTabForm" ${tab === 'eu' ? '' : 'onchange="if(S.incEdit)S.incEdit.error=\'\'"'}>${inv}${html}</div>
+      ${e.error ? `<div class="form-error" role="alert">${esc(e.error)}</div>` : ''}
+      <div class="wz-foot"><span></span><div class="right">
+        <button class="btn btn-primary btn-sm" onclick="saveIncSection()" ${e.busy ? 'disabled' : ''}>${e.busy ? t('saving') : t('save_section')}</button></div></div>`;
+    if (tab === 'cierre') {
+      const miss = incCloseMissing(data);
+      body += `<div class="card mt close-box"><div>${miss.length
+          ? `<b>${t('close_missing')}</b> ${miss.join(' · ')}` : `<b>${t('ready_to_close')}</b> <span class="count-note">${t('close_confirm_help')}</span>`}</div>
+        <button class="btn btn-danger btn-sm" onclick="openIncClose()" ${miss.length ? 'disabled' : ''}>${t('close_incident')}</button></div>`;
+    }
+  } else {
+    body = `<div class="card">${incReadOnlyHtml(tab, data)}</div>`;
+  }
+
   return `${back}
-    <div class="head-row"><h1>${esc(x.title)}</h1>${sevChip(x.severity)}
-      ${x.eu_serious_incident ? `<span class="chip c-r">${t('eu_serious_short')}</span>` : ''}
-      <span class="chip c-n">${t('ist_' + x.status)}</span></div>
-    <div class="crumb">${esc(x.occurred_at)} · ${t('kind_' + x.kind)} · <a href="#/activos/${esc(x.asset_id)}">${esc(x.asset_code)} — ${esc(x.asset_name)}</a> · ${esc(x.branch_name)}</div>
+    <div class="head-row"><h1>${esc(x.title)}</h1>
+      <span class="chip ${x.status === 'abierto' ? 'c-g' : 'c-n'}">${t('ist_' + x.status)}</span>
+      <span class="chip c-n">${t('f_kind')}: ${t('kind_' + x.kind)}</span>
+      <span class="chip ${SEV_CLS[x.severity] || 'c-n'}">${t('f_severity')}: ${t('sev_' + x.severity)}</span>
+      ${x.eu_serious_incident ? `<span class="chip c-r">${t('eu_serious_short')}</span>` : ''}</div>
+    <div class="crumb">${esc(x.occurred_at)}${x.occurred_time ? ' ' + esc(String(x.occurred_time).slice(0, 5)) : ''} ·
+      <a href="#/activos/${esc(x.asset_id)}">${esc(x.asset_code)} — ${esc(x.asset_name)}</a> ·
+      ${x.model_name ? `<a href="#/instancias/${esc(x.instance_id)}">${esc(x.model_name)}</a>${x.version ? ' (' + esc(x.version) + ')' : ''}` : t('model_undetermined')} ·
+      ${esc(x.branch_name)}${x.reported_by_email ? ' · ' + esc(t('reported_by').replace('{u}', x.reported_by_email)) : ''}</div>
+    ${x.status === 'cerrado' ? `<div class="alert">${esc(t('closed_by').replace('{d}', when(x.closed_at)).replace('{u}', x.closed_by_email || '—'))} · ${t('read_only_closed')}</div>` : ''}
     ${S.incMsg ? `<div class="alert info">${esc(S.incMsg)}</div>` : ''}
-    ${can('incident.write') ? `<div class="edit-bar left"><a class="btn btn-sm" href="#/incidentes/${esc(x.id)}/editar">${t('edit')}</a></div>` : ''}
-    <div class="card"><h3>${t('model_involved')}</h3>
-      ${x.instance_id ? `<div class="fields">
-          <div class="field"><label>${t('model')}</label><div><a href="#/instancias/${esc(x.instance_id)}"><b>${esc(x.model_name)}</b></a> <small class="count-note">${esc(x.instance_code)}</small></div></div>
-          <div class="field"><label>${t('version_on_date')}</label><div>${x.version ? `<b>${esc(x.version)}</b> <small class="count-note">${t('auto_version')}</small>` : `<span class="no-info">${t('no_version')}</span>`}</div></div>
-        </div>`
-        : `<div class="empty small"><span class="chip c-a">${t('model_undetermined')}</span><p>${t('undetermined_help')}</p></div>`}
-    </div>
-    <div class="card mt"><h3>${t('incident_details')}</h3><div class="fields">
-      <div class="field wide"><label>${t('f_description')}</label><div class="${x.description ? '' : 'no-info'}">${x.description ? esc(x.description) : t('no_info')}</div></div>
-      ${f(t('f_incident_type'), x.incident_type)}${f(t('f_root_tech'), x.root_cause_technical)}${f(t('f_root_org'), x.root_cause_organizational)}
-      ${f(t('f_lessons'), x.lessons_learned)}
-    </div></div>
-    <div class="card mt"><h3>${t('regulator_notification')}</h3><div class="fields">
-      <div class="field"><label>${t('eu_serious_q')}</label><div>${x.eu_serious_incident ? t('yes') : t('no')}</div></div>
-      <div class="field"><label>${t('f_requires_notification')}</label><div>${x.requires_regulator_notification ? t('yes') : t('no')}</div></div>
-      ${f(t('f_authority'), x.regulator_authority)}${f(t('f_deadline'), x.notification_deadline)}
-    </div></div>`;
-}
-
-// ── Registrar / editar ────────────────────────────────────────
-// S.incForm = { id, values, assets, instances: {assetId: [...]}, error, busy }
-const INC_FORM_FIELDS = ['asset_id', 'instance_id', 'occurred_at', 'title', 'description', 'incident_type', 'kind', 'severity',
-  'status', 'eu_serious_incident', 'requires_regulator_notification', 'regulator_authority', 'notification_deadline',
-  'root_cause_technical', 'root_cause_organizational', 'lessons_learned'];
-
-function initIncForm(id) {
-  if (S.incForm && S.incForm.id === id) return;
-  const p = parseHash().params;
-  S.incForm = { id, values: { kind: 'incidente', status: 'abierto', asset_id: p.asset || '', instance_id: p.instance || '' }, instances: {} };
-  if (id) {
-    const x = S.incDetail?.id === id && S.incDetail.data;
-    if (!x) { loadIncident(id); S.incForm.waiting = true; return; }
-    INC_FORM_FIELDS.forEach(k => { S.incForm.values[k] = x[k] ?? ''; });
-  }
-  loadIncFormAssets();
-  if (S.incForm.values.asset_id) loadIncFormInstances(S.incForm.values.asset_id);
-}
-
-async function loadIncFormAssets() {
-  const q = divisionParam() ? '?division=' + encodeURIComponent(divisionParam()) : '';
-  try { S.incForm.assets = await apiGet('/api/assets' + q); } catch (e) { if (S.incForm) S.incForm.assets = []; }
-  if (S.incForm) render();
-}
-
-async function loadIncFormInstances(assetId) {
-  if (!assetId || S.incForm.instances[assetId]) return;
-  S.incForm.instances[assetId] = 'loading';
-  try {
-    const d = await apiGet('/api/assets?id=' + encodeURIComponent(assetId));
-    if (S.incForm) S.incForm.instances[assetId] = d.instances;
-  } catch (e) { if (S.incForm) S.incForm.instances[assetId] = []; }
-  if (S.incForm) render();
-}
-
-function collectIncForm() {
-  const f = S.incForm;
-  if (!f || !document.getElementById('if_title')) return;
-  INC_FORM_FIELDS.forEach(k => {
-    const el = document.getElementById('if_' + k);
-    if (!el) return;
-    f.values[k] = el.type === 'checkbox' ? el.checked : el.value;
-  });
-}
-
-function incFormChanged(field) {
-  collectIncForm();
-  if (field === 'asset_id') { S.incForm.values.instance_id = ''; loadIncFormInstances(S.incForm.values.asset_id); }
-  render();
-}
-
-function viewIncidentForm(id) {
-  initIncForm(id);
-  const f = S.incForm;
-  const back = `<button class="back" onclick="history.back()">← ${t('back')}</button>`;
-  if (f.waiting) {
-    if (S.incDetail?.data) { S.incForm = null; return viewIncidentForm(id); }
-    if (S.incDetail?.error) return back + `<div class="card empty">${t(S.incDetail.error)}</div>`;
-    return back + `<div class="card empty">${t('loading')}</div>`;
-  }
-  const v = f.values;
-  const opt = (val, label, cur) => `<option value="${esc(val)}" ${String(val) === String(cur ?? '') ? 'selected' : ''}>${esc(label)}</option>`;
-  const assets = f.assets;
-  const insts = v.asset_id ? f.instances[v.asset_id] : null;
-  const txt = (k, label, req, area) => `<div class="field ${area ? 'wide' : ''}"><label for="if_${k}">${t(label)}${req ? ' *' : ''}</label>
-    ${area ? `<textarea class="input" id="if_${k}" rows="3">${esc(v[k] || '')}</textarea>` : `<input class="input" id="if_${k}" value="${esc(v[k] || '')}">`}</div>`;
-
-  return `${back}
-    <h1>${id ? t('edit_incident') : t('new_incident')}</h1>
-    <div class="crumb">${t('new_incident_help')}</div>
-    ${f.error ? `<div class="form-error" role="alert">${esc(f.error)}</div>` : ''}
-    <div class="card"><h3>${t('where_what')}</h3><div class="fields form">
-      <div class="field"><label for="if_asset_id">${t('asset')} *</label>
-        ${!assets ? `<div class="no-info">${t('loading')}</div>` : `<select class="input" id="if_asset_id" onchange="incFormChanged('asset_id')">
-          ${opt('', '', v.asset_id)}${assets.map(a => opt(a.id, `${a.code} — ${a.name}`, v.asset_id)).join('')}
-          ${v.asset_id && !assets.some(a => String(a.id) === String(v.asset_id)) ? opt(v.asset_id, t('asset') + ' (' + t('st_retired_m') + ')', v.asset_id) : ''}</select>`}</div>
-      <div class="field"><label for="if_instance_id">${t('model_involved')}</label>
-        ${!v.asset_id ? `<div class="no-info">${t('choose_asset_first')}</div>` : insts === 'loading' || !insts ? `<div class="no-info">${t('loading')}</div>`
-          : `<select class="input" id="if_instance_id">${opt('', t('unknown_yet'), v.instance_id)}
-            ${insts.map(i => opt(i.id, `${i.model_name} (${i.code})${i.status !== 'activa' ? ' — ' + t('st_retired_f') : ''}`, v.instance_id)).join('')}</select>`}
-        <small class="count-note">${t('auto_version_help')}</small></div>
-      <div class="field"><label for="if_occurred_at">${t('f_date')} *</label><input class="input" type="date" id="if_occurred_at" value="${esc(v.occurred_at || '')}" max="${today()}"></div>
-      ${txt('title', 'f_title', true)}
-      <div class="field"><label for="if_kind">${t('f_kind')}</label><select class="input" id="if_kind">${INC_KINDS.map(k => opt(k, t('kind_' + k), v.kind)).join('')}</select></div>
-      <div class="field"><label for="if_severity">${t('f_severity')} *</label><select class="input" id="if_severity">${opt('', '', v.severity)}${INC_SEVERITIES.map(k => opt(k, t('sev_' + k), v.severity)).join('')}</select></div>
-      ${can('incident.write') ? `<div class="field"><label for="if_status">${t('status')}</label><select class="input" id="if_status">${INC_STATUSES.map(k => opt(k, t('ist_' + k), v.status)).join('')}</select></div>` : ''}
-      ${txt('incident_type', 'f_incident_type')}
-      ${txt('description', 'f_description', false, true)}
-    </div></div>
-    <div class="card mt"><h3>${t('regulator_notification')}</h3>
-      <label class="radio"><input type="checkbox" id="if_eu_serious_incident" ${v.eu_serious_incident === true || v.eu_serious_incident === 'true' ? 'checked' : ''}
-        onchange="incFormChanged('eu')"> ${t('eu_serious_q')}</label>
-      <p class="count-note">${t('eu_serious_help')}</p>
-      ${v.eu_serious_incident === true ? `<div class="fields form">
-        ${txt('regulator_authority', 'f_authority', true)}
-        <div class="field"><label for="if_notification_deadline">${t('f_deadline')} *</label><input class="input" type="date" id="if_notification_deadline" value="${esc(v.notification_deadline || '')}"></div>
-      </div>` : `<label class="radio"><input type="checkbox" id="if_requires_regulator_notification" ${v.requires_regulator_notification === true ? 'checked' : ''}
-        onchange="incFormChanged('notif')"> ${t('f_requires_notification')}</label>
-        ${v.requires_regulator_notification === true ? `<div class="fields form">${txt('regulator_authority', 'f_authority')}
-          <div class="field"><label for="if_notification_deadline">${t('f_deadline')}</label><input class="input" type="date" id="if_notification_deadline" value="${esc(v.notification_deadline || '')}"></div></div>` : ''}`}
-    </div>
-    <div class="card mt"><h3>${t('analysis')}</h3><div class="fields form">
-      ${txt('root_cause_technical', 'f_root_tech', false, true)}${txt('root_cause_organizational', 'f_root_org', false, true)}${txt('lessons_learned', 'f_lessons', false, true)}
-    </div></div>
-    <div class="edit-bar">
-      <button class="btn btn-ghost" onclick="history.back()" ${f.busy ? 'disabled' : ''}>${t('cancel')}</button>
-      <button class="btn btn-primary" onclick="saveIncident()" ${f.busy ? 'disabled' : ''}>${f.busy ? t('saving') : (id ? t('save') : t('register_incident'))}</button>
-    </div>`;
-}
-
-async function saveIncident() {
-  collectIncForm();
-  const f = S.incForm, v = f.values;
-  const missing = [['asset_id', 'asset'], ['occurred_at', 'f_date'], ['title', 'f_title'], ['severity', 'f_severity']]
-    .filter(([k]) => !String(v[k] || '').trim()).map(([, key]) => t(key));
-  if (missing.length) { f.error = t('required_fields') + ' ' + missing.join(', '); return render(); }
-  if (v.occurred_at > today()) { f.error = t('err_future_date'); return render(); }
-  if (v.eu_serious_incident === true && (!String(v.regulator_authority || '').trim() || !v.notification_deadline)) { f.error = t('err_eu_fields'); return render(); }
-
-  const body = {};
-  INC_FORM_FIELDS.forEach(k => {
-    let val = v[k];
-    if (typeof val === 'string') val = val.trim();
-    if (k === 'eu_serious_incident' || k === 'requires_regulator_notification') val = val === true;
-    else if (val === '' || val === undefined) val = null;
-    body[k] = val;
-  });
-  if (!body.eu_serious_incident && !body.requires_regulator_notification) { body.regulator_authority = null; body.notification_deadline = null; }
-
-  f.busy = true; f.error = ''; render();
-  try {
-    let id = f.id;
-    if (id) await apiSend('PUT', '/api/incidents?id=' + encodeURIComponent(id), body);
-    else id = (await apiSend('POST', '/api/incidents', body)).id;
-    S.incForm = null; S.incidents = null; S.incDetail = null;
-    S.incMsgNext = body.instance_id ? t('saved_version_auto') : t('saved_undetermined');
-    location.hash = '#/incidentes/' + id;
-    loadNav();
-  } catch (e) {
-    f.busy = false; f.error = t('save_error') + ' ' + incErrorText(e.message);
-    render();
-  }
+    <div class="tabs" role="tablist">${incTabs(data).map(k => `<button class="tab ${k === tab ? 'on' : ''} ${incTabDone(x, k, data.actions) && k !== tab ? 'done' : ''}"
+      role="tab" aria-selected="${k === tab}" onclick="setIncTab('${k}')">${t('tab_' + k)}</button>`).join('')}</div>
+    ${body}
+    ${S.incClose ? modalHtml({ title: t('close_confirm_title'), subtitle: x.title, close: 'closeIncCloseModal',
+      body: `<p class="count-note">${t('close_confirm_help')}</p>${S.incClose.error ? `<div class="form-error">${esc(S.incClose.error)}</div>` : ''}`,
+      footer: `<button class="btn btn-ghost btn-sm" onclick="closeIncCloseModal()" ${S.incClose.busy ? 'disabled' : ''}>${t('cancel')}</button>
+        <button class="btn btn-danger btn-sm" onclick="confirmIncClose()" ${S.incClose.busy ? 'disabled' : ''}>${S.incClose.busy ? t('saving') : t('close_incident')}</button>` }) : ''}`;
 }
 
 // ── Registrar: asistente de 3 pasos (CSET → OECD → revisar) ──────────
