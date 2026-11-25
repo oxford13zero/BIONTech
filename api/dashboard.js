@@ -41,7 +41,7 @@ async function dashboard(db, user, q) {
     db.query(`
       SELECT x.id, x.occurred_at, x.title, x.severity, x.status, a.code AS asset_code
       FROM ai_incidents x JOIN assets a ON a.id = x.asset_id
-      WHERE x.company_id = $1 AND x.severity IN ('grave','critico') AND x.status <> 'cerrado'${divX}
+      WHERE x.company_id = $1 AND x.severity IN ('incidente_grave','desastre') AND x.status = 'abierto'${divX}
       ORDER BY x.occurred_at DESC LIMIT 10`, p),
     db.query(`
       SELECT x.id, x.occurred_at, x.title, x.severity, x.status, x.kind, a.code AS asset_code, m.name AS model_name, v.version

@@ -109,6 +109,12 @@
         </select>
       </div>
     </div>
+    <div class="field" id="fEuWrap" style="display:none;">
+      <label style="display:flex;align-items:center;gap:8px;text-transform:none;letter-spacing:0;cursor:pointer;">
+        <input type="checkbox" id="fEuAiAct" style="width:auto;">
+        EU AI Act — show the article 73 section (serious incidents) in this client's incidents
+      </label>
+    </div>
     <div class="field-row">
       <div class="field">
         <label>Contact Name</label>
@@ -214,6 +220,9 @@
     document.getElementById('fName').value          = clientData?.name || '';
     document.getElementById('fCountry').value       = clientData?.country || 'Chile';
     document.getElementById('fContractStatus').value= clientData?.contract_status || 'pending';
+    // El ajuste EU AI Act solo se cambia al editar una empresa existente
+    document.getElementById('fEuAiAct').checked = clientData?.eu_ai_act_enabled === true;
+    document.getElementById('fEuWrap').style.display = clientData ? 'block' : 'none';
     document.getElementById('fContactName').value   = clientData?.contact_name || '';
     document.getElementById('fContactEmail').value  = clientData?.contact_email || '';
     document.getElementById('fContactPhone').value  = clientData?.contact_phone || '';
@@ -269,6 +278,7 @@
       contact_phone:    document.getElementById('fContactPhone').value.trim()
     };
     if (!id) payload.division_name = document.getElementById('fDivisionName').value.trim();
+    if (id) payload.eu_ai_act_enabled = document.getElementById('fEuAiAct').checked;
 
     const url    = id ? `/api/admin-clients?id=${id}` : '/api/admin-clients';
     const method = id ? 'PUT' : 'POST';

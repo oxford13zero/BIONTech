@@ -24,6 +24,9 @@ function pendingGroups(items) {
     tag: f.entity === 'modelo' ? modelTag(stateTxt(f.state)) : stateTxt(f.state)
   });
   return [
+    { key: 'incident_actions_overdue', icon: '⏰', list: (items.incident_actions_overdue || []).map(a => ({
+        href: '#/incidentes/' + a.id + '?tab=cierre', main: esc(a.action), sub: `${esc(a.title)} · ${esc(a.asset_code)} · ${esc(a.owner)}`,
+        tag: t('review_was_due').replace('{d}', esc(a.due_date)) })) },
     { key: 'reclassification_pending', icon: '⚖️', list: items.reclassification_pending.map(i => ({
         href: '#/instancias/' + i.id, main: esc(i.model_name), sub: `${esc(i.asset_code || t('asset_unassigned'))} · ${esc(i.code)} · ${verLabel(i.version)}`,
         tag: t('action_review_risk') })) },

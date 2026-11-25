@@ -32,6 +32,7 @@ CREATE TABLE IF NOT EXISTS companies (
   azure_db_password   TEXT,
   azure_db_status     TEXT DEFAULT 'pending' CHECK (azure_db_status IN ('pending','provisioning','ready','error')),
   onboarded_at        TIMESTAMPTZ,
+  eu_ai_act_enabled   BOOLEAN NOT NULL DEFAULT false,  -- sección EU AI Act en incidentes (migración 004)
   created_at          TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at          TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );

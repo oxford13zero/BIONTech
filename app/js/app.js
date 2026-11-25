@@ -342,14 +342,14 @@ function viewDashboard() {
     ['dash_models', c.models, '#/modelos'],
     ['dash_high_risk_inst', c.high_risk, '#/modelos'],
     ['dash_pending', c.pending, '#/pendientes'],
-    ['dash_incidents_12m', c.incidents_12m, '#/incidentes?from=' + new Date(Date.now() - 365 * 864e5).toISOString().slice(0, 10)]
+    ['dash_incidents_12m', c.incidents_12m, '#/incidentes?status=todos&from=' + new Date(Date.now() - 365 * 864e5).toISOString().slice(0, 10)]
   ];
   const mapRows = risk_map.map(b => `<tr><td class="l">${esc(b.name)}</td>${LEVELS.map(l =>
       `<td class="n ${b[l] ? LEVEL_CLS[l] + '-t' : ''}">${b[l] || '·'}</td>`).join('')}<td class="n">${b.total}</td></tr>`).join('');
 
   const attItems = [
     ...at.serious_open_incidents.map(x => ({ href: '#/incidentes/' + x.id, main: esc(x.title),
-      sub: `${esc(x.occurred_at)} · ${esc(x.asset_code)} · ${t('ist_' + x.status)}`, tag: `<span class="chip ${x.severity === 'critico' ? 'l-crit' : 'l-high'}">${t('sev_' + x.severity)}</span>` })),
+      sub: `${esc(x.occurred_at)} · ${esc(x.asset_code)} · ${t('ist_' + x.status)}`, tag: sevChip(x.severity) })),
     ...at.reclassification_pending.map(i => ({ href: '#/instancias/' + i.id, main: esc(i.model_name),
       sub: `${esc(i.asset_code || t('asset_unassigned'))} · ${verLabel(i.version)}`, tag: `<span class="chip c-a">${t('reclass_pending')}</span>` })),
     ...at.reviews_overdue.map(i => ({ href: '#/instancias/' + i.id, main: esc(i.model_name),
@@ -914,7 +914,8 @@ window.addEventListener('hashchange', () => {
   // Las fichas se vuelven a cargar al entrar, para mostrar siempre datos al día
   S.inst = null; S.assetDetail = null; S.modelDetail = null; S.assets = null; S.models = null;
   S.incDetail = null; S.incidents = null; S.cmp = null; S.pending = null; S.dash = null; S.repPreview = null; S.divStats = null;
-  if (!/^incidentes\/(nuevo|[\w-]+\/editar)$/.test(parseHash().path)) S.incForm = null;
+  S.incEdit = null; S.incActForm = null; S.incClose = null;
+  if (parseHash().path !== 'incidentes/nuevo') S.wiz = null;
   S.incMsg = S.incMsgNext || ''; S.incMsgNext = null;
   if (parseHash().path !== 'modelos/nuevo') S.modelNew = null;
   render(); window.scrollTo(0, 0);

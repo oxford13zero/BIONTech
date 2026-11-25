@@ -158,7 +158,7 @@ module.exports = async function handler(req, res) {
   }
 
   if (req.method === 'PUT' && id) {
-    const { name, industry, country, contact_name, contact_email, contact_phone, status, contract_status } = req.body;
+    const { name, industry, country, contact_name, contact_email, contact_phone, status, contract_status, eu_ai_act_enabled } = req.body;
     await pool.query(`
       UPDATE companies SET
         name = COALESCE($1, name), industry = COALESCE($2, industry),
@@ -168,6 +168,15 @@ module.exports = async function handler(req, res) {
         updated_at = NOW()
       WHERE id = $9
     `, [name, industry, country, contact_name, contact_email, contact_phone, status, contract_status, id]);
+    // Sección EU AI Act en incidentes (columna de la migración 004 maestra)
+    if (typeof eu_ai_act_enabled === 'boolean') {
+      try {
+        await pool.query('UPDATE companies SET eu_ai_act_enabled = $1 WHERE id = $2', [eu_ai_act_enabled, id]);
+      } catch (e) {
+        if (e.code === '42703') return res.status(200).json({ success: true, warning: 'EU AI Act setting not saved: run migration 004 on the master database.' });
+        throw e;
+      }
+    }
     return res.status(200).json({ success: true });
   }
 
