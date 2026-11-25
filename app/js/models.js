@@ -63,7 +63,7 @@ function viewModels() {
 // ── Catálogo ──────────────────────────────────────────────────
 function modelFilters() {
   const p = parseHash().params;
-  return { q: p.q || '', vendor: p.vendor || '', status: p.status || 'activo' };
+  return { q: p.q || '', vendor: p.vendor || '', status: p.status || 'activo', info: p.info || '' };
 }
 
 function setModelFilter(key, value) {
@@ -85,6 +85,17 @@ async function loadModels(key, f) {
   if (modelRoute()?.view === 'list') render();
 }
 
+// Estado de la información del modelo: caja negra / no entregados (proveedor) y por completar (interno)
+function modelInfoChips(x) {
+  const chips = [];
+  const np = x.fields_not_provided || 0, pe = x.fields_pending || 0;
+  if (x.black_box) chips.push(`<span class="chip c-r">${t('black_box')}${np ? ' · ' + t(np === 1 ? 'n_not_provided_1' : 'n_not_provided').replace('{n}', np) : ''}</span>`);
+  else if (np) chips.push(`<span class="chip c-a">${t(np === 1 ? 'n_not_provided_1' : 'n_not_provided').replace('{n}', np)}</span>`);
+  if (pe) chips.push(`<span class="chip c-a">${t('n_to_complete').replace('{n}', pe)}</span>`);
+  if (!chips.length) chips.push(`<span class="chip c-g">${t('info_complete')}</span>`);
+  return chips.join(' ');
+}
+
 function viewModelList() {
   const f = modelFilters();
   const key = JSON.stringify([S.division, f]);
@@ -103,13 +114,11 @@ function viewModelList() {
         <td>${x.instances_count}</td>
         <td>${x.versions_in_use.length ? x.versions_in_use.map(v => `<span class="chip c-n">${esc(v)}</span>`).join(' ') : '—'}</td>
         <td>${x.incidents_count}</td>
-        <td>${[x.black_box ? `<span class="chip c-r">${t('black_box')}</span>` : '',
-               x.fields_flagged ? `<span class="chip c-a">${t('n_fields_flagged').replace('{n}', x.fields_flagged)}</span>` : '',
-               x.reclassification_pending ? `<span class="chip c-a">${t('n_reclass').replace('{n}', x.reclassification_pending)}</span>` : ''].join(' ')}</td>
+        <td class="state-chips">${modelInfoChips(x)}${x.reclassification_pending ? `<span class="chip c-a">${t('n_reclass').replace('{n}', x.reclassification_pending)}</span>` : ''}</td>
       </tr>`).join('');
     body = `<div class="tbl-wrap"><table>
       <thead><tr><th>${t('model')}</th><th>${t('vendor')}</th><th>${t('base_risk')}</th><th>${t('installations')}</th>
-        <th>${t('versions_in_use')}</th><th>${t('nav_incidents')}</th><th></th></tr></thead>
+        <th>${t('versions_in_use')}</th><th>${t('nav_incidents')}</th><th>${t('status')}</th></tr></thead>
       <tbody>${rows || `<tr><td colspan="7" class="empty small">${t('models_none')}</td></tr>`}</tbody>
     </table></div>
     <p class="count-note">${t('n_models').replace('{n}', m.list.length)}${S.division !== 'all' ? ' · ' + t('models_in_division') : ''}</p>`;
@@ -122,6 +131,8 @@ function viewModelList() {
       <input class="input" type="text" placeholder="${t('vendor')}" value="${esc(f.vendor)}" onchange="setModelFilter('vendor', this.value.trim())">
       <select class="input" onchange="setModelFilter('status', this.value)">
         ${opt('activo', t('st_models_active'), f.status)}${opt('retirado', t('st_models_retired'), f.status)}</select>
+      <select class="input" aria-label="${t('info_filter')}" onchange="setModelFilter('info', this.value)">
+        ${opt('', t('info_all'), f.info)}${opt('incompleta', t('info_incomplete'), f.info)}${opt('proveedor', t('info_vendor'), f.info)}${opt('interno', t('info_internal'), f.info)}</select>
     </div>
     <div class="card">${body}</div>`;
 }

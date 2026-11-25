@@ -392,3 +392,4 @@ table.cmp td small{display:block}
 .acc[open] summary .arrow{transform:rotate(90deg)}
 .acc-body{padding:0 16px 14px}
 .acc-body .count-note{margin:0 0 10px}
+.state-chips .chip{margin:0 4px 4px 0}
