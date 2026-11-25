@@ -379,3 +379,16 @@ table.cmp td small{display:block}
 .act-add{display:grid;grid-template-columns:2fr 1fr auto auto;gap:8px;margin-top:10px}
 .close-box{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
 @media(max-width:700px){.act-add{grid-template-columns:1fr 1fr}.act-add input:first-child{grid-column:1/-1}.yn{flex-direction:column;align-items:flex-start}}
+
+/* ── Pendientes: grupos en acordeón ──────────────────────────── */
+.acc-list{display:flex;flex-direction:column;gap:8px;margin-top:10px}
+.acc{background:var(--panel);border:1px solid var(--border);border-radius:12px;overflow:hidden}
+.acc summary{display:flex;align-items:center;gap:10px;padding:13px 16px;cursor:pointer;list-style:none;font-weight:700}
+.acc summary::-webkit-details-marker{display:none}
+.acc summary:hover{background:var(--row)}
+.acc summary:focus-visible{outline:2px solid var(--sand);outline-offset:-2px}
+.acc-title{flex:1}
+.acc summary .arrow{color:var(--dim);transition:transform .15s}
+.acc[open] summary .arrow{transform:rotate(90deg)}
+.acc-body{padding:0 16px 14px}
+.acc-body .count-note{margin:0 0 10px}

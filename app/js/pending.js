@@ -15,36 +15,23 @@ async function loadPending(key) {
 
 // Definición de cada grupo: título, ayuda, cómo mostrar cada elemento y a dónde lleva
 function pendingGroups(items) {
-  const modelTag = tag => can('model.write') ? tag : t('managed_by_company');
-  const stateTxt = s => s === 'no_entregado' ? `🚫 ${t('st_not_provided')}` : `⏳ ${t('st_pending')}`;
-  const fieldItem = f => ({
-    href: f.entity === 'modelo' ? '#/modelos/' + f.id : '#/instancias/' + f.id,
-    main: `${esc(instLabel(f.field))}`,
-    sub: `${f.entity === 'modelo' ? t('model') : t('installation')}: ${esc(f.name || f.code)}${f.name ? ' · ' + esc(f.code) : ''}`,
-    tag: f.entity === 'modelo' ? modelTag(stateTxt(f.state)) : stateTxt(f.state)
-  });
+  // De la más urgente a la menos urgente
   return [
-    { key: 'incident_actions_overdue', icon: '⏰', list: (items.incident_actions_overdue || []).map(a => ({
+    { key: 'incident_actions_overdue', list: (items.incident_actions_overdue || []).map(a => ({
         href: '#/incidentes/' + a.id + '?tab=cierre', main: esc(a.action), sub: `${esc(a.title)} · ${esc(a.asset_code)} · ${esc(a.owner)}`,
         tag: t('review_was_due').replace('{d}', esc(a.due_date)) })) },
-    { key: 'reclassification_pending', icon: '⚖️', list: items.reclassification_pending.map(i => ({
+    { key: 'incidents_model_undetermined', list: items.incidents_model_undetermined.map(x => ({
+        href: '#/incidentes/' + x.id, main: esc(x.title), sub: `${esc(x.occurred_at)} · ${esc(x.asset_code)}`, tag: t('action_assign_model') })) },
+    { key: 'reclassification_pending', list: items.reclassification_pending.map(i => ({
         href: '#/instancias/' + i.id, main: esc(i.model_name), sub: `${esc(i.asset_code || t('asset_unassigned'))} · ${esc(i.code)} · ${verLabel(i.version)}`,
         tag: t('action_review_risk') })) },
-    { key: 'incidents_model_undetermined', icon: '🔎', list: items.incidents_model_undetermined.map(x => ({
-        href: '#/incidentes/' + x.id, main: esc(x.title), sub: `${esc(x.occurred_at)} · ${esc(x.asset_code)}`, tag: t('action_assign_model') })) },
-    { key: 'assets_models_unknown', icon: '❓', list: items.assets_models_unknown.map(a => ({
-        href: '#/activos/' + a.id, main: esc(a.name), sub: `${esc(a.code)} · ${esc(a.branch_name)}`, tag: t('usage_' + a.ai_usage) })) },
-    { key: 'instances_without_asset', icon: '📍', list: items.instances_without_asset.map(i => ({
-        href: '#/instancias/' + i.id, main: esc(i.model_name), sub: `${esc(i.code)} · ${esc(i.branch_name)}`, tag: t('action_assign_asset') })) },
-    { key: 'reviews_overdue', icon: '📅', list: items.reviews_overdue.map(i => ({
+    { key: 'reviews_overdue', list: items.reviews_overdue.map(i => ({
         href: '#/instancias/' + i.id, main: esc(i.model_name), sub: `${esc(i.asset_code || t('asset_unassigned'))} · ${esc(i.code)}`,
         tag: t('review_was_due').replace('{d}', esc(i.next_review_date)) })) },
-    { key: 'black_box_models', icon: '⬛', list: items.black_box_models.map(m => ({
-        href: '#/modelos/' + m.id, main: esc(m.name), sub: `${esc(m.code)} · ${esc(m.vendor)}`,
-        tag: modelTag(m.vendor_questionnaire_received ? t('questionnaire_answered')
-          : m.vendor_questionnaire_sent_at ? t('questionnaire_waiting').replace('{d}', esc(m.vendor_questionnaire_sent_at)) : t('questionnaire_not_sent')) })) },
-    { key: 'fields_pending', icon: '⏳', list: items.fields_pending.map(fieldItem) },
-    { key: 'fields_not_provided', icon: '🚫', list: items.fields_not_provided.map(fieldItem) }
+    { key: 'assets_models_unknown', list: items.assets_models_unknown.map(a => ({
+        href: '#/activos/' + a.id, main: esc(a.name), sub: `${esc(a.code)} · ${esc(a.branch_name)}`, tag: t('usage_' + a.ai_usage) })) },
+    { key: 'instances_without_asset', list: items.instances_without_asset.map(i => ({
+        href: '#/instancias/' + i.id, main: esc(i.model_name), sub: `${esc(i.code)} · ${esc(i.branch_name)}`, tag: t('action_assign_asset') })) }
   ];
 }
 
@@ -58,20 +45,22 @@ function viewPending() {
   if (!counts.total) return `<div class="card empty">${t('nothing_pending')}</div>`;
   const groups = pendingGroups(items).filter(g => g.list.length);
 
+  // Cada grupo es un acordeón (cerrado al inicio); se recuerda cuáles están abiertos
+  const open = S.pendOpen || (S.pendOpen = {});
   return `
     <p class="count-note">${t('pending_help').replace('{n}', counts.total)}</p>
-    <div class="tiles pend-tiles">${groups.map(g => `
-      <a class="tile" href="javascript:void(0)" onclick="document.getElementById('pg-${g.key}').scrollIntoView({behavior:'smooth'})">
-        <b>${g.list.length}</b>${g.icon} ${t('pend_' + g.key)}</a>`).join('')}
-    </div>
-    ${groups.map(g => `
-      <div class="card mt" id="pg-${g.key}">
-        <h3>${g.icon} ${t('pend_' + g.key)} <span class="badge-inline">${g.list.length}</span></h3>
-        <p class="count-note">${t('pend_help_' + g.key)}</p>
-        <div class="pend-list">${g.list.map(x => `
-          <a class="pend-item" href="${x.href}">
-            <span class="pend-main"><b>${x.main}</b><small>${x.sub}</small></span>
-            <span class="chip c-a">${x.tag}</span><span class="arrow">›</span></a>`).join('')}
+    <div class="acc-list">${groups.map(g => `
+      <details class="acc" id="pg-${g.key}" ${open[g.key] ? 'open' : ''} ontoggle="S.pendOpen['${g.key}'] = this.open">
+        <summary><span class="acc-title">${t('pend_' + g.key)}</span><span class="badge-inline">${g.list.length}</span><span class="arrow">›</span></summary>
+        <div class="acc-body">
+          <p class="count-note">${t('pend_help_' + g.key)}</p>
+          <div class="pend-list">${g.list.map(x => `
+            <a class="pend-item" href="${x.href}">
+              <span class="pend-main"><b>${x.main}</b><small>${x.sub}</small></span>
+              <span class="chip c-a">${x.tag}</span><span class="arrow">›</span></a>`).join('')}
+          </div>
         </div>
-      </div>`).join('')}`;
+      </details>`).join('')}
+    </div>
+    <p class="count-note mt"><a href="#/modelos">${t('pending_info_note')}</a></p>`;
 }
