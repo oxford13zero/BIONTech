@@ -19,10 +19,11 @@ const th = key => { const v = t(key); return v === key ? '' : v; };
 const sevChip = s => `<span class="chip ${SEV_CLS[s] || 'c-n'}">${t('sev_' + s)}</span>`;
 
 function incidentRoute() {
-  const m = S.route.match(/^incidentes(?:\/([\w-]+))?(?:\/(editar))?$/);
+  const m = S.route.match(/^incidentes(?:\/([\w-]+))?(?:\/(editar|reporte))?$/);
   if (!m) return null;
   if (!m[1]) return { view: 'list' };
   if (m[1] === 'nuevo') return { view: 'new' };
+  if (m[2] === 'reporte') return { view: 'report', id: m[1] };   // reporte formal (reports.js)
   return { view: 'detail', id: m[1] };
 }
 
@@ -30,6 +31,7 @@ function viewIncidents() {
   const r = incidentRoute();
   if (r.view === 'list') return viewIncidentList();
   if (r.view === 'detail') return viewIncidentDetail(r.id);
+  if (r.view === 'report') return grIncidentReportHtml(r.id);
   if (!can('incident.create')) return `<div class="card empty">${t('err_not_allowed')}</div>`;
   return viewIncidentWizard();
 }
@@ -472,7 +474,8 @@ function viewIncidentDetail(id) {
       <span class="chip ${x.status === 'abierto' ? 'c-g' : 'c-n'}">${t('ist_' + x.status)}</span>
       <span class="chip c-n">${t('f_kind')}: ${t('kind_' + x.kind)}</span>
       <span class="chip ${SEV_CLS[x.severity] || 'c-n'}">${t('f_severity')}: ${t('sev_' + x.severity)}</span>
-      ${x.eu_serious_incident ? `<span class="chip c-r">${t('eu_serious_short')}</span>` : ''}</div>
+      ${x.eu_serious_incident ? `<span class="chip c-r">${t('eu_serious_short')}</span>` : ''}
+      ${grIncReportAllowed(x) ? `<button class="btn btn-sm head-act" onclick="openIncReport()">${t('gr_inc_btn')}</button>` : ''}</div>
     <div class="crumb">${esc(x.occurred_at)}${x.occurred_time ? ' ' + esc(String(x.occurred_time).slice(0, 5)) : ''} ·
       <a href="#/activos/${esc(x.asset_id)}">${esc(x.asset_code)} — ${esc(x.asset_name)}</a> ·
       ${x.model_name ? `<a href="#/instancias/${esc(x.instance_id)}">${esc(x.model_name)}</a>${x.version ? ' (' + esc(x.version) + ')' : ''}` : t('model_undetermined')} ·
@@ -485,7 +488,8 @@ function viewIncidentDetail(id) {
     ${S.incClose ? modalHtml({ title: t('close_confirm_title'), subtitle: x.title, close: 'closeIncCloseModal',
       body: `<p class="count-note">${t('close_confirm_help')}</p>${S.incClose.error ? `<div class="form-error">${esc(S.incClose.error)}</div>` : ''}`,
       footer: `<button class="btn btn-ghost btn-sm" onclick="closeIncCloseModal()" ${S.incClose.busy ? 'disabled' : ''}>${t('cancel')}</button>
-        <button class="btn btn-danger btn-sm" onclick="confirmIncClose()" ${S.incClose.busy ? 'disabled' : ''}>${S.incClose.busy ? t('saving') : t('close_incident')}</button>` }) : ''}`;
+        <button class="btn btn-danger btn-sm" onclick="confirmIncClose()" ${S.incClose.busy ? 'disabled' : ''}>${S.incClose.busy ? t('saving') : t('close_incident')}</button>` }) : ''}
+    ${S.incReport ? grIncReportModal(x) : ''}`;
 }
 
 // ── Registrar: asistente de 3 pasos (CSET → OECD → revisar) ──────────

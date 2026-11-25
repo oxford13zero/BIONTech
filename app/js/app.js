@@ -186,6 +186,8 @@ function checkDivision() {
 }
 
 function divisionBar() {
+  // Informes de gobernanza: la cobertura se elige dentro del informe
+  if (S.route === 'reportes' || grIsConfigRoute(S.route)) return '';
   const branches = S.data?.branches || [];
   if (!canChooseDivision()) {
     const own = branches.find(b => String(b.id) === String(S.user.divisionId));
@@ -260,7 +262,7 @@ function sideHtml(items, depth = 0) {
   return items.map(it => {
     if (it.sec) return `<div class="sec-title">${t(it.sec)}</div>`;
     // Activo también en sus subpáginas (ej. activos/<id>), salvo los ítems con submenú
-    const active = S.route === it.id || (!it.kids && S.route.startsWith(it.id + '/'));
+    const active = S.route === it.id || (!it.kids && S.route.startsWith(it.id + '/')) || (it.id === 'reportes' && grIsConfigRoute(S.route));
     const open = it.kids && (active || it.kids.some(k => k.id === S.route));
     const n = it.count ? it.count() : null;
     const count = n !== null && n !== undefined ? `<span class="badge ${it.alert && n > 0 ? 'badge-alert' : ''}">${n}</span>` : '';
@@ -282,7 +284,8 @@ function currentRoute() {
   if (/^activos\/[\w-]+(\/editar)?$/.test(path)) return path;   // ficha, nuevo y editar activo
   if (/^modelos\/[\w-]+$/.test(path)) return path;                // ficha y nuevo modelo
   if (/^instancias\/[\w-]+$/.test(path)) return path;             // ficha de la instalación
-  if (/^incidentes\/[\w-]+(\/editar)?$/.test(path)) return path; // registrar, ficha y editar incidente
+  if (/^incidentes\/[\w-]+(\/(editar|reporte))?$/.test(path)) return path; // registrar, ficha, editar y reporte formal
+  if (grIsConfigRoute(path)) return path;                         // configuración de un informe (reports.js)
   return findItem(menu(), path) ? path : 'dashboard';
 }
 
@@ -300,7 +303,8 @@ function pageHead() {
 function viewPage() {
   if (S.route === 'dashboard') return pageHead() + viewDashboard();
   if (S.route === 'divisiones') return pageHead() + viewDivisions();
-  if (S.route.startsWith('reportes')) return pageHead() + viewReports();
+  if (S.route === 'reportes' || grIsConfigRoute(S.route)) return viewGovReports();   // informes de gobernanza (reports.js)
+  if (S.route.startsWith('reportes')) return pageHead() + viewReports();             // informe con IA (ISO, NIST, EU)
   if (S.route === 'equipo') return pageHead() + viewTeam();
   if (S.route === 'activos') return pageHead() + viewAssets();
   if (S.route.startsWith('activos/')) return viewAssets();
@@ -913,8 +917,9 @@ window.addEventListener('hashchange', () => {
   S.instEdit = null; S.instAction = null; S.integForm = null; S.instMsg = '';
   // Las fichas se vuelven a cargar al entrar, para mostrar siempre datos al día
   S.inst = null; S.assetDetail = null; S.modelDetail = null; S.assets = null; S.models = null;
-  S.incDetail = null; S.incidents = null; S.cmp = null; S.pending = null; S.dash = null; S.repPreview = null; S.divStats = null;
-  S.incEdit = null; S.incActForm = null; S.incClose = null;
+  S.incDetail = null; S.incidents = null; S.cmp = null; S.pending = null; S.dash = null; S.repPreview = null; S.divStats = null; S.grPrev = null; S.grDoc = null;
+  if (S.gr) S.gr.dd = false;
+  S.incEdit = null; S.incActForm = null; S.incClose = null; S.incReport = null;
   if (parseHash().path !== 'incidentes/nuevo') S.wiz = null;
   S.incMsg = S.incMsgNext || ''; S.incMsgNext = null;
   if (parseHash().path !== 'modelos/nuevo') S.modelNew = null;
