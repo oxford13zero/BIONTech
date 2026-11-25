@@ -198,12 +198,12 @@ async function incidentsReport(db, user, P) {
       ${base} GROUP BY b.name ORDER BY count(*) DESC, b.name`, p),
     db.query(`
       SELECT m.name AS model, count(*)::int AS incidents,
-        mode() WITHIN GROUP (ORDER BY x.incident_type) AS main_type,
+        mode() WITHIN GROUP (ORDER BY x.ai_behavior) AS main_behavior,
         max(CASE x.severity WHEN 'desastre' THEN 3 WHEN 'incidente_grave' THEN 2 ELSE 1 END)::int AS max_rank
       ${base} GROUP BY m.name ORDER BY count(*) DESC, m.name NULLS LAST`, p),
     db.query(`SELECT x.severity, count(*)::int AS incidents ${base} GROUP BY x.severity`, p),
     db.query(`
-      SELECT x.id, x.occurred_at, x.title, x.kind, x.severity, x.status, x.incident_type,
+      SELECT x.id, x.occurred_at, x.title, x.kind, x.severity, x.status, x.ai_behavior,
         a.code AS asset_code, m.name AS model, b.name AS division
       ${base} ORDER BY x.occurred_at DESC, x.created_at DESC LIMIT ${DETAIL_LIMIT + 1}`, p)
   ]);

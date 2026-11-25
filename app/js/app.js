@@ -917,7 +917,7 @@ window.addEventListener('hashchange', () => {
   S.instEdit = null; S.instAction = null; S.integForm = null; S.instMsg = '';
   // Las fichas se vuelven a cargar al entrar, para mostrar siempre datos al día
   S.inst = null; S.assetDetail = null; S.modelDetail = null; S.assets = null; S.models = null;
-  S.incDetail = null; S.incidents = null; S.cmp = null; S.pending = null; S.dash = null; S.repPreview = null; S.divStats = null; S.grPrev = null;
+  S.incDetail = null; S.incidents = null; S.cmp = null; S.pending = null; S.dash = null; S.repPreview = null; S.divStats = null; S.grPrev = null; S.grDoc = null;
   if (S.gr) S.gr.dd = false;
   S.incEdit = null; S.incActForm = null; S.incClose = null;
   if (parseHash().path !== 'incidentes/nuevo') S.wiz = null;
