@@ -16,6 +16,7 @@
 const { getClientPool, setCors } = require('./_db');
 const { verifyClient, assertCan, sendError } = require('./_auth');
 const I = require('./_inventory');
+const { pending } = require('./pending');
 
 function bad(status, message) { return { status, message }; }
 
@@ -24,8 +25,8 @@ function bad(status, message) { return { status, message }; }
 // filters: qué filtros aplican a cada informe
 // ready: ya se puede generar (los demás llegan en etapas siguientes)
 const REPORTS = {
-  1: { level: 'company',  frameworks: ['ISO 42001 9.3', 'NIST Govern'], filters: ['period'] },
-  2: { level: 'company',  frameworks: ['ISO 42001 6.1', 'NIST Map/Measure'], filters: [] },
+  1: { level: 'company',  frameworks: ['ISO 42001 9.3', 'NIST Govern'], filters: ['period'], ready: true },
+  2: { level: 'company',  frameworks: ['ISO 42001 6.1', 'NIST Map/Measure'], filters: [], ready: true },
   3: { level: 'division', frameworks: ['ISO 42001 A.4', 'EU AI Act art. 49', 'NIST Map'], filters: [], ready: true },
   4: { level: 'division', frameworks: ['ISO 42001 10.2', 'ISO 45001', 'OECD'], filters: ['period', 'status', 'severity'], ready: true },
   5: { level: 'division', frameworks: ['ISO 42001 10.2', 'ISO 45001 10.2'], filters: ['period'], ready: true },
@@ -442,8 +443,112 @@ async function gapsReport(db, user, P) {
   return { summary: gapsSummary(g), models: g.models, installations: D.rows, installations_truncated: D.truncated };
 }
 
-// Generadores por informe (1, 2 y 8 llegan en las etapas siguientes)
+// ── Informe 1: Estado Global de la IA en la Organización ──────
+// Revisión por la dirección (ISO 42001 9.3): reúne los demás informes a nivel empresa, con desglose por división
+async function globalByDivision(db, user, P) {
+  const p = [user.companyId, P.filters.from, P.filters.to];
+  return (await db.query(`
+    SELECT b.name AS division,
+      (SELECT count(*)::int FROM ai_instances i WHERE i.branch_id = b.id AND i.status = 'activa') AS installations,
+      (SELECT count(*)::int FROM ai_instances i WHERE i.branch_id = b.id AND i.status = 'activa' AND i.risk_level IN ('Critical','High')) AS high_risk,
+      (SELECT count(*)::int FROM ai_instances i WHERE i.branch_id = b.id AND i.status = 'activa' AND i.reclassification_pending) AS risk_to_review,
+      (SELECT count(*)::int FROM ai_incidents x WHERE x.branch_id = b.id AND x.occurred_at BETWEEN $2 AND $3) AS incidents,
+      (SELECT count(*)::int FROM ai_incidents x WHERE x.branch_id = b.id AND x.occurred_at BETWEEN $2 AND $3 AND x.severity = ANY('{incidente_grave,desastre}')) AS serious,
+      (SELECT count(*)::int FROM ai_incidents x WHERE x.branch_id = b.id AND x.status = 'abierto') AS open_now,
+      (SELECT count(*)::int FROM incident_actions ac JOIN ai_incidents x ON x.id = ac.incident_id
+         WHERE x.branch_id = b.id AND ac.status = 'pendiente' AND ac.due_date < CURRENT_DATE) AS actions_overdue
+    FROM branches b WHERE b.company_id = $1 AND b.status = 'active' ORDER BY b.name`, p)).rows;
+}
+
+// Incidentes por mes: los 12 meses que terminan en el mes final del período
+async function incidentTrend(db, user, P) {
+  return (await db.query(`
+    SELECT to_char(m, 'YYYY-MM') AS month,
+      count(x.id)::int AS incidents,
+      count(x.id) FILTER (WHERE x.severity = ANY('{incidente_grave,desastre}'))::int AS serious
+    FROM generate_series(date_trunc('month', $2::date) - INTERVAL '11 months', date_trunc('month', $2::date), INTERVAL '1 month') m
+    LEFT JOIN ai_incidents x ON x.company_id = $1 AND date_trunc('month', x.occurred_at) = m
+    GROUP BY m ORDER BY m`, [user.companyId, P.filters.to])).rows;
+}
+
+async function globalPreview(db, user, P) {
+  const [inc, act, inv] = await Promise.all([incidentsPreview(db, user, P), actionsPreview(db, user, P), inventoryCounts(db, user, P)]);
+  return { incidents: inc.incidents, serious: inc.serious, actions_overdue: inc.actions_overdue, risk_to_review: inv.risk_to_review };
+}
+
+async function globalReport(db, user, P) {
+  const [inventory, incidents, actions, changes, gaps, pend, byDivision, trend] = await Promise.all([
+    inventoryCounts(db, user, P),
+    incidentsReport(db, user, P),
+    actionsReport(db, user, P),
+    changesPreview(db, user, P),
+    gapsData(db, user, P),
+    pending(db, user, {}),
+    globalByDivision(db, user, P),
+    incidentTrend(db, user, P)
+  ]);
+  return {
+    inventory,
+    incidents: { ...incidents.summary, by_severity: incidents.by_severity, by_model: incidents.by_model.slice(0, 5) },
+    actions: actions.summary,
+    changes,
+    gaps: gapsSummary(gaps),
+    pending: pend.counts,
+    by_division: byDivision,
+    trend
+  };
+}
+
+// ── Informe 2: Mapa de riesgo de IA (fotografía a la fecha) ───
+async function riskMatrix(db, user) {
+  return (await db.query(`
+    SELECT b.name AS division,
+      count(i.id) FILTER (WHERE i.risk_level = 'Critical')::int AS "Critical",
+      count(i.id) FILTER (WHERE i.risk_level = 'High')::int AS "High",
+      count(i.id) FILTER (WHERE i.risk_level = 'Medium')::int AS "Medium",
+      count(i.id) FILTER (WHERE i.risk_level = 'Low')::int AS "Low",
+      count(i.id) FILTER (WHERE i.risk_level IS NULL)::int AS none,
+      count(i.id)::int AS total,
+      count(i.id) FILTER (WHERE i.reclassification_pending)::int AS risk_to_review,
+      count(i.id) FILTER (WHERE i.next_review_date < CURRENT_DATE)::int AS reviews_overdue,
+      (SELECT count(*)::int FROM ai_incidents x WHERE x.branch_id = b.id AND x.status = 'abierto'
+         AND x.severity = ANY('{incidente_grave,desastre}')) AS serious_open
+    FROM branches b LEFT JOIN ai_instances i ON i.branch_id = b.id AND i.status = 'activa'
+    WHERE b.company_id = $1 AND b.status = 'active'
+    GROUP BY b.id, b.name ORDER BY b.name`, [user.companyId])).rows;
+}
+
+async function riskPreview(db, user) {
+  const m = await riskMatrix(db, user);
+  const sum = k => m.reduce((n, r) => n + r[k], 0);
+  return { installations: sum('total'), critical: sum('Critical'), high: sum('High'), risk_to_review: sum('risk_to_review') };
+}
+
+async function riskReport(db, user) {
+  const [matrix, models] = await Promise.all([
+    riskMatrix(db, user),
+    // Modelos con instalaciones de riesgo crítico o alto, y dónde están
+    db.query(`
+      SELECT m.code, m.name, m.vendor, m.base_risk_level, m.black_box,
+        count(i.id) FILTER (WHERE i.risk_level = 'Critical')::int AS critical,
+        count(i.id) FILTER (WHERE i.risk_level = 'High')::int AS high,
+        count(i.id) FILTER (WHERE i.reclassification_pending)::int AS risk_to_review,
+        array_agg(DISTINCT b.name ORDER BY b.name) AS divisions,
+        (SELECT count(*)::int FROM ai_incidents x JOIN ai_instances xi ON xi.id = x.instance_id
+           WHERE xi.model_id = m.id AND x.occurred_at >= CURRENT_DATE - INTERVAL '12 months') AS incidents_12m
+      FROM ai_models m JOIN ai_instances i ON i.model_id = m.id AND i.status = 'activa' JOIN branches b ON b.id = i.branch_id
+      WHERE m.company_id = $1 AND i.risk_level IN ('Critical','High')
+      GROUP BY m.id ORDER BY count(i.id) FILTER (WHERE i.risk_level = 'Critical') DESC, count(i.id) DESC, m.name`, [user.companyId])
+  ]);
+  const sum = k => matrix.reduce((n, r) => n + r[k], 0);
+  const totals = Object.fromEntries(['Critical', 'High', 'Medium', 'Low', 'none', 'total', 'risk_to_review', 'reviews_overdue', 'serious_open'].map(k => [k, sum(k)]));
+  return { matrix, totals, models: models.rows };
+}
+
+// Generadores por informe (el 8 se genera desde la ficha del incidente)
 const BUILDERS = {
+  1: { preview: globalPreview, generate: globalReport },
+  2: { preview: riskPreview, generate: riskReport },
   3: { preview: inventoryPreview, generate: inventoryReport },
   4: { preview: incidentsPreview, generate: incidentsReport },
   5: { preview: actionsPreview, generate: actionsReport },

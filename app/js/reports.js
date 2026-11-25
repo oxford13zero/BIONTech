@@ -257,7 +257,7 @@ function grDocHtml(r) {
   const d = S.grDoc;
   if (!d || d.loading) return back + `<div class="card empty">${t('gr_generating')}</div>`;
   if (d.error) return back + `<div class="card empty">${t('data_error')}</div>`;
-  const body = { 3: grDocInventory, 4: grDocIncidents, 5: grDocActions, 6: grDocChanges, 7: grDocGaps }[r.id];
+  const body = { 1: grDocGlobal, 2: grDocRiskMap, 3: grDocInventory, 4: grDocIncidents, 5: grDocActions, 6: grDocChanges, 7: grDocGaps }[r.id];
   return back + `
     <div class="gr-actions gr-noprint"><span class="gr-help">${t('gr_pdf_help')}</span>
       <button class="btn btn-sm" onclick="grPrint()">${t('gr_pdf')}</button></div>
@@ -416,4 +416,81 @@ function grDocGaps(x) {
         x.installations.map(r => [grNw(esc(r.code)), grNw(r.asset_code ? esc(r.asset_code) : '—'), esc(r.model), esc(r.division), r.pending, r.not_provided]), [4, 5])
         + grNote(t('gr_internal_help')) + grTrunc(x.installations_truncated, x.installations.length)
       : `<p class="gr-empty">${t('gr_empty_internal_gaps')}</p>`);
+}
+
+// Informe 1: Estado Global de la IA en la Organización (revisión por la dirección, ISO 42001 9.3)
+const GR_PENDING_KEYS = ['incident_actions_overdue', 'incidents_model_undetermined', 'reclassification_pending', 'reviews_overdue', 'assets_models_unknown', 'instances_without_asset'];
+
+function grDocGlobal(x) {
+  const inv = x.inventory, inc = x.incidents, act = x.actions, chg = x.changes, gap = x.gaps;
+  // Puntos de atención: lo que la gerencia debe decidir o seguir (solo lo que tiene casos)
+  const points = [
+    [inc.serious, 'gr_pt_serious'], [x.pending.incident_actions_overdue, 'gr_pt_actions_overdue'],
+    [inv.risk_to_review, 'gr_pt_risk_to_review'], [inv.reviews_overdue, 'gr_pt_reviews_overdue'],
+    [x.pending.incidents_model_undetermined, 'gr_pt_undetermined'], [gap.black_box, 'gr_pt_black_box'],
+    [inv.assets_unknown, 'gr_pt_assets_unknown']
+  ].filter(([n]) => n > 0);
+  const model = m => m ? esc(m) : `<i>${t('gr_model_undetermined')}</i>`;
+  return grSec(1, 'gr_s_attention', points.length
+      ? `<ul class="gr-points">${points.map(([n, k]) => `<li><b>${n}</b> ${t(k)}</li>`).join('')}</ul>`
+      : `<p class="gr-empty">${t('gr_no_attention')}</p>`)
+    + grSec(2, 'gr_s_inventory_risk', `<div class="gr-kpi">
+      ${grKpi(inv.installations, 'gr_k_installations')}${grKpi(inv.models, 'gr_k_models')}${grKpi(inv.high_risk, 'gr_k_high_risk')}
+      ${grKpi(inv.risk_to_review, 'gr_k_risk_to_review')}${grKpi(inv.reviews_overdue, 'gr_k_reviews_overdue')}${grKpi(inv.assets, 'gr_k_assets')}</div>`)
+    + grSec(3, 'gr_s_incidents_period', `<div class="gr-kpi">
+      ${grKpi(inc.incidents, 'gr_k_incidents')}${grKpi(inc.serious, 'gr_k_serious')}${grKpi(inc.open, 'gr_k_open')}
+      ${grKpi(inc.hazards, 'gr_k_hazards')}${grKpi(inc.avg_close_days === null ? '—' : t('gr_days').replace('{n}', inc.avg_close_days), 'gr_k_avg_close')}
+      ${grKpi(inc.model_undetermined, 'gr_k_undetermined')}</div>`
+      + (inc.by_model.length ? `<h4>${t('gr_top_models')}</h4>` + grTable(['gr_c_model', 'gr_c_incidents', 'gr_c_max_sev'],
+          inc.by_model.map(r => [model(r.model), r.incidents, grSev(r.max_severity)]), [1]) : ''))
+    + grSec(4, 'gr_s_trend', grTrendHtml(x.trend))
+    + grSec(5, 'gr_s_actions_short', `<div class="gr-kpi">
+      ${grKpi(act.actions, 'gr_k_actions')}${grKpi(act.pending, 'gr_k_pending')}${grKpi(act.overdue, 'gr_k_actions_overdue')}
+      ${grKpi(act.done, 'gr_k_done')}${grKpi(act.on_time_pct === null ? '—' : act.on_time_pct + '%', 'gr_k_on_time')}${grKpi(act.done_late, 'gr_k_done_late')}</div>`)
+    + grSec(6, 'gr_s_changes_short', `<div class="gr-kpi gr-kpi4">
+      ${grKpi(chg.changes, 'gr_k_changes')}${grKpi(chg.reviewed, 'gr_k_reviewed')}${grKpi(chg.pending_review, 'gr_k_pending_review')}${grKpi(chg.in_monitoring, 'gr_k_in_monitoring')}</div>`)
+    + grSec(7, 'gr_s_gaps_short', `<div class="gr-kpi gr-kpi4">
+      ${grKpi(gap.models_with_gaps, 'gr_k_models_with_gaps')}${grKpi(gap.black_box, 'gr_k_black_box')}
+      ${grKpi(gap.vendor_fields_not_provided, 'gr_k_vendor_not_provided')}${grKpi(gap.installations_with_gaps, 'gr_k_installations_with_gaps')}</div>`)
+    + grSec(8, 'gr_s_division', grTable(['gr_c_division', 'gr_c_installations', 'gr_c_high_risk', 'gr_c_risk_to_review', 'gr_c_incidents_period', 'gr_c_serious', 'gr_c_open_now', 'gr_c_overdue'],
+        x.by_division.map(r => [esc(r.division), r.installations, r.high_risk, r.risk_to_review, r.incidents, r.serious, r.open_now, r.actions_overdue]), [1, 2, 3, 4, 5, 6, 7])
+      + grNote(t('gr_division_help')))
+    + grSec(9, 'gr_s_pending', grTable(['gr_c_task', 'gr_c_count'], GR_PENDING_KEYS.map(k => [t('pend_' + k), x.pending[k] || 0]), [1])
+      + grNote(t('gr_pending_help')));
+}
+
+// Incidentes por mes (12 meses): una serie en barras, con la tabla de valores debajo
+function grTrendHtml(trend) {
+  const max = Math.max(1, ...trend.map(m => m.incidents));
+  const mon = ym => { const [y, m] = ym.split('-'); return new Date(Date.UTC(+y, +m - 1, 1)).toLocaleDateString(LANG === 'es' ? 'es-CL' : 'en-US', { month: 'short', timeZone: 'UTC' }).replace('.', '') + ' ' + y.slice(2); };
+  const tip = m => t('gr_trend_tip').replace('{m}', mon(m.month)).replace('{n}', m.incidents).replace('{s}', m.serious);
+  return `<figure class="gr-trend" aria-label="${t('gr_s_trend')}">
+      <div class="gr-bars">${trend.map(m => `<div class="gr-bar" title="${esc(tip(m))}">
+        <span style="height:${Math.round(100 * m.incidents / max)}%"></span></div>`).join('')}</div>
+      <table class="gr-tbl gr-trend-tbl"><thead><tr><th></th>${trend.map(m => `<th class="n">${mon(m.month)}</th>`).join('')}</tr></thead>
+        <tbody><tr><td>${t('gr_c_incidents')}</td>${trend.map(m => `<td class="n">${m.incidents}</td>`).join('')}</tr>
+        <tr><td>${t('gr_c_serious')}</td>${trend.map(m => `<td class="n">${m.serious}</td>`).join('')}</tr></tbody></table>
+    </figure>` + grNote(t('gr_trend_help'));
+}
+
+// Informe 2: Mapa de riesgo de IA
+function grDocRiskMap(x) {
+  const T = x.totals;
+  const cell = (n, l) => n ? `<span class="gr-heat gr-h-${l}">${n}</span>` : '<span class="gr-zero">0</span>';
+  const levels = ['Critical', 'High', 'Medium', 'Low'];
+  const matrix = `<table class="gr-tbl gr-matrix"><thead><tr><th>${t('gr_c_division')}</th>${levels.map(l => `<th class="n">${t('risk_' + l)}</th>`).join('')}
+      <th class="n">${t('gr_risk_none')}</th><th class="n">${t('gr_c_total')}</th></tr></thead>
+    <tbody>${x.matrix.map(r => `<tr><td>${esc(r.division)}</td>${levels.map(l => `<td class="n">${cell(r[l], l)}</td>`).join('')}
+      <td class="n">${r.none}</td><td class="n"><b>${r.total}</b></td></tr>`).join('')}
+      <tr class="gr-total"><td>${t('gr_c_total')}</td>${levels.map(l => `<td class="n">${T[l]}</td>`).join('')}<td class="n">${T.none}</td><td class="n">${T.total}</td></tr></tbody></table>`;
+  return grSec(1, 'gr_s_summary', `<div class="gr-kpi">
+      ${grKpi(T.total, 'gr_k_installations')}${grKpi(T.Critical, 'gr_k_critical')}${grKpi(T.High, 'gr_k_high')}
+      ${grKpi(T.risk_to_review, 'gr_k_risk_to_review')}${grKpi(T.reviews_overdue, 'gr_k_reviews_overdue')}${grKpi(T.serious_open, 'gr_k_serious_open')}</div>`)
+    + grSec(2, 'gr_s_matrix', matrix + grNote(t('gr_matrix_help')))
+    + grSec(3, 'gr_s_high_models', x.models.length ? grTable(['gr_c_model', 'gr_c_vendor', 'gr_c_base_risk', 'gr_c_critical', 'gr_c_high', 'gr_c_risk_to_review', 'gr_c_incidents_12m', 'gr_c_where'],
+        x.models.map(m => [`${esc(m.name)}${m.black_box ? ` <small>${t('black_box')}</small>` : ''}`, esc(m.vendor), m.base_risk_level ? t('risk_' + m.base_risk_level) : '—',
+          m.critical, m.high, m.risk_to_review, m.incidents_12m, m.divisions.map(esc).join(', ')]), [3, 4, 5, 6])
+      : `<p class="gr-empty">${t('gr_empty_high_models')}</p>`)
+    + grSec(4, 'gr_s_concentration', grTable(['gr_c_division', 'gr_c_risk_to_review', 'gr_c_reviews_overdue', 'gr_c_serious_open'],
+        x.matrix.map(r => [esc(r.division), r.risk_to_review, r.reviews_overdue, r.serious_open]), [1, 2, 3]) + grNote(t('gr_concentration_help')));
 }
