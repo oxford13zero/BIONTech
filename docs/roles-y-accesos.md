@@ -41,7 +41,8 @@ Regla: un usuario solo puede crear usuarios con **menor** acceso que el suyo.
 1. Los permisos se validan **en el servidor** (APIs), no solo en la pantalla.
 2. Tokens de BION Admin y de clientes son distintos (`type: admin` / `type: client`) y no son intercambiables.
 3. Toda lectura/escritura se filtra por empresa y, si corresponde, por división.
-4. Los reportes solo se generan dentro del alcance del usuario.
+4. Los reportes solo se generan dentro del alcance del usuario. Los informes de empresa (Estado Global y
+   Mapa de riesgo) son solo para Super empresa. Detalle en `docs/informes.md`.
 5. Borrado siempre lógico (`status = 'inactive'`).
 
 ## Migración de roles actuales
