@@ -1,6 +1,7 @@
 // ============================================================
 // Pendientes — /api/pending?division=
-// Reúne lo que falta en el inventario (regla 8 del diseño), con conteos.
+// Tareas pendientes (con plazo o urgencia), con conteos. La información incompleta
+// de modelos e instalaciones se muestra en Modelos de IA y en cada ficha.
 // ============================================================
 const { getClientPool, setCors } = require('./_db');
 const { verifyClient, assertCan, resolveDivision, sendError } = require('./_auth');
@@ -16,31 +17,9 @@ async function pending(db, user, q) {
   const divI = division ? (p.push(division), ` AND i.branch_id::text = $${p.length}`) : '';
   const divA = division ? ` AND a.branch_id::text = $2` : '';
   const divX = division ? ` AND x.branch_id::text = $2` : '';
-  // Modelos: con división, solo los instalados en ella
-  const modelScope = division
-    ? ` AND EXISTS (SELECT 1 FROM ai_instances i WHERE i.model_id = m.id AND i.status = 'activa'${divI})` : '';
-
-  const sectionUnion = Object.values(I.INSTANCE_SECTIONS).map(s => `
-      SELECT i.id AS instance_id, i.code, e.key AS field, e.value AS state, '${s.table}' AS section
-      FROM ${s.table} t JOIN ai_instances i ON i.id = t.instance_id, jsonb_each_text(t.field_status) e
-      WHERE i.company_id = $1 AND i.status = 'activa'${divI}`).join(' UNION ALL ');
 
   const q1 = (sql) => db.query(sql + ` LIMIT ${LIMIT}`, p).then(r => r.rows);
-  const [fieldFlags, blackBox, assetsUnknown, noAsset, reclass, undetermined, overdue, actionsOverdue] = await Promise.all([
-    q1(`
-      SELECT 'modelo' AS entity, m.id, m.code, m.name, e.key AS field, e.value AS state, NULL AS section
-      FROM ai_models m, jsonb_each_text(m.field_status) e
-      WHERE m.company_id = $1 AND m.status = 'activo'${modelScope}
-      UNION ALL
-      SELECT 'instancia', i.id, i.code, m.name, e.key, e.value, NULL
-      FROM ai_instances i JOIN ai_models m ON m.id = i.model_id, jsonb_each_text(i.field_status) e
-      WHERE i.company_id = $1 AND i.status = 'activa'${divI}
-      UNION ALL
-      SELECT 'instancia', s.instance_id, s.code, NULL, s.field, s.state, s.section FROM (${sectionUnion}) s
-      ORDER BY 1, 3`),
-    q1(`
-      SELECT m.id, m.code, m.name, m.vendor, m.vendor_questionnaire_sent_at, m.vendor_questionnaire_received
-      FROM ai_models m WHERE m.company_id = $1 AND m.status = 'activo' AND m.black_box${modelScope} ORDER BY m.name`),
+  const [assetsUnknown, noAsset, reclass, undetermined, overdue, actionsOverdue] = await Promise.all([
     q1(`
       SELECT a.id, a.code, a.name, a.ai_usage, b.name AS branch_name
       FROM assets a JOIN branches b ON b.id = a.branch_id
@@ -70,21 +49,17 @@ async function pending(db, user, q) {
       ORDER BY ac.due_date`)
   ]);
 
+  // Solo tareas, de la más urgente a la menos urgente (la información incompleta se ve en Modelos de IA)
   const items = {
-    fields_pending: fieldFlags.filter(f => f.state === 'pendiente'),
-    fields_not_provided: fieldFlags.filter(f => f.state === 'no_entregado'),
-    black_box_models: blackBox,
-    questionnaires_unanswered: blackBox.filter(m => !m.vendor_questionnaire_received),
-    assets_models_unknown: assetsUnknown,
-    instances_without_asset: noAsset,
-    reclassification_pending: reclass,
+    incident_actions_overdue: actionsOverdue,
     incidents_model_undetermined: undetermined,
+    reclassification_pending: reclass,
     reviews_overdue: overdue,
-    incident_actions_overdue: actionsOverdue
+    assets_models_unknown: assetsUnknown,
+    instances_without_asset: noAsset
   };
   const counts = Object.fromEntries(Object.entries(items).map(([k, v]) => [k, v.length]));
-  // Total para el número del menú (cada brecha cuenta una vez; los cuestionarios ya están en caja negra)
-  counts.total = Object.entries(counts).filter(([k]) => k !== 'questionnaires_unanswered').reduce((s, [, n]) => s + n, 0);
+  counts.total = Object.values(counts).reduce((s, n) => s + n, 0);
   return { division, counts, items };
 }
 

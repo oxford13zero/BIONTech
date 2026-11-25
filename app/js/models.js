@@ -63,7 +63,7 @@ function viewModels() {
 // ── Catálogo ──────────────────────────────────────────────────
 function modelFilters() {
   const p = parseHash().params;
-  return { q: p.q || '', vendor: p.vendor || '', status: p.status || 'activo' };
+  return { q: p.q || '', vendor: p.vendor || '', status: p.status || 'activo', info: p.info || '' };
 }
 
 function setModelFilter(key, value) {
@@ -85,6 +85,39 @@ async function loadModels(key, f) {
   if (modelRoute()?.view === 'list') render();
 }
 
+// Recuadro "Información incompleta" de la ficha: proveedor (caja negra, no entregado) e interno (por completar)
+function modelInfoBoxHtml(m) {
+  const fs = m.field_status || {};
+  const link = col => `<a href="javascript:void(0)" onclick="goToField('mfield_${col}')">${esc(fieldLabel(col))}</a>`;
+  const notProvided = Object.keys(fs).filter(k => fs[k] === 'no_entregado'), pending = Object.keys(fs).filter(k => fs[k] === 'pendiente');
+  const rows = [];
+  if (m.black_box) rows.push(infoRow(t('black_box'), 'vendor', `${t('black_box_info')} ${m.vendor_questionnaire_received ? t('questionnaire_answered')
+    : m.vendor_questionnaire_sent_at ? t('questionnaire_waiting').replace('{d}', esc(m.vendor_questionnaire_sent_at)) : t('questionnaire_not_sent')}.`));
+  if (notProvided.length) rows.push(infoRow(t('st_not_provided_short'), 'vendor', notProvided.map(link).join(' · ')));
+  if (pending.length) rows.push(infoRow(t('st_to_complete'), 'internal', pending.map(link).join(' · ')));
+  return rows.length ? `<div class="inc-box"><h3>${t('info_incomplete')}</h3><dl>${rows.join('')}</dl></div>` : '';
+}
+const infoRow = (label, who, html) => `<div class="inc-row"><dt>${esc(label)}<span class="who ${who}">${t(who === 'vendor' ? 'who_vendor' : 'who_internal')}</span></dt><dd>${html}</dd></div>`;
+
+// Lleva a un campo de la ficha y lo resalta un momento
+function goToField(id) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  el.classList.remove('flash'); void el.offsetWidth; el.classList.add('flash');
+}
+
+// Estado de la información del modelo: caja negra / no entregados (proveedor) y por completar (interno)
+function modelInfoChips(x) {
+  const chips = [];
+  const np = x.fields_not_provided || 0, pe = x.fields_pending || 0;
+  if (x.black_box) chips.push(`<span class="chip c-r">${t('black_box')}${np ? ' · ' + t(np === 1 ? 'n_not_provided_1' : 'n_not_provided').replace('{n}', np) : ''}</span>`);
+  else if (np) chips.push(`<span class="chip c-a">${t(np === 1 ? 'n_not_provided_1' : 'n_not_provided').replace('{n}', np)}</span>`);
+  if (pe) chips.push(`<span class="chip c-a">${t('n_to_complete').replace('{n}', pe)}</span>`);
+  if (!chips.length) chips.push(`<span class="chip c-g">${t('info_complete')}</span>`);
+  return chips.join(' ');
+}
+
 function viewModelList() {
   const f = modelFilters();
   const key = JSON.stringify([S.division, f]);
@@ -103,13 +136,11 @@ function viewModelList() {
         <td>${x.instances_count}</td>
         <td>${x.versions_in_use.length ? x.versions_in_use.map(v => `<span class="chip c-n">${esc(v)}</span>`).join(' ') : '—'}</td>
         <td>${x.incidents_count}</td>
-        <td>${[x.black_box ? `<span class="chip c-r">${t('black_box')}</span>` : '',
-               x.fields_flagged ? `<span class="chip c-a">${t('n_fields_flagged').replace('{n}', x.fields_flagged)}</span>` : '',
-               x.reclassification_pending ? `<span class="chip c-a">${t('n_reclass').replace('{n}', x.reclassification_pending)}</span>` : ''].join(' ')}</td>
+        <td class="state-chips">${modelInfoChips(x)}${x.reclassification_pending ? `<span class="chip c-a">${t('n_reclass').replace('{n}', x.reclassification_pending)}</span>` : ''}</td>
       </tr>`).join('');
     body = `<div class="tbl-wrap"><table>
       <thead><tr><th>${t('model')}</th><th>${t('vendor')}</th><th>${t('base_risk')}</th><th>${t('installations')}</th>
-        <th>${t('versions_in_use')}</th><th>${t('nav_incidents')}</th><th></th></tr></thead>
+        <th>${t('versions_in_use')}</th><th>${t('nav_incidents')}</th><th>${t('status')}</th></tr></thead>
       <tbody>${rows || `<tr><td colspan="7" class="empty small">${t('models_none')}</td></tr>`}</tbody>
     </table></div>
     <p class="count-note">${t('n_models').replace('{n}', m.list.length)}${S.division !== 'all' ? ' · ' + t('models_in_division') : ''}</p>`;
@@ -122,6 +153,8 @@ function viewModelList() {
       <input class="input" type="text" placeholder="${t('vendor')}" value="${esc(f.vendor)}" onchange="setModelFilter('vendor', this.value.trim())">
       <select class="input" onchange="setModelFilter('status', this.value)">
         ${opt('activo', t('st_models_active'), f.status)}${opt('retirado', t('st_models_retired'), f.status)}</select>
+      <select class="input" aria-label="${t('info_filter')}" onchange="setModelFilter('info', this.value)">
+        ${opt('', t('info_all'), f.info)}${opt('incompleta', t('info_incomplete'), f.info)}${opt('proveedor', t('info_vendor'), f.info)}${opt('interno', t('info_internal'), f.info)}</select>
     </div>
     <div class="card">${body}</div>`;
 }
@@ -154,7 +187,7 @@ function viewModelDetail(id) {
     <div class="sec open" style="--c:${g.color}">
       <div class="sec-head static"><span class="dot"></span><span class="sec-name">${esc(g.title[LANG])}</span></div>
       <div class="sec-body"><div class="fields">${g.fields.map(col => editing ? modelFieldInput(col, m[col], fs[col]) : `
-        <div class="field"><label>${esc(fieldLabel(col))}</label>
+        <div class="field" id="mfield_${col}"><label>${esc(fieldLabel(col))}</label>
           <div>${stateValueHtml(MODEL_DATE_FIELDS.includes(col) && m[col] ? String(m[col]).slice(0, 10) : m[col], fs[col], MODEL_BOOL_FIELDS.includes(col))}</div></div>`).join('')}
       </div></div>
     </div>`).join('');
@@ -212,6 +245,7 @@ function viewModelDetail(id) {
            <button class="btn btn-sm" onclick="retireModel('${esc(m.id)}')">${t('retire')}</button>`}</div>` : ''}
     </div>
     ${S.modelMsg ? `<div class="alert">${esc(S.modelMsg)}</div>` : ''}
+    ${editing ? '' : modelInfoBoxHtml(m)}
     ${editing && S.modelEdit.error ? `<div class="form-error" role="alert">${esc(S.modelEdit.error)}</div>` : ''}
     ${identity}
     <div class="card ${editing ? 'mt' : ''}"><h3>${t('vendor_transparency')}</h3>${transparency}</div>

@@ -132,6 +132,21 @@ async function resolveWhere(db, user, inc) {
   }
 }
 
+// Un incidente grave durante la vigilancia de una revisión de cambio de versión
+// devuelve la instalación a "Riesgo por revisar" (migración 005)
+async function reopenReviewIfSerious(db, inc) {
+  if (!inc.instance_id || !['incidente_grave', 'desastre'].includes(inc.severity)) return false;
+  if (!(await db.query(`SELECT to_regclass('instance_version_reviews') AS t`)).rows[0].t) return false;
+  const r = await db.query(`
+    UPDATE instance_version_reviews r SET reopened_at = NOW(), reopened_by_incident = $2
+    WHERE r.id = (SELECT id FROM instance_version_reviews WHERE instance_id::text = $1 ORDER BY reviewed_at DESC LIMIT 1)
+      AND r.reopened_at IS NULL AND $3::date BETWEEN r.reviewed_at::date AND r.monitoring_until
+    RETURNING r.instance_id`, [String(inc.instance_id), inc.id, inc.occurred_at]);
+  if (!r.rowCount) return false;
+  await db.query('UPDATE ai_instances SET reclassification_pending = true, updated_at = NOW() WHERE id = $1', [r.rows[0].instance_id]);
+  return true;
+}
+
 async function loadIncident(db, user, id) {
   const r = await db.query(`${SELECT} WHERE x.id::text = $1 AND x.company_id = $2`, [String(id), user.companyId]);
   const inc = r.rows[0];
@@ -219,7 +234,8 @@ async function create(pool, user, body) {
     const r = await db.query(
       `INSERT INTO ai_incidents (${keys.join(', ')}) VALUES (${keys.map((_, i) => '$' + (i + 1)).join(', ')}) RETURNING id`,
       Object.values(row));
-    return { id: r.rows[0].id, version_id: f.version_id };
+    const reopened = await reopenReviewIfSerious(db, { ...f, id: r.rows[0].id });
+    return { id: r.rows[0].id, version_id: f.version_id, review_reopened: reopened };
   });
 }
 
@@ -265,6 +281,7 @@ async function updateSection(pool, user, id, section, body) {
     await db.query(
       `UPDATE ai_incidents SET ${keys.map((k, i) => `${k} = $${i + 2}`).join(', ')}, updated_at = NOW() WHERE id = $1`,
       [cur.id, ...Object.values(set)]);
+    if (section === 'registro') await reopenReviewIfSerious(db, { ...cur, ...changes, id: cur.id });
     return { success: true, version_id: set.version_id };
   });
 }

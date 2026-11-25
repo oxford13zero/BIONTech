@@ -1,6 +1,7 @@
 // ============================================================
 // Catálogo de modelos — /api/models
-//   GET    /api/models?division=&q=&vendor=&status=&catalog=   lista (catalog=1: todo el catálogo aunque no esté en la división)
+//   GET    /api/models?division=&q=&vendor=&status=&catalog=&info=   lista (catalog=1: todo el catálogo aunque no esté en la división)
+//          info: incompleta · proveedor (caja negra o datos no entregados) · interno (datos por completar)
 //   GET    /api/models?id=&division=                  ficha (versiones, instalaciones, incidentes)
 //   POST   /api/models                                crear { ...campos, field_status?, first_version? }
 //   PUT    /api/models?id=                            editar { ...campos, field_status?, justification, new_version?, dry_run? }
@@ -54,6 +55,12 @@ async function list(db, user, q) {
   // Instancias que cuentan: activas y, si hay división, de esa división
   let instCond = "i.model_id = m.id AND i.status = 'activa'";
   if (division) { params.push(division); instCond += ` AND i.branch_id::text = $${params.length}`; }
+  // Información incompleta del modelo: del proveedor (caja negra, no entregados) o interna (por completar)
+  const nNot = "(SELECT count(*) FROM jsonb_each_text(m.field_status) e WHERE e.value = 'no_entregado')";
+  const nPend = "(SELECT count(*) FROM jsonb_each_text(m.field_status) e WHERE e.value = 'pendiente')";
+  if (q.info === 'incompleta') where.push(`(m.black_box OR ${nNot} > 0 OR ${nPend} > 0)`);
+  if (q.info === 'proveedor') where.push(`(m.black_box OR ${nNot} > 0)`);
+  if (q.info === 'interno') where.push(`${nPend} > 0`);
   // Con una división elegida, solo los modelos instalados en ella
   // (catalog=1: catálogo completo, para elegir qué instalar)
   if (division && q.catalog !== '1') where.push(`EXISTS (SELECT 1 FROM ai_instances i WHERE ${instCond})`);
@@ -65,7 +72,9 @@ async function list(db, user, q) {
               FROM ai_instances i JOIN model_versions v ON v.id = i.current_version_id WHERE ${instCond}) AS versions_in_use,
            (SELECT count(*)::int FROM ai_incidents x JOIN ai_instances i ON i.id = x.instance_id WHERE ${instCond.replace("AND i.status = 'activa'", '')}) AS incidents_count,
            (SELECT count(*)::int FROM ai_instances i WHERE ${instCond} AND i.reclassification_pending) AS reclassification_pending,
-           (SELECT count(*)::int FROM jsonb_object_keys(m.field_status)) AS fields_flagged
+           (SELECT count(*)::int FROM jsonb_object_keys(m.field_status)) AS fields_flagged,
+           ${nNot}::int AS fields_not_provided, ${nPend}::int AS fields_pending,
+           m.vendor_questionnaire_sent_at, m.vendor_questionnaire_received
     FROM ai_models m
     WHERE ${where.join(' AND ')}
     ORDER BY m.name`, params);

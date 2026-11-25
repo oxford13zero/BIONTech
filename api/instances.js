@@ -8,7 +8,9 @@
 //   PUT    ?id=&integration_id=                  editar integración
 //   DELETE ?id=&integration_id=                  borrar integración
 //   POST   ?id=&action=assign                    asignar activo { asset_id }
-//   POST   ?id=&action=review                    riesgo revisado { risk_level? }
+//   POST   ?id=&action=review                    revisión del cambio de versión (gestión del cambio; migración 005)
+//          { what_changed?, substantial, affected_aspects[], tests[], test_result?, evidence_url?, controls[],
+//            rollback_plan, monitoring_days, risk_level, approved_by?, justification }
 //   POST   ?id=&action=retire                    retirar { date? }
 //   POST   ?action=copy                          copiar { source_id, target_ids[] } (solo campos vacíos)
 // Diseño: docs/activos-y-modelos.md
@@ -22,7 +24,7 @@ const notFound = () => ({ status: 404, message: 'Instance not found' });
 // Instancia visible para el usuario (empresa y división)
 async function loadInstance(db, user, id) {
   const r = await db.query(`
-    SELECT i.*, m.base_risk_level, m.name AS model_name, m.code AS model_code, m.vendor, m.black_box
+    SELECT i.*, m.base_risk_level, m.name AS model_name, m.code AS model_code, m.vendor, m.black_box, m.field_status AS model_field_status
     FROM ai_instances i JOIN ai_models m ON m.id = i.model_id
     WHERE i.id::text = $1 AND i.company_id = $2`, [String(id), user.companyId]);
   const inst = r.rows[0];
@@ -63,7 +65,8 @@ async function detail(db, user, id) {
     branch: branch.rows[0] || null,
     version_history: history.rows,
     integrations: integrations.rows,
-    incidents: incidents.rows
+    incidents: incidents.rows,
+    version_review: await latestReview(db, inst, history.rows)
   };
 }
 
@@ -185,17 +188,83 @@ async function assign(pool, user, id, body) {
   });
 }
 
+// ── Revisión del cambio de versión (gestión del cambio) ─────────
+const REVIEW_ENUMS = {
+  affected_aspects: ['funciones_seguridad', 'autonomia', 'interaccion_personas', 'sensores_datos', 'umbrales', 'pantalla_operador'],
+  tests: ['piloto', 'pruebas_faena', 'validacion_proveedor', 'sin_pruebas'],
+  controls: ['capacitacion', 'procedimientos', 'supervision_humana', 'ninguno']
+};
+const YES_NO = ['si', 'no', 'no_se_sabe'];
+const MONITORING_DAYS = [15, 30, 60, 90];
+const SERIOUS = ['incidente_grave', 'desastre'];
+
+const reviewsReady = async db => !!(await db.query(`SELECT to_regclass('instance_version_reviews') AS t`)).rows[0].t;
+
 async function review(pool, user, id, body) {
   assertCan(user, 'instance.write');
+  const b = body || {};
+  const f = {};
+  for (const [k, allowed] of Object.entries(REVIEW_ENUMS)) {
+    const v = b[k] ?? [];
+    if (!Array.isArray(v) || v.some(x => !allowed.includes(x))) throw I.badRequest(`Invalid value: ${k}`);
+    f[k] = [...new Set(v)];
+  }
+  if (!f.tests.length) throw I.badRequest('tests required');
+  if (!f.controls.length) throw I.badRequest('controls required');
+  I.assertOneOf(b.substantial, YES_NO, 'substantial'); if (!b.substantial) throw I.badRequest('substantial required');
+  I.assertOneOf(b.rollback_plan, YES_NO, 'rollback_plan'); if (!b.rollback_plan) throw I.badRequest('rollback_plan required');
+  if (!MONITORING_DAYS.includes(Number(b.monitoring_days))) throw I.badRequest('Invalid value: monitoring_days');
+  const text = (v, max = 5000) => { const s = v == null ? '' : String(v).trim(); if (s.length > max) throw I.badRequest('Invalid value'); return s || null; };
+  const justification = text(b.justification);
+  if (!justification) throw I.badRequest('Justification required');
+  const evidence = text(b.evidence_url, 2000);
+  if (evidence && !/^https?:\/\/\S+$/i.test(evidence)) throw I.badRequest('Invalid value: evidence_url');
+
   return I.inTransaction(pool, async db => {
+    if (!(await reviewsReady(db))) throw { status: 500, message: 'Database update pending (migration 005)' };
     const inst = await loadInstance(db, user, id);
     assertActive(inst);
-    const risk = body.risk_level || inst.risk_level;
+    const risk = b.risk_level || inst.risk_level;
     I.assertOneOf(risk, I.RISK_LEVELS, 'risk_level');
     I.assertRiskNotBelow(risk, inst.base_risk_level);
+    // Versión vigente y la anterior
+    const hist = (await db.query(
+      `SELECT version_id FROM instance_versions WHERE instance_id = $1 ORDER BY valid_from DESC LIMIT 2`, [inst.id])).rows;
+    const days = Number(b.monitoring_days);
+    const r = await db.query(`
+      INSERT INTO instance_version_reviews (instance_id, version_id, previous_version_id, what_changed, substantial, affected_aspects,
+        tests, test_result, evidence_url, controls, rollback_plan, monitoring_days, monitoring_until, risk_level, approved_by,
+        justification, reviewed_by, reviewed_by_email)
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12, CURRENT_DATE + $12::int, $13,$14,$15,$16,$17) RETURNING id, monitoring_until`,
+      [inst.id, hist[0]?.version_id || null, hist[1]?.version_id || null, text(b.what_changed), b.substantial, f.affected_aspects,
+       f.tests, text(b.test_result), evidence, f.controls, b.rollback_plan, days, risk, text(b.approved_by, 300),
+       justification, I.asUuid(user.userId), user.email || null]);
     await db.query('UPDATE ai_instances SET reclassification_pending = false, risk_level = $2, updated_at = NOW() WHERE id = $1', [inst.id, risk]);
-    return { success: true };
+    return { success: true, review_id: r.rows[0].id, monitoring_until: r.rows[0].monitoring_until };
   });
+}
+
+// Última revisión y comparación de incidentes antes y después del cambio
+async function latestReview(db, inst, history) {
+  if (!(await reviewsReady(db))) return null;
+  const rv = (await db.query(`
+    SELECT r.*, v.version, pv.version AS previous_version, x.title AS reopened_by_title
+    FROM instance_version_reviews r LEFT JOIN model_versions v ON v.id = r.version_id
+    LEFT JOIN model_versions pv ON pv.id = r.previous_version_id LEFT JOIN ai_incidents x ON x.id = r.reopened_by_incident
+    WHERE r.instance_id = $1 ORDER BY r.reviewed_at DESC LIMIT 1`, [inst.id])).rows[0];
+  if (!rv) return null;
+  const change = history.find(h => String(h.version_id) === String(rv.version_id));
+  const changeDate = change ? String(change.valid_from) : String(rv.reviewed_at.toISOString()).slice(0, 10);
+  const start = rv.reviewed_at.toISOString().slice(0, 10);
+  const c = (await db.query(`
+    SELECT
+      count(*) FILTER (WHERE occurred_at >= $2::date - $4::int AND occurred_at < $2::date)::int AS before_n,
+      count(*) FILTER (WHERE occurred_at >= $2::date - $4::int AND occurred_at < $2::date AND severity = ANY($6))::int AS before_serious,
+      count(*) FILTER (WHERE occurred_at >= $3::date AND occurred_at <= LEAST(CURRENT_DATE, $5::date))::int AS after_n,
+      count(*) FILTER (WHERE occurred_at >= $3::date AND occurred_at <= LEAST(CURRENT_DATE, $5::date) AND severity = ANY($6))::int AS after_serious,
+      (LEAST(CURRENT_DATE, $5::date) - $3::date)::int AS elapsed, ($5::date - CURRENT_DATE)::int AS days_left
+    FROM ai_incidents WHERE instance_id = $1`, [inst.id, changeDate, start, rv.monitoring_days, rv.monitoring_until, SERIOUS])).rows[0];
+  return { ...rv, change_date: changeDate, monitoring_start: start, comparison: c, in_monitoring: c.days_left >= 0 && !rv.reopened_at };
 }
 
 async function retire(pool, user, id, body) {
@@ -308,3 +377,6 @@ module.exports = async function handler(req, res) {
     return sendError(res, I.dbError(e));
   }
 };
+
+// Usado por api/incidents.js: un incidente grave durante la vigilancia reabre la revisión
+module.exports.SERIOUS = SERIOUS;
