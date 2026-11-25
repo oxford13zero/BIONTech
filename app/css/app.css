@@ -393,3 +393,19 @@ table.cmp td small{display:block}
 .acc-body{padding:0 16px 14px}
 .acc-body .count-note{margin:0 0 10px}
 .state-chips .chip{margin:0 4px 4px 0}
+
+/* ── Recuadro "Información incompleta" (fichas de modelo e instalación) ── */
+.inc-box{border:1px solid rgba(244,195,139,.45);background:rgba(244,195,139,.07);border-radius:12px;padding:14px 16px;margin:0 0 14px}
+.inc-box h3{margin:0 0 6px;font-size:15px}
+.inc-box dl{margin:0}
+.inc-row{display:grid;grid-template-columns:220px 1fr;gap:4px 14px;padding:8px 0;border-top:1px solid var(--border);font-size:14px}
+.inc-row:first-child{border-top:0}
+.inc-row dt{color:var(--dim);font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;padding-top:2px}
+.inc-row dd{margin:0}
+.inc-row a{color:#9DB9FF}
+.who{font-size:11px;font-weight:700;border-radius:6px;padding:1px 7px;margin-left:6px;text-transform:none;letter-spacing:0}
+.who.vendor{color:#F4C38B;background:rgba(244,195,139,.14)}
+.who.internal{color:#9DB9FF;background:rgba(130,170,255,.14)}
+.flash{animation:flash 1.6s ease-out}
+@keyframes flash{0%,40%{background:rgba(244,195,139,.25);border-radius:8px}100%{background:transparent}}
+@media(max-width:700px){.inc-row{grid-template-columns:1fr}}

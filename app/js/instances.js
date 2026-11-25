@@ -123,7 +123,7 @@ function viewInstance() {
             <option value="" ${!fs[col] ? 'selected' : ''}>✅ ${t('st_informed')}</option>
             <option value="pendiente" ${fs[col] === 'pendiente' ? 'selected' : ''}>⏳ ${t('st_pending')}</option>
             <option value="no_entregado" ${fs[col] === 'no_entregado' ? 'selected' : ''}>🚫 ${t('st_not_provided')}</option></select></div>`
-      : `<div class="field"><label>${esc(instLabel(col))}</label><div>${fs[col]
+      : `<div class="field" id="ifield_${col}"><label>${esc(instLabel(col))}</label><div>${fs[col]
           ? stateValueHtml(null, fs[col]) : (() => { const v = fmtValue(row[col], INST_FMT[col]); return v === null ? `<span class="no-info">${t('no_info')}</span>` : esc(v); })()}</div></div>`).join('');
     const open = editing || (S.instOpen || { A: true })[b.key];
     return `
@@ -154,6 +154,7 @@ function viewInstance() {
       ${!active ? `<span class="chip c-n">${t('st_retired_f')}</span>` : ''}</div>
     <div class="crumb">${esc(i.code)} · ${d.asset ? `<a href="#/activos/${esc(d.asset.id)}">${esc(d.asset.code)} — ${esc(d.asset.name)}</a>` : t('asset_unassigned')}
       · <a href="#/modelos/${esc(i.model_id)}">${esc(i.model_code)} · ${esc(i.vendor)}</a> · ${esc(d.branch?.name || '')}</div>
+    ${instInfoBoxHtml(d)}
     <div class="card"><div class="fields">
       <div class="field"><label>${t('current_version')}</label><div>${current ? `<b>${esc(current.version)}</b> ${t('since')} ${esc(current.valid_from)}` : `<span class="no-info">${t('no_version')}</span>`}</div></div>
       <div class="field"><label>${t('group')}</label><div>${t('group_' + i.inventory_group)}</div></div>
@@ -172,6 +173,35 @@ function viewInstance() {
       ${can('incident.create') && d.asset && i.status === 'activa' ? `<div class="edit-bar left"><a class="btn btn-sm" href="#/incidentes/nuevo?asset=${esc(d.asset.id)}&instance=${esc(i.id)}">+ ${t('new_incident')}</a></div>` : ''}
       ${incRows ? `<div class="tbl-wrap"><table><thead><tr><th>${t('f_date')}</th><th>${t('f_title')}</th><th>${t('version')}</th><th>${t('f_severity')}</th><th>${t('status')}</th></tr></thead><tbody>${incRows}</tbody></table></div>`
         : `<div class="empty small">${t('no_incidents')}</div>`}</div>`;
+}
+
+// Recuadro "Información incompleta" de la instalación (sus datos) + aviso si el modelo tiene brechas del proveedor
+function instInfoBoxHtml(d) {
+  const i = d.instance, pending = [], notProvided = [];
+  for (const b of instBlocks(d.risk_section)) {
+    const row = b.kind === 'fields' ? i : (d.sections[b.key] || {});
+    const fs = row.field_status || {};
+    for (const col of b.fields) {
+      if (fs[col] === 'pendiente') pending.push([b.key, col]);
+      if (fs[col] === 'no_entregado') notProvided.push([b.key, col]);
+    }
+  }
+  const link = ([key, col]) => `<a href="javascript:void(0)" onclick="openInstField('${esc(key)}','${esc(col)}')">${esc(instLabel(col))}</a>`;
+  const mfs = i.model_field_status || {};
+  const modelGap = i.black_box || Object.values(mfs).some(v => v === 'no_entregado' || v === 'pendiente');
+  const rows = [];
+  if (pending.length) rows.push(infoRow(t('st_to_complete'), 'internal', pending.map(link).join(' · ')));
+  if (notProvided.length) rows.push(infoRow(t('st_not_provided_short'), 'internal', notProvided.map(link).join(' · ')));
+  if (modelGap) rows.push(infoRow(t('from_model'), 'vendor', `${t('model_has_gaps')} <a href="#/modelos/${esc(i.model_id)}">${t('see_model_record')}</a>`));
+  return rows.length ? `<div class="inc-box"><h3>${t('info_incomplete')}</h3><dl>${rows.join('')}</dl></div>` : '';
+}
+
+// Abre el bloque donde está el campo y lo resalta
+function openInstField(key, col) {
+  S.instOpen = S.instOpen || { A: true };
+  S.instOpen[key] = true;
+  render();
+  goToField('ifield_' + col);
 }
 
 function toggleInstBlock(key) {

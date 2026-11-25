@@ -22,7 +22,7 @@ const notFound = () => ({ status: 404, message: 'Instance not found' });
 // Instancia visible para el usuario (empresa y división)
 async function loadInstance(db, user, id) {
   const r = await db.query(`
-    SELECT i.*, m.base_risk_level, m.name AS model_name, m.code AS model_code, m.vendor, m.black_box
+    SELECT i.*, m.base_risk_level, m.name AS model_name, m.code AS model_code, m.vendor, m.black_box, m.field_status AS model_field_status
     FROM ai_instances i JOIN ai_models m ON m.id = i.model_id
     WHERE i.id::text = $1 AND i.company_id = $2`, [String(id), user.companyId]);
   const inst = r.rows[0];

@@ -85,6 +85,28 @@ async function loadModels(key, f) {
   if (modelRoute()?.view === 'list') render();
 }
 
+// Recuadro "Información incompleta" de la ficha: proveedor (caja negra, no entregado) e interno (por completar)
+function modelInfoBoxHtml(m) {
+  const fs = m.field_status || {};
+  const link = col => `<a href="javascript:void(0)" onclick="goToField('mfield_${col}')">${esc(fieldLabel(col))}</a>`;
+  const notProvided = Object.keys(fs).filter(k => fs[k] === 'no_entregado'), pending = Object.keys(fs).filter(k => fs[k] === 'pendiente');
+  const rows = [];
+  if (m.black_box) rows.push(infoRow(t('black_box'), 'vendor', `${t('black_box_info')} ${m.vendor_questionnaire_received ? t('questionnaire_answered')
+    : m.vendor_questionnaire_sent_at ? t('questionnaire_waiting').replace('{d}', esc(m.vendor_questionnaire_sent_at)) : t('questionnaire_not_sent')}.`));
+  if (notProvided.length) rows.push(infoRow(t('st_not_provided_short'), 'vendor', notProvided.map(link).join(' · ')));
+  if (pending.length) rows.push(infoRow(t('st_to_complete'), 'internal', pending.map(link).join(' · ')));
+  return rows.length ? `<div class="inc-box"><h3>${t('info_incomplete')}</h3><dl>${rows.join('')}</dl></div>` : '';
+}
+const infoRow = (label, who, html) => `<div class="inc-row"><dt>${esc(label)}<span class="who ${who}">${t(who === 'vendor' ? 'who_vendor' : 'who_internal')}</span></dt><dd>${html}</dd></div>`;
+
+// Lleva a un campo de la ficha y lo resalta un momento
+function goToField(id) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  el.classList.remove('flash'); void el.offsetWidth; el.classList.add('flash');
+}
+
 // Estado de la información del modelo: caja negra / no entregados (proveedor) y por completar (interno)
 function modelInfoChips(x) {
   const chips = [];
@@ -165,7 +187,7 @@ function viewModelDetail(id) {
     <div class="sec open" style="--c:${g.color}">
       <div class="sec-head static"><span class="dot"></span><span class="sec-name">${esc(g.title[LANG])}</span></div>
       <div class="sec-body"><div class="fields">${g.fields.map(col => editing ? modelFieldInput(col, m[col], fs[col]) : `
-        <div class="field"><label>${esc(fieldLabel(col))}</label>
+        <div class="field" id="mfield_${col}"><label>${esc(fieldLabel(col))}</label>
           <div>${stateValueHtml(MODEL_DATE_FIELDS.includes(col) && m[col] ? String(m[col]).slice(0, 10) : m[col], fs[col], MODEL_BOOL_FIELDS.includes(col))}</div></div>`).join('')}
       </div></div>
     </div>`).join('');
@@ -223,6 +245,7 @@ function viewModelDetail(id) {
            <button class="btn btn-sm" onclick="retireModel('${esc(m.id)}')">${t('retire')}</button>`}</div>` : ''}
     </div>
     ${S.modelMsg ? `<div class="alert">${esc(S.modelMsg)}</div>` : ''}
+    ${editing ? '' : modelInfoBoxHtml(m)}
     ${editing && S.modelEdit.error ? `<div class="form-error" role="alert">${esc(S.modelEdit.error)}</div>` : ''}
     ${identity}
     <div class="card ${editing ? 'mt' : ''}"><h3>${t('vendor_transparency')}</h3>${transparency}</div>
