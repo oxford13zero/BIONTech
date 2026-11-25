@@ -47,25 +47,35 @@ function incErrorText(msg) {
 }
 
 // ── Lista ─────────────────────────────────────────────────────
+// Filtros en la URL: q (texto), status (abierto por defecto · cerrado · todos), severity, from (desde el Dashboard)
 function incFilters() {
   const p = parseHash().params;
-  return { kind: p.kind || '', severity: p.severity || '', status: p.status || '', from: p.from || '', to: p.to || '',
-           eu_serious: p.eu_serious || '', undetermined: p.undetermined || '' };
+  return { q: p.q || '', status: p.status || 'abierto', severity: p.severity || '', from: p.from || '' };
 }
 
 function setIncFilter(key, value) {
   const f = incFilters();
   f[key] = value;
-  const qs = new URLSearchParams(Object.entries(f).filter(([, v]) => v)).toString();
+  const qs = new URLSearchParams(Object.entries(f).filter(([k, v]) => v && !(k === 'status' && v === 'abierto'))).toString();
   history.replaceState(null, '', '#/incidentes' + (qs ? '?' + qs : ''));
   render();
 }
 
+// Búsqueda: espera a que la persona deje de escribir
+let incSearchTimer = null;
+function incSearch(value) {
+  clearTimeout(incSearchTimer);
+  incSearchTimer = setTimeout(() => setIncFilter('q', value.trim()), 300);
+}
+
 async function loadIncidents(key, f) {
   S.incidents = { key, loading: true };
-  const qs = new URLSearchParams({ ...(divisionParam() ? { division: divisionParam() } : {}),
-    ...Object.fromEntries(Object.entries(f).filter(([, v]) => v)) }).toString();
-  try { S.incidents = { key, list: await apiGet('/api/incidents?' + qs) }; }
+  const params = { ...(divisionParam() ? { division: divisionParam() } : {}) };
+  if (f.q) params.q = f.q;
+  if (f.status !== 'todos') params.status = f.status;
+  if (f.severity) params.severity = f.severity;
+  if (f.from) params.from = f.from;
+  try { S.incidents = { key, list: await apiGet('/api/incidents?' + new URLSearchParams(params)) }; }
   catch (e) { if (!S.user) return; S.incidents = { key, error: true }; }
   if (incidentRoute()?.view === 'list') render();
 }
@@ -75,7 +85,6 @@ function viewIncidentList() {
   const key = JSON.stringify([S.division, f]);
   if (!S.incidents || S.incidents.key !== key) loadIncidents(key, f);
   const x = S.incidents;
-  const showDiv = S.division === 'all';
   const opt = (v, label, cur) => `<option value="${esc(v)}" ${v === cur ? 'selected' : ''}>${esc(label)}</option>`;
   let body;
   if (x.loading || !x.list && !x.error) body = `<div class="empty small">${t('loading')}</div>`;
@@ -84,32 +93,26 @@ function viewIncidentList() {
     const rows = x.list.map(i => `
       <tr class="row" onclick="location.hash='#/incidentes/${esc(i.id)}'">
         <td>${esc(i.occurred_at)}</td>
-        <td><b>${esc(i.title)}</b>${i.eu_serious_incident ? ` <span class="chip c-r">${t('eu_serious_short')}</span>` : ''}</td>
-        <td><a href="#/activos/${esc(i.asset_id)}" onclick="event.stopPropagation()"><b>${esc(i.asset_code)}</b></a>${showDiv ? `<small>${esc(i.branch_name)}</small>` : ''}</td>
+        <td><b>${esc(i.title)}</b><small>${esc(i.asset_code)} · ${esc(i.branch_name)}</small></td>
         <td>${i.model_name ? `${esc(i.model_name)}${i.version ? `<small>${verLabel(i.version)}</small>` : ''}` : `<span class="chip c-a">${t('model_undetermined')}</span>`}</td>
-        <td>${t('kind_' + i.kind)}</td>
-        <td>${sevChip(i.severity)}</td>
-        <td>${t('ist_' + i.status)}</td>
+        <td>${t('sev_' + i.severity)}${i.kind === 'peligro' ? `<small>${t('kind_peligro')}</small>` : ''}</td>
+        <td><span class="chip ${i.status === 'abierto' ? 'c-g' : 'c-n'}">${t('ist_' + i.status)}</span></td>
       </tr>`).join('');
     body = `<div class="tbl-wrap"><table>
-      <thead><tr><th>${t('f_date')}</th><th>${t('f_title')}</th><th>${t('asset')}</th><th>${t('model')}</th><th>${t('f_kind')}</th>
-        <th>${t('f_severity')}</th><th>${t('status')}</th></tr></thead>
-      <tbody>${rows || `<tr><td colspan="7" class="empty small">${t('incidents_none')}</td></tr>`}</tbody>
+      <thead><tr><th>${t('f_date')}</th><th>${t('nav_incidents')}</th><th>${t('model')}</th><th>${t('f_severity')}</th><th>${t('status')}</th></tr></thead>
+      <tbody>${rows || `<tr><td colspan="5" class="empty small">${t('incidents_none')}</td></tr>`}</tbody>
     </table></div><p class="count-note">${t('n_incidents').replace('{n}', x.list.length)}</p>`;
   }
   return `
     ${can('incident.create') ? `<div class="page-actions"><a class="btn btn-primary" href="#/incidentes/nuevo">+ ${t('new_incident')}</a></div>` : ''}
-    <div class="toolbar">
-      <select class="input" onchange="setIncFilter('kind', this.value)">${opt('', t('all_kinds'), f.kind)}${INC_KINDS.map(k => opt(k, t('kind_' + k), f.kind)).join('')}</select>
-      <select class="input" onchange="setIncFilter('severity', this.value)">${opt('', t('all_severities'), f.severity)}${INC_SEVERITIES.map(k => opt(k, t('sev_' + k), f.severity)).join('')}</select>
-      <select class="input" onchange="setIncFilter('status', this.value)">${opt('', t('all_statuses'), f.status)}${INC_STATUSES.map(k => opt(k, t('ist_' + k), f.status)).join('')}</select>
-      <label class="date-filter">${t('from')} <input class="input" type="date" value="${esc(f.from)}" onchange="setIncFilter('from', this.value)"></label>
-      <label class="date-filter">${t('to')} <input class="input" type="date" value="${esc(f.to)}" onchange="setIncFilter('to', this.value)"></label>
+    <div class="toolbar inc-toolbar">
+      <input class="input search" id="incSearch" type="search" placeholder="${t('inc_search')}" aria-label="${t('inc_search')}" value="${esc(f.q)}" oninput="incSearch(this.value)">
+      <select class="input" aria-label="${t('status')}" onchange="setIncFilter('status', this.value)">
+        ${opt('abierto', t('inc_open_pl'), f.status)}${opt('cerrado', t('inc_closed_pl'), f.status)}${opt('todos', t('inc_all_pl'), f.status)}</select>
+      <select class="input" aria-label="${t('f_severity')}" onchange="setIncFilter('severity', this.value)">
+        ${opt('', t('all_severities'), f.severity)}${INC_SEVERITIES.map(k => opt(k, t('sev_' + k), f.severity)).join('')}</select>
     </div>
-    <div class="shortcuts">
-      <button class="sc ${f.eu_serious ? 'on' : ''}" onclick="setIncFilter('eu_serious', '${f.eu_serious ? '' : 'true'}')">${t('only_eu_serious')}</button>
-      <button class="sc ${f.undetermined ? 'on' : ''}" onclick="setIncFilter('undetermined', '${f.undetermined ? '' : 'true'}')">${t('only_undetermined')}</button>
-    </div>
+    ${f.from ? `<div class="shortcuts"><button class="sc on" onclick="setIncFilter('from', '')">${t('since_date').replace('{d}', esc(f.from))} ✕</button></div>` : ''}
     <div class="card">${body}</div>`;
 }
 
