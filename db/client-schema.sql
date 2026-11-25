@@ -822,6 +822,10 @@ ALTER TABLE ai_incidents ADD COLUMN IF NOT EXISTS effectiveness_check  TEXT;    
 ALTER TABLE ai_incidents ADD COLUMN IF NOT EXISTS closed_at            TIMESTAMPTZ;
 ALTER TABLE ai_incidents ADD COLUMN IF NOT EXISTS closed_by            UUID;
 
+-- Quién registró y quién cerró (email, para mostrarlo en la ficha)
+ALTER TABLE ai_incidents ADD COLUMN IF NOT EXISTS reported_by_email    TEXT;
+ALTER TABLE ai_incidents ADD COLUMN IF NOT EXISTS closed_by_email      TEXT;
+
 -- ── 5. Acciones correctivas (ISO 42001 10.2) ──────────────────
 CREATE TABLE IF NOT EXISTS incident_actions (
   id           UUID PRIMARY KEY DEFAULT gen_random_uuid(),

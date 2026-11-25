@@ -26,7 +26,7 @@ async function pending(db, user, q) {
       WHERE i.company_id = $1 AND i.status = 'activa'${divI}`).join(' UNION ALL ');
 
   const q1 = (sql) => db.query(sql + ` LIMIT ${LIMIT}`, p).then(r => r.rows);
-  const [fieldFlags, blackBox, assetsUnknown, noAsset, reclass, undetermined, overdue] = await Promise.all([
+  const [fieldFlags, blackBox, assetsUnknown, noAsset, reclass, undetermined, overdue, actionsOverdue] = await Promise.all([
     q1(`
       SELECT 'modelo' AS entity, m.id, m.code, m.name, e.key AS field, e.value AS state, NULL AS section
       FROM ai_models m, jsonb_each_text(m.field_status) e
@@ -61,7 +61,13 @@ async function pending(db, user, q) {
     q1(`
       SELECT i.id, i.code, m.name AS model_name, a.code AS asset_code, i.next_review_date
       FROM ai_instances i JOIN ai_models m ON m.id = i.model_id LEFT JOIN assets a ON a.id = i.asset_id
-      WHERE i.company_id = $1 AND i.status = 'activa' AND i.next_review_date < CURRENT_DATE${divI} ORDER BY i.next_review_date`)
+      WHERE i.company_id = $1 AND i.status = 'activa' AND i.next_review_date < CURRENT_DATE${divI} ORDER BY i.next_review_date`),
+    // Acciones correctivas vencidas de incidentes abiertos (ISO 42001 10.2)
+    q1(`
+      SELECT ac.id AS action_id, ac.action, ac.owner, ac.due_date, x.id, x.title, a.code AS asset_code
+      FROM incident_actions ac JOIN ai_incidents x ON x.id = ac.incident_id JOIN assets a ON a.id = x.asset_id
+      WHERE x.company_id = $1 AND x.status = 'abierto' AND ac.status = 'pendiente' AND ac.due_date < CURRENT_DATE${divX}
+      ORDER BY ac.due_date`)
   ]);
 
   const items = {
@@ -73,7 +79,8 @@ async function pending(db, user, q) {
     instances_without_asset: noAsset,
     reclassification_pending: reclass,
     incidents_model_undetermined: undetermined,
-    reviews_overdue: overdue
+    reviews_overdue: overdue,
+    incident_actions_overdue: actionsOverdue
   };
   const counts = Object.fromEntries(Object.entries(items).map(([k, v]) => [k, v.length]));
   // Total para el número del menú (cada brecha cuenta una vez; los cuestionarios ya están en caja negra)
