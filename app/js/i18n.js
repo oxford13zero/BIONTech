@@ -1012,6 +1012,7 @@ const I18N = {
     lg_title: 'Legislación', lg_prev: 'Norma anterior', lg_next: 'Norma siguiente', lg_view: 'Ver ley →',
     lg_overview: 'Panorama completo →', lg_applies: 'Aplica a: {a}',
     lg_st_tramitacion: 'En tramitación', lg_st_vigente: 'Vigente', lg_st_plazo: 'Plazo',
+    lg_country_Brazil: 'Brasil', lg_country_Peru: 'Perú', lg_country_European_Union: 'Unión Europea', lg_country_International: 'Internacional',
     db_k_incidents: 'incidentes',
     db_k_serious: 'graves o desastres',
     db_of_n_inst: 'de {n} instalaciones',

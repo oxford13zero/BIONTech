@@ -253,10 +253,17 @@ function legisStatus(x) {
 
 function legisItemHtml(x) {
   const full = [x.title, x.description, x.applies_to ? t('lg_applies').replace('{a}', x.applies_to) : ''].filter(Boolean).join(' — ');
-  return `<span class="lg-country">${esc(x.country)}</span>${legisStatus(x)}
+  return `<span class="lg-country">${esc(legisCountry(x.country))}</span>${legisStatus(x)}
     <span class="lg-text" title="${esc(full)}"><b>${esc(x.title)}:</b> ${esc(x.description || '')}
       ${x.applies_to ? `<span class="lg-applies">${esc(t('lg_applies').replace('{a}', x.applies_to))}</span>` : ''}</span>
     ${x.url ? `<a class="lg-link" href="${esc(x.url)}" target="_blank" rel="noopener noreferrer">${t('lg_view')}</a>` : ''}`;
+}
+
+// País de la norma en el idioma de la pantalla (en la base se guarda en inglés)
+function legisCountry(c) {
+  const key = 'lg_country_' + String(c || '').replace(/\W+/g, '_');
+  const label = t(key);
+  return label === key ? c : label;
 }
 
 const legisDots = (n, i) => Array.from({ length: n }, (_, k) => `<i class="${k === i ? 'on' : ''}"></i>`).join('');
