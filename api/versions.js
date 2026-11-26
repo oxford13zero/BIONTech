@@ -46,7 +46,7 @@ async function selectInstances(db, model, applyTo, onlyDivision = null) {
   }
   const r = await db.query(`
     SELECT i.id, i.code, i.current_version_id, cv.version AS current_version,
-           a.code AS asset_code, a.manufacturer, b.name AS branch_name,
+           a.code AS asset_code, a.manufacturer, b.name AS branch_name, i.installed_at,
            (SELECT iv.valid_from FROM instance_versions iv WHERE iv.instance_id = i.id AND iv.valid_to IS NULL) AS current_since
     FROM ai_instances i LEFT JOIN assets a ON a.id = i.asset_id JOIN branches b ON b.id = i.branch_id
     LEFT JOIN model_versions cv ON cv.id = i.current_version_id
@@ -68,18 +68,22 @@ async function instanceSnapshot(db, instanceId) {
   return { instance: inst, sections, integrations };
 }
 
+// La fecha no puede ser anterior al inicio de la versión vigente ni a la fecha de instalación
+function assertDateFits(targets, installedAt) {
+  const since = t => [t.current_since, t.installed_at].filter(Boolean).map(String).sort().pop();
+  const tooEarly = targets.filter(t => since(t) && since(t) > installedAt);
+  if (tooEarly.length) {
+    throw { status: 400, message: 'Installation date is before the current version start',
+            instances: tooEarly.map(t => ({ code: t.code, asset_code: t.asset_code, current_since: since(t) })) };
+  }
+}
+
 // Aplica una versión a las instancias elegidas (regla 2 del diseño)
 async function applyVersion(db, user, version, targets, installedAt) {
   const skipped = targets.filter(t => String(t.current_version_id) === String(version.id))
     .map(t => ({ code: t.code, asset_code: t.asset_code, reason: 'already_on_version' }));
   const toApply = targets.filter(t => String(t.current_version_id) !== String(version.id));
-
-  // La fecha no puede ser anterior al inicio de la versión vigente
-  const tooEarly = toApply.filter(t => t.current_since && String(t.current_since) > installedAt);
-  if (tooEarly.length) {
-    throw { status: 400, message: 'Installation date is before the current version start',
-            instances: tooEarly.map(t => ({ code: t.code, asset_code: t.asset_code, current_since: t.current_since })) };
-  }
+  assertDateFits(toApply, installedAt);
 
   const userId = I.asUuid(user.userId);
   for (const t of toApply) {
@@ -117,6 +121,7 @@ async function register(pool, user, body) {
   return I.inTransaction(pool, async db => {
     const model = await loadModel(db, user, body.model_id);
     const targets = await selectInstances(db, model, body.apply_to);
+    assertDateFits(targets, installed);   // también en la vista previa
     if (body.dry_run) return preview(targets);
 
     // Copia de la ficha del modelo antes de la nueva versión
@@ -146,6 +151,7 @@ async function applyMore(pool, user, versionId, body) {
     I.assertDate(installed, 'installed_at');
     if (!body.apply_to || body.apply_to.mode === 'none') throw I.badRequest('Select where to apply the version');
     const targets = await selectInstances(db, model, body.apply_to, scope === 'division' ? user.divisionId : null);
+    assertDateFits(targets.filter(t => String(t.current_version_id) !== String(version.id)), installed);   // también en la vista previa
     if (body.dry_run) return preview(targets);
     if (!targets.length) throw I.badRequest('No instances match');
     return { version_id: version.id, version: version.version, ...(await applyVersion(db, user, version, targets, installed)) };
