@@ -393,7 +393,7 @@ function grDocChanges(x) {
         x.by_model.map(r => [esc(r.model), r.changes, r.reviewed, r.pending_review]), [1, 2, 3]))
     + grSec(3, 'gr_s_changes', grTable(['gr_c_date', 'gr_c_asset', 'gr_c_model', 'gr_c_change', 'gr_c_review', 'gr_c_decision', 'gr_c_watch', 'gr_c_before_after'],
         x.detail.map(r => [grNw(grDate(r.changed_at)), grNw(r.asset_code ? esc(r.asset_code) : esc(r.code)), esc(r.model),
-          `${grNw(`${verLabel(r.from_version)} → ${verLabel(r.to_version)}`)}${r.changes_unknown ? ` <small>(${t('gr_changes_unknown')})</small>` : ''}`,
+          `${grNw(`${r.from_version ? verLabel(r.from_version) : t('gr_no_version')} → ${verLabel(r.to_version)}`)}${r.changes_unknown ? ` <small>(${t('gr_changes_unknown')})</small>` : ''}`,
           review(r), decision(r), watch(r), grNw(inc(r))]))
       + grNote(t('gr_before_after_help')) + grTrunc(x.detail_truncated, x.detail.length));
 }

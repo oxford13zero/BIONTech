@@ -387,6 +387,7 @@ const I18N = {
     gr_c_watch: 'Vigilancia',
     gr_c_before_after: 'Incidentes antes → durante',
     gr_c_decision: 'Decisión',
+    gr_no_version: 'Sin versión registrada',
     gr_c_vendor: 'Proveedor',
     gr_c_black_box: 'Caja negra',
     gr_c_questionnaire: 'Cuestionario',
@@ -713,7 +714,7 @@ const I18N = {
     version_applied:   'Listo. Cambiaron:',
     version_registered_only: 'Versión registrada, sin aplicar a instalaciones.',
     version_skipped:   '{n} ya la tenían',
-    version_too_early: 'La fecha de instalación es anterior a la versión vigente en:',
+    version_too_early: 'La fecha no puede ser anterior a la instalación ni a la versión vigente en:',
     version_exists:    'Esa versión ya existe para este modelo.',
     // Incidentes
     new_incident:      'Registrar incidente',
@@ -1391,6 +1392,7 @@ const I18N = {
     gr_c_watch: 'Monitoring',
     gr_c_before_after: 'Incidents before → during',
     gr_c_decision: 'Decision',
+    gr_no_version: 'No version recorded',
     gr_c_vendor: 'Vendor',
     gr_c_black_box: 'Black box',
     gr_c_questionnaire: 'Questionnaire',
@@ -1717,7 +1719,7 @@ const I18N = {
     version_applied:   'Done. Changed:',
     version_registered_only: 'Version registered, not applied to installations.',
     version_skipped:   '{n} already had it',
-    version_too_early: 'The installation date is before the current version on:',
+    version_too_early: 'The date cannot be before the installation or the current version on:',
     version_exists:    'That version already exists for this model.',
     // Incidents
     new_incident:      'Report incident',

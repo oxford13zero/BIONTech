@@ -336,13 +336,17 @@ async function actionsReport(db, user, P) {
 }
 
 // ── Informe 6: Gestión del cambio (cambios de versión en el período) ──
-// Un cambio = una versión aplicada después de la primera de la instalación
+// Un cambio = una versión aplicada a una instalación que ya existía: después de otra versión, o la primera
+// si la instalación se creó sin versión. Al aplicar una versión, BION guarda una copia de la ficha en la
+// misma transacción (record_snapshots, misma hora), lo que la distingue de la versión con que se instaló.
 function changesCte(user, P) {
   const p = [user.companyId, P.filters.from, P.filters.to];
   const ci = cov('i', P, p);
   const sql = `WITH h AS (
       SELECT iv.instance_id, iv.version_id, iv.valid_from,
-        lag(iv.version_id) OVER (PARTITION BY iv.instance_id ORDER BY iv.valid_from, iv.created_at) AS prev_version_id
+        lag(iv.version_id) OVER (PARTITION BY iv.instance_id ORDER BY iv.valid_from, iv.created_at) AS prev_version_id,
+        EXISTS (SELECT 1 FROM record_snapshots s WHERE s.entity_type = 'instancia' AND s.entity_id = iv.instance_id
+          AND s.taken_at = iv.created_at) AS applied_later
       FROM instance_versions iv JOIN ai_instances i ON i.id = iv.instance_id
       WHERE i.company_id = $1${ci}),
     c AS (
@@ -351,7 +355,7 @@ function changesCte(user, P) {
       FROM h LEFT JOIN LATERAL (
         SELECT * FROM instance_version_reviews r WHERE r.instance_id = h.instance_id AND r.version_id = h.version_id
         ORDER BY r.reviewed_at DESC LIMIT 1) r ON true
-      WHERE h.prev_version_id IS NOT NULL AND h.valid_from BETWEEN $2 AND $3)`;
+      WHERE (h.prev_version_id IS NOT NULL OR h.applied_later) AND h.valid_from BETWEEN $2 AND $3)`;
   return { sql, p };
 }
 const CHG_COUNTS = `count(*)::int AS changes,
