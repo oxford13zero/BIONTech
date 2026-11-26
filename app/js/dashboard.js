@@ -212,3 +212,68 @@ function viewDashboard() {
           <tbody>${recRows}</tbody></table></div>` : `<div class="empty small">${t('no_incidents')}</div>`}</div>
     </div>`;
 }
+
+// ── Línea rotativa de legislación (normas de IA; BD maestra) ──
+// Una norma a la vez: primero las del país de la empresa. Rota sola cada 7 s, se pausa con el cursor
+// o el foco, y no rota si el sistema pide reducir el movimiento.
+const DB_LEGIS_MS = 7000;
+
+async function loadLegislation(key) {
+  S.legis = { key, loading: true, items: [] };
+  try { const r = await apiGet('/api/dashboard?legislation=1'); S.legis = { key, items: r.items || [] }; }
+  catch (e) { if (!S.user) return; S.legis = { key, items: [] }; }
+  if (S.route === 'dashboard') render();
+}
+
+function dashLegisHtml() {
+  const key = S.user.email;
+  if (!S.legis || S.legis.key !== key) { loadLegislation(key); return ''; }
+  const items = S.legis.items;
+  if (!items.length) return '';
+  S.legisIdx = (S.legisIdx || 0) % items.length;
+  return `<section class="db-legis" id="dbLegis" aria-label="${t('lg_title')}"
+      onmouseenter="S.legisPaused=true" onmouseleave="S.legisPaused=false" onfocusin="S.legisPaused=true" onfocusout="S.legisPaused=false">
+    <b class="lg-h">⚖ ${t('lg_title')}</b>
+    <div class="lg-body" id="dbLegisBody">${legisItemHtml(items[S.legisIdx])}</div>
+    <div class="lg-nav">
+      <button type="button" onclick="legisGo(-1)" aria-label="${t('lg_prev')}">‹</button>
+      <span class="lg-dots" id="dbLegisDots">${legisDots(items.length, S.legisIdx)}</span>
+      <button type="button" onclick="legisGo(1)" aria-label="${t('lg_next')}">›</button>
+    </div>
+    <a class="lg-all" href="#/reportes/iso">${t('lg_overview')}</a>
+  </section>`;
+}
+
+// Estado de la norma: en tramitación · vigente · plazo DD-MM-AAAA
+function legisStatus(x) {
+  const st = ['tramitacion', 'vigente', 'plazo'].includes(x.status) ? x.status : 'vigente';
+  const date = x.key_date ? x.key_date.split('-').reverse().join('-') : '';
+  return `<span class="lg-st lg-${st}">${t('lg_st_' + st)}${st === 'plazo' && date ? ' ' + date : ''}</span>`;
+}
+
+function legisItemHtml(x) {
+  const full = [x.title, x.description, x.applies_to ? t('lg_applies').replace('{a}', x.applies_to) : ''].filter(Boolean).join(' — ');
+  return `<span class="lg-country">${esc(x.country)}</span>${legisStatus(x)}
+    <span class="lg-text" title="${esc(full)}"><b>${esc(x.title)}:</b> ${esc(x.description || '')}
+      ${x.applies_to ? `<span class="lg-applies">${esc(t('lg_applies').replace('{a}', x.applies_to))}</span>` : ''}</span>
+    ${x.url ? `<a class="lg-link" href="${esc(x.url)}" target="_blank" rel="noopener noreferrer">${t('lg_view')}</a>` : ''}`;
+}
+
+const legisDots = (n, i) => Array.from({ length: n }, (_, k) => `<i class="${k === i ? 'on' : ''}"></i>`).join('');
+
+// Cambia de norma sin volver a dibujar la página
+function legisShow(i, announce) {
+  const items = S.legis && S.legis.items, body = document.getElementById('dbLegisBody');
+  if (!items || !items.length || !body) return;
+  S.legisIdx = (i + items.length) % items.length;
+  body.innerHTML = legisItemHtml(items[S.legisIdx]);
+  body.setAttribute('aria-live', announce ? 'polite' : 'off');
+  document.getElementById('dbLegisDots').innerHTML = legisDots(items.length, S.legisIdx);
+}
+function legisGo(step) { legisShow((S.legisIdx || 0) + step, true); }
+
+setInterval(() => {
+  if (S.route !== 'dashboard' || S.legisPaused || document.hidden) return;
+  if (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  if (document.getElementById('dbLegis')) legisShow((S.legisIdx || 0) + 1, false);
+}, DB_LEGIS_MS);
