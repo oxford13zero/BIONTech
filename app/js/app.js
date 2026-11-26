@@ -325,71 +325,8 @@ const riskChip = l => l ? `<span class="chip ${LEVEL_CLS[l] || 'c-n'}">${t('risk
 
 const today = () => new Date().toISOString().slice(0, 10);
 
-async function loadDashboard(key) {
-  S.dash = { key, loading: true };
-  const q = divisionParam() ? '?division=' + encodeURIComponent(divisionParam()) : '';
-  try { S.dash = { key, data: await apiGet('/api/dashboard' + q) }; }
-  catch (e) { if (!S.user) return; S.dash = { key, error: true }; }
-  if (S.route === 'dashboard') render();
-}
 
-function viewDashboard() {
-  const key = S.division;
-  if (!S.dash || S.dash.key !== key) loadDashboard(key);
-  const d = S.dash;
-  if (d.loading || (!d.data && !d.error)) return `<div class="card empty">${t('loading')}</div>`;
-  if (d.error) return `<div class="card empty">${t('data_error')}</div>`;
-  const { counts: c, risk_map, attention: at, recent_incidents } = d.data;
-
-  const tiles = [
-    ['dash_assets', c.assets, '#/activos'],
-    ['dash_models', c.models, '#/modelos'],
-    ['dash_high_risk_inst', c.high_risk, '#/modelos'],
-    ['dash_pending', c.pending, '#/pendientes'],
-    ['dash_incidents_12m', c.incidents_12m, '#/incidentes?status=todos&from=' + new Date(Date.now() - 365 * 864e5).toISOString().slice(0, 10)]
-  ];
-  const mapRows = risk_map.map(b => `<tr><td class="l">${esc(b.name)}</td>${LEVELS.map(l =>
-      `<td class="n ${b[l] ? LEVEL_CLS[l] + '-t' : ''}">${b[l] || '·'}</td>`).join('')}<td class="n">${b.total}</td></tr>`).join('');
-
-  const attItems = [
-    ...at.serious_open_incidents.map(x => ({ href: '#/incidentes/' + x.id, main: esc(x.title),
-      sub: `${esc(x.occurred_at)} · ${esc(x.asset_code)} · ${t('ist_' + x.status)}`, tag: sevChip(x.severity) })),
-    ...at.reclassification_pending.map(i => ({ href: '#/instancias/' + i.id, main: esc(i.model_name),
-      sub: `${esc(i.asset_code || t('asset_unassigned'))} · ${verLabel(i.version)}`, tag: `<span class="chip c-a">${t('reclass_pending')}</span>` })),
-    ...at.reviews_overdue.map(i => ({ href: '#/instancias/' + i.id, main: esc(i.model_name),
-      sub: `${esc(i.asset_code || t('asset_unassigned'))}`, tag: `<span class="chip c-r">${t('review_was_due').replace('{d}', esc(i.next_review_date))}</span>` }))
-  ];
-  const more = (at.totals.reclassification_pending - at.reclassification_pending.length) + (at.totals.reviews_overdue - at.reviews_overdue.length);
-  const recRows = recent_incidents.map(x => `
-    <tr class="row" onclick="location.hash='#/incidentes/${esc(x.id)}'">
-      <td>${esc(x.occurred_at)}</td><td><b>${esc(x.title)}</b><small>${esc(x.asset_code)}</small></td>
-      <td>${x.model_name ? esc(x.model_name) + `<small>${verLabel(x.version)}</small>` : `<span class="chip c-a">${t('model_undetermined')}</span>`}</td>
-      <td>${sevChip(x.severity)}</td></tr>`).join('');
-
-  return `
-    <div class="tiles tiles-5">${tiles.map(([k, n, href]) => `<a class="tile" href="${href}"><b>${n}</b>${t(k)}</a>`).join('')}</div>
-    <div class="dash-grid">
-      <div class="card">
-        <h3>${t('dash_map_inst')}</h3>
-        <div class="tbl-wrap"><table class="map">
-          <thead><tr><th class="l">${t('division')}</th>${LEVELS.map(l => `<th>${t('risk_' + l)}</th>`).join('')}<th>${t('total')}</th></tr></thead>
-          <tbody>${mapRows || `<tr><td colspan="6" class="empty">${t('no_divisions')}</td></tr>`}</tbody>
-        </table></div>
-      </div>
-      <div class="card">
-        <h3>${t('dash_attention')}</h3>
-        ${attItems.length ? `<div class="pend-list">${attItems.map(x => `
-          <a class="pend-item" href="${x.href}"><span class="pend-main"><b>${x.main}</b><small>${x.sub}</small></span>${x.tag}<span class="arrow">›</span></a>`).join('')}</div>
-          ${more > 0 ? `<p class="count-note"><a href="#/pendientes">${t('dash_more_pending').replace('{n}', more)}</a></p>` : ''}`
-        : `<div class="empty small">${t('dash_attention_none')}</div>`}
-      </div>
-    </div>
-    <div class="card mt">
-      <h3>${t('dash_recent_incidents')}</h3>
-      ${recRows ? `<div class="tbl-wrap"><table><thead><tr><th>${t('f_date')}</th><th>${t('f_title')}</th><th>${t('model')}</th><th>${t('f_severity')}</th></tr></thead>
-        <tbody>${recRows}</tbody></table></div>` : `<div class="empty small">${t('no_incidents')}</div>`}
-    </div>`;
-}
+// viewDashboard y loadDashboard: app/js/dashboard.js
 
 // ── Ayudantes de campos (los usa la ficha de la instalación) ─
 function fmtValue(v, fmt) {

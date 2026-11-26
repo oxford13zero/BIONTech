@@ -590,4 +590,6 @@ module.exports = async function handler(req, res) {
 };
 
 module.exports.REPORTS = REPORTS;
+// Usados por el Dashboard (api/dashboard.js)
+module.exports.parts = { actionsReport, changesPreview, gapsData };
 module.exports.resolvePeriod = resolvePeriod;
